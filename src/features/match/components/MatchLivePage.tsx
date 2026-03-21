@@ -375,13 +375,28 @@ export function MatchLivePage(): React.ReactNode {
     executeSubstitution(nextSuggestion.playerInId, nextSuggestion.playerOutId);
   }, [nextSuggestion, executeSubstitution]);
 
-  // Determine which tab should be active based on selection
-  const effectiveMobileTab = useMemo((): MobileTab => {
-    if (selectedPlayerId) {
-      return isSelectedOnField ? "bench" : "field";
-    }
-    return mobileTab;
-  }, [selectedPlayerId, isSelectedOnField, mobileTab]);
+  // Switch to the other tab after selecting a player (for easier substitution flow)
+  const handleFieldPlayerTapWithTabSwitch = useCallback(
+    (playerId: string) => {
+      handleFieldPlayerTap(playerId);
+      // If we just selected (not deselected), switch to bench tab on mobile
+      if (selectedPlayerId !== playerId && !goalScorerMode) {
+        setMobileTab("bench");
+      }
+    },
+    [handleFieldPlayerTap, selectedPlayerId, goalScorerMode],
+  );
+
+  const handleBenchPlayerTapWithTabSwitch = useCallback(
+    (playerId: string) => {
+      handleBenchPlayerTap(playerId);
+      // If we just selected (not deselected), switch to field tab on mobile
+      if (selectedPlayerId !== playerId) {
+        setMobileTab("field");
+      }
+    },
+    [handleBenchPlayerTap, selectedPlayerId],
+  );
 
   // No match loaded
   if (!match) {
@@ -639,23 +654,29 @@ export function MatchLivePage(): React.ReactNode {
           onClick={() => setMobileTab("field")}
           className={cn(
             "flex-1 touch-manipulation py-3 text-center text-sm font-medium",
-            effectiveMobileTab === "field"
+            mobileTab === "field"
               ? "border-b-2 border-green-500 text-green-400"
               : "text-muted-foreground",
+            // Highlight if bench player selected (indicating "tap here")
+            isSelectedOnBench && mobileTab !== "field" && "bg-primary/10",
           )}
         >
           {t("match.live.field.title")} ({fieldPlayers.length})
+          {isSelectedOnBench && mobileTab !== "field" && " ←"}
         </button>
         <button
           type="button"
           onClick={() => setMobileTab("bench")}
           className={cn(
             "flex-1 touch-manipulation py-3 text-center text-sm font-medium",
-            effectiveMobileTab === "bench"
+            mobileTab === "bench"
               ? "border-b-2 border-primary text-foreground"
               : "text-muted-foreground",
+            // Highlight if field player selected (indicating "tap here")
+            isSelectedOnField && mobileTab !== "bench" && "bg-primary/10",
           )}
         >
+          {isSelectedOnField && mobileTab !== "bench" && "→ "}
           {t("match.live.bench.title")} (
           {benchPlayers.length + outPlayers.length})
         </button>
@@ -668,7 +689,7 @@ export function MatchLivePage(): React.ReactNode {
           className={cn(
             "flex flex-col border-r border-border",
             "w-full sm:w-[55%] lg:w-[60%]",
-            effectiveMobileTab !== "field" && "hidden sm:flex",
+            mobileTab !== "field" && "hidden sm:flex",
           )}
         >
           <div className="hidden items-center justify-between px-3 py-2 sm:flex">
@@ -688,7 +709,9 @@ export function MatchLivePage(): React.ReactNode {
                   <button
                     key={player.playerId}
                     type="button"
-                    onClick={() => handleFieldPlayerTap(player.playerId)}
+                    onClick={() =>
+                      handleFieldPlayerTapWithTabSwitch(player.playerId)
+                    }
                     className={cn(
                       "flex min-h-20 w-full touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl p-2 sm:min-h-16 sm:rounded-lg",
                       "text-center transition-all select-none",
@@ -761,7 +784,7 @@ export function MatchLivePage(): React.ReactNode {
           className={cn(
             "flex flex-col",
             "w-full sm:w-[45%] lg:w-[40%]",
-            effectiveMobileTab !== "bench" && "hidden sm:flex",
+            mobileTab !== "bench" && "hidden sm:flex",
           )}
         >
           <div className="hidden items-center justify-between px-3 py-2 sm:flex">
@@ -782,7 +805,9 @@ export function MatchLivePage(): React.ReactNode {
                   <button
                     key={player.playerId}
                     type="button"
-                    onClick={() => handleBenchPlayerTap(player.playerId)}
+                    onClick={() =>
+                      handleBenchPlayerTapWithTabSwitch(player.playerId)
+                    }
                     className={cn(
                       "flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-xl p-3 sm:min-h-14 sm:rounded-lg",
                       "text-left transition-all select-none",
