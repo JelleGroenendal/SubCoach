@@ -163,7 +163,11 @@
         "title": "Straffen:"
       },
       "suggestion": {
-        "next": "Volgende wissel: {{playerIn}} voor {{playerOut}} ({{time}})"
+        "next": "{{playerIn}} ↔ {{playerOut}} ({{time}})",
+        "execute": "Wisselen"
+      },
+      "selection": {
+        "selected": "Geselecteerd: {{name}}"
       },
       "endMatch": {
         "title": "Wedstrijd beëindigen",

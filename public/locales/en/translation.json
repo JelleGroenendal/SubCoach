@@ -163,7 +163,11 @@
         "title": "Penalties:"
       },
       "suggestion": {
-        "next": "Next sub: {{playerIn}} for {{playerOut}} ({{time}})"
+        "next": "{{playerIn}} ↔ {{playerOut}} ({{time}})",
+        "execute": "Substitute"
+      },
+      "selection": {
+        "selected": "Selected: {{name}}"
       },
       "endMatch": {
         "title": "End match",

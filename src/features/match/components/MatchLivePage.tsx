@@ -12,6 +12,7 @@ import { getSportProfile } from "@/engine/sport-profiles";
 import type { MatchPlayer } from "@/data/schemas";
 
 type PlayerAction = "penalty" | "redCard" | "injury";
+type MobileTab = "field" | "bench";
 
 export function MatchLivePage(): React.ReactNode {
   const { t } = useTranslation();
@@ -62,6 +63,7 @@ export function MatchLivePage(): React.ReactNode {
   const [goalScorerMode, setGoalScorerMode] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [mobileTab, setMobileTab] = useState<MobileTab>("field");
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
@@ -388,6 +390,24 @@ export function MatchLivePage(): React.ReactNode {
     }
   }, [lastAction, match, t]);
 
+  // Quick substitute handler for suggestion
+  const handleQuickSubstitute = useCallback(() => {
+    if (!nextSuggestion) return;
+    executeSubstitution(nextSuggestion.playerInId, nextSuggestion.playerOutId);
+  }, [nextSuggestion, executeSubstitution]);
+
+  // Determine which tab should be active based on selection
+  // When a field player is selected, show bench (and vice versa) to make substitution easier
+  const effectiveMobileTab = useMemo((): MobileTab => {
+    if (selectedPlayerId) {
+      const isFieldPlayer = fieldPlayers.some(
+        (p) => p.playerId === selectedPlayerId,
+      );
+      return isFieldPlayer ? "bench" : "field";
+    }
+    return mobileTab;
+  }, [selectedPlayerId, fieldPlayers, mobileTab]);
+
   // No match loaded
   if (!match) {
     return (
@@ -408,48 +428,50 @@ export function MatchLivePage(): React.ReactNode {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-background">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between border-b border-border px-3 py-2">
-        {/* Timer */}
-        <button
-          type="button"
-          onClick={handleTimerTap}
-          className={cn(
-            "flex min-h-12 touch-manipulation flex-col items-center rounded-lg px-4 py-1",
-            "transition-colors",
-            match.status === "playing" && "bg-field/20",
-            match.status === "paused" && "bg-amber-900/30",
-            match.status === "setup" && "bg-primary/10",
-          )}
-          aria-label={t("match.live.timer.toggle")}
-        >
-          <span className="text-3xl font-bold tabular-nums leading-tight text-foreground lg:text-4xl">
-            {displayTime}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {match.status === "playing" && t("match.live.timer.running")}
-            {match.status === "paused" &&
-              !periodFinished &&
-              t("match.live.timer.paused")}
-            {match.status === "setup" && t("match.live.timer.tapToStart")}
-            {periodFinished &&
-              !isLastPeriod &&
-              t("match.live.timer.startNextPeriod", {
-                period: match.currentPeriod + 1,
-              })}
-            {periodFinished && isLastPeriod && t("match.live.timer.matchEnded")}
-          </span>
-        </button>
+      {/* Top Bar - Compact on mobile */}
+      <div className="flex flex-col border-b border-border">
+        {/* Row 1: Timer + Score */}
+        <div className="flex items-center justify-between px-2 py-1.5 sm:px-3 sm:py-2">
+          {/* Timer */}
+          <button
+            type="button"
+            onClick={handleTimerTap}
+            className={cn(
+              "flex min-h-12 touch-manipulation flex-col items-center rounded-lg px-3 py-1 sm:px-4",
+              "transition-colors",
+              match.status === "playing" && "bg-field/20",
+              match.status === "paused" && "bg-amber-900/30",
+              match.status === "setup" && "bg-primary/10",
+            )}
+            aria-label={t("match.live.timer.toggle")}
+          >
+            <span className="text-2xl font-bold tabular-nums leading-tight text-foreground sm:text-3xl lg:text-4xl">
+              {displayTime}
+            </span>
+            <span className="text-[10px] text-muted-foreground sm:text-xs">
+              {match.status === "playing" && t("match.live.timer.running")}
+              {match.status === "paused" &&
+                !periodFinished &&
+                t("match.live.timer.paused")}
+              {match.status === "setup" && t("match.live.timer.tapToStart")}
+              {periodFinished &&
+                !isLastPeriod &&
+                t("match.live.timer.startNextPeriod", {
+                  period: match.currentPeriod + 1,
+                })}
+              {periodFinished &&
+                isLastPeriod &&
+                t("match.live.timer.matchEnded")}
+            </span>
+          </button>
 
-        {/* Score */}
-        <div className="flex items-center gap-2">
-          {/* Home Score */}
-          <div className="flex items-center gap-1">
+          {/* Score - More compact */}
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               type="button"
               onClick={handleHomeGoal}
               className={cn(
-                "min-h-12 min-w-12 touch-manipulation rounded-lg px-2",
+                "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
                 "text-xs font-medium text-green-400",
                 "transition-colors hover:bg-green-900/30",
                 goalScorerMode && "bg-green-900/50 ring-2 ring-green-400",
@@ -458,23 +480,20 @@ export function MatchLivePage(): React.ReactNode {
             >
               +1
             </button>
-            <span className="min-w-10 text-center text-3xl font-bold tabular-nums text-foreground lg:text-4xl">
+            <span className="min-w-8 text-center text-2xl font-bold tabular-nums text-foreground sm:min-w-10 sm:text-3xl lg:text-4xl">
               {match.homeScore}
             </span>
-          </div>
-
-          <span className="text-2xl font-light text-muted-foreground">-</span>
-
-          {/* Away Score */}
-          <div className="flex items-center gap-1">
-            <span className="min-w-10 text-center text-3xl font-bold tabular-nums text-foreground lg:text-4xl">
+            <span className="text-xl font-light text-muted-foreground sm:text-2xl">
+              -
+            </span>
+            <span className="min-w-8 text-center text-2xl font-bold tabular-nums text-foreground sm:min-w-10 sm:text-3xl lg:text-4xl">
               {match.awayScore}
             </span>
             <button
               type="button"
               onClick={() => registerOpponentGoal()}
               className={cn(
-                "min-h-12 min-w-12 touch-manipulation rounded-lg px-2",
+                "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
                 "text-xs font-medium text-red-400",
                 "transition-colors hover:bg-red-900/30",
               )}
@@ -483,67 +502,67 @@ export function MatchLivePage(): React.ReactNode {
               +1
             </button>
           </div>
-        </div>
 
-        {/* Period + Controls */}
-        <div className="flex items-center gap-2">
-          <div className="flex flex-col items-center">
-            <span className="text-sm font-medium text-muted-foreground">
-              {t("match.live.period", { period: match.currentPeriod })}
-            </span>
-            <span className="text-xs tabular-nums text-muted-foreground">
-              {periodTimeDisplay}
-            </span>
-          </div>
+          {/* Period + Menu */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <div className="flex flex-col items-center">
+              <span className="text-xs font-medium text-muted-foreground sm:text-sm">
+                {t("match.live.period", { period: match.currentPeriod })}
+              </span>
+              <span className="text-[10px] tabular-nums text-muted-foreground sm:text-xs">
+                {periodTimeDisplay}
+              </span>
+            </div>
 
-          {/* Undo Button */}
-          <button
-            type="button"
-            onClick={undoLastAction}
-            disabled={!lastAction}
-            className={cn(
-              "min-h-12 min-w-12 touch-manipulation rounded-lg px-3",
-              "text-sm font-medium text-muted-foreground",
-              "transition-colors hover:bg-accent",
-              !lastAction && "opacity-30",
-            )}
-            aria-label={t("match.live.undo.button")}
-          >
-            {t("match.live.undo.button")}
-          </button>
-
-          {/* Menu */}
-          <div className="relative">
+            {/* Undo - Hidden on smallest screens, shown in bottom bar instead */}
             <button
               type="button"
-              onClick={() => setShowMenu((v) => !v)}
+              onClick={undoLastAction}
+              disabled={!lastAction}
               className={cn(
-                "min-h-12 min-w-12 touch-manipulation rounded-lg px-2",
-                "text-lg text-muted-foreground",
+                "hidden min-h-12 min-w-12 touch-manipulation rounded-lg px-2 sm:flex",
+                "items-center justify-center text-sm font-medium text-muted-foreground",
                 "transition-colors hover:bg-accent",
+                !lastAction && "opacity-30",
               )}
-              aria-label={t("match.live.menu.button")}
+              aria-label={t("match.live.undo.button")}
             >
-              &#8942;
+              ↩
             </button>
-            {showMenu && (
-              <div className="absolute right-0 top-full z-50 mt-1 min-w-48 rounded-lg border border-border bg-card p-1 shadow-lg">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMenu(false);
-                    setShowEndConfirm(true);
-                  }}
-                  className={cn(
-                    "flex min-h-12 w-full touch-manipulation items-center rounded-md px-3 py-2",
-                    "text-sm font-medium text-destructive",
-                    "transition-colors hover:bg-destructive/10",
-                  )}
-                >
-                  {t("match.live.menu.endMatch")}
-                </button>
-              </div>
-            )}
+
+            {/* Menu */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowMenu((v) => !v)}
+                className={cn(
+                  "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
+                  "text-lg text-muted-foreground",
+                  "transition-colors hover:bg-accent",
+                )}
+                aria-label={t("match.live.menu.button")}
+              >
+                &#8942;
+              </button>
+              {showMenu && (
+                <div className="absolute right-0 top-full z-50 mt-1 min-w-48 rounded-lg border border-border bg-card p-1 shadow-lg">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowEndConfirm(true);
+                    }}
+                    className={cn(
+                      "flex min-h-12 w-full touch-manipulation items-center rounded-md px-3 py-2",
+                      "text-sm font-medium text-destructive",
+                      "transition-colors hover:bg-destructive/10",
+                    )}
+                  >
+                    {t("match.live.menu.endMatch")}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -569,17 +588,76 @@ export function MatchLivePage(): React.ReactNode {
         </div>
       )}
 
-      {/* Main Area: Field + Bench */}
+      {/* Selection indicator bar - shows when player selected */}
+      {selectedPlayerId && (
+        <div className="flex items-center justify-between border-b border-orange-700 bg-orange-900/30 px-3 py-2">
+          <span className="text-sm font-medium text-orange-300">
+            {t("match.live.selection.selected", {
+              name:
+                match.roster.find((p) => p.playerId === selectedPlayerId)
+                  ?.name ?? "?",
+            })}
+          </span>
+          <button
+            type="button"
+            onClick={() => selectPlayer(undefined)}
+            className={cn(
+              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
+              "text-sm text-orange-300",
+              "transition-colors hover:bg-orange-900/50",
+            )}
+          >
+            {t("common.cancel")}
+          </button>
+        </div>
+      )}
+
+      {/* Mobile Tab Bar - Only visible on small screens */}
+      <div className="flex border-b border-border sm:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileTab("field")}
+          className={cn(
+            "flex-1 touch-manipulation py-3 text-center text-sm font-medium",
+            effectiveMobileTab === "field"
+              ? "border-b-2 border-green-500 text-green-400"
+              : "text-muted-foreground",
+          )}
+        >
+          {t("match.live.field.title")} ({fieldPlayers.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileTab("bench")}
+          className={cn(
+            "flex-1 touch-manipulation py-3 text-center text-sm font-medium",
+            effectiveMobileTab === "bench"
+              ? "border-b-2 border-primary text-foreground"
+              : "text-muted-foreground",
+          )}
+        >
+          {t("match.live.bench.title")} ({benchPlayers.length})
+        </button>
+      </div>
+
+      {/* Main Area: Field + Bench - Split on tablet+, tabs on mobile */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Field Players (60%) */}
-        <div className="flex w-[60%] flex-col border-r border-border">
-          <div className="flex items-center justify-between px-3 py-2">
+        {/* Field Players - Always visible on tablet+, tab-controlled on mobile */}
+        <div
+          className={cn(
+            "flex flex-col border-r border-border",
+            "w-full sm:w-[55%] lg:w-[60%]",
+            effectiveMobileTab !== "field" && "hidden sm:flex",
+          )}
+        >
+          {/* Header - Hidden on mobile (using tabs) */}
+          <div className="hidden items-center justify-between px-3 py-2 sm:flex">
             <h2 className="text-sm font-semibold text-green-400">
               {t("match.live.field.title")} ({fieldPlayers.length})
             </h2>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {fieldPlayers.map((player) => {
                 const isSelected = selectedPlayerId === player.playerId;
                 const isSuggestedOut =
@@ -597,10 +675,10 @@ export function MatchLivePage(): React.ReactNode {
                       onPointerUp={() => handleFieldPointerUp(player.playerId)}
                       onPointerLeave={handleFieldPointerLeave}
                       className={cn(
-                        "flex min-h-16 w-full touch-manipulation flex-col items-center justify-center gap-0.5 rounded-lg p-2",
+                        "flex min-h-20 w-full touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl p-2 sm:min-h-16 sm:rounded-lg",
                         "text-center transition-all select-none",
                         "bg-field text-white",
-                        isSelected && "ring-3 ring-orange-400",
+                        isSelected && "ring-4 ring-orange-400",
                         isSuggestedOut &&
                           !isSelected &&
                           "ring-2 ring-amber-500/60",
@@ -622,7 +700,7 @@ export function MatchLivePage(): React.ReactNode {
                           </span>
                         )}
                       </div>
-                      <span className="text-base font-semibold leading-tight lg:text-lg">
+                      <span className="text-base font-semibold leading-tight sm:text-base lg:text-lg">
                         {player.name}
                       </span>
                       <span className="text-xs tabular-nums opacity-70">
@@ -630,7 +708,7 @@ export function MatchLivePage(): React.ReactNode {
                       </span>
                     </button>
 
-                    {/* Action menu dot */}
+                    {/* Action menu button - Larger on mobile */}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -642,8 +720,8 @@ export function MatchLivePage(): React.ReactNode {
                         );
                       }}
                       className={cn(
-                        "absolute right-1 top-1 flex h-6 w-6 touch-manipulation items-center justify-center",
-                        "rounded-full text-xs text-white/60",
+                        "absolute right-1 top-1 flex h-8 w-8 touch-manipulation items-center justify-center sm:h-6 sm:w-6",
+                        "rounded-full bg-black/20 text-sm text-white/80 sm:bg-transparent sm:text-xs sm:text-white/60",
                         "transition-colors hover:bg-white/20",
                       )}
                       aria-label={t("match.live.field.moreActions", {
@@ -653,9 +731,9 @@ export function MatchLivePage(): React.ReactNode {
                       &#8942;
                     </button>
 
-                    {/* Inline action menu */}
+                    {/* Inline action menu - Full width on mobile */}
                     {showActions && (
-                      <div className="absolute left-0 top-full z-40 mt-1 flex w-full flex-col gap-1 rounded-lg border border-border bg-card p-1 shadow-lg">
+                      <div className="absolute left-0 top-full z-40 mt-1 flex w-full min-w-40 flex-col gap-1 rounded-lg border border-border bg-card p-1 shadow-lg">
                         <button
                           type="button"
                           onClick={() =>
@@ -710,7 +788,7 @@ export function MatchLivePage(): React.ReactNode {
                   <div
                     key={player.playerId}
                     className={cn(
-                      "flex min-h-16 flex-col items-center justify-center gap-0.5 rounded-lg p-2",
+                      "flex min-h-20 flex-col items-center justify-center gap-0.5 rounded-xl p-2 sm:min-h-16 sm:rounded-lg",
                       "bg-penalty text-white opacity-80",
                     )}
                   >
@@ -738,9 +816,16 @@ export function MatchLivePage(): React.ReactNode {
           </div>
         </div>
 
-        {/* Bench Players (40%) */}
-        <div className="flex w-[40%] flex-col">
-          <div className="flex items-center justify-between px-3 py-2">
+        {/* Bench Players - Always visible on tablet+, tab-controlled on mobile */}
+        <div
+          className={cn(
+            "flex flex-col",
+            "w-full sm:w-[45%] lg:w-[40%]",
+            effectiveMobileTab !== "bench" && "hidden sm:flex",
+          )}
+        >
+          {/* Header - Hidden on mobile (using tabs) */}
+          <div className="hidden items-center justify-between px-3 py-2 sm:flex">
             <h2 className="text-sm font-semibold text-muted-foreground">
               {t("match.live.bench.title")} ({benchPlayers.length})
             </h2>
@@ -759,10 +844,10 @@ export function MatchLivePage(): React.ReactNode {
                     type="button"
                     onClick={() => handleBenchPlayerTap(player.playerId)}
                     className={cn(
-                      "flex min-h-14 w-full touch-manipulation items-center gap-3 rounded-lg p-3",
+                      "flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-xl p-3 sm:min-h-14 sm:rounded-lg",
                       "text-left transition-all select-none",
                       "bg-bench text-foreground",
-                      isSelected && "ring-3 ring-orange-400",
+                      isSelected && "ring-4 ring-orange-400",
                       isSuggestedIn &&
                         !isSelected &&
                         "ring-2 ring-amber-500/60",
@@ -772,7 +857,7 @@ export function MatchLivePage(): React.ReactNode {
                     })}
                   >
                     {player.number !== undefined && (
-                      <span className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-sm font-bold text-muted-foreground">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground sm:h-8 sm:w-8 sm:rounded-md">
                         {player.number}
                       </span>
                     )}
@@ -803,11 +888,11 @@ export function MatchLivePage(): React.ReactNode {
         </div>
       </div>
 
-      {/* Bottom Bar */}
+      {/* Bottom Bar - More info on mobile */}
       <div className="flex flex-col border-t border-border">
         {/* Active penalties */}
         {activePenalties.length > 0 && (
-          <div className="flex items-center gap-4 border-b border-border bg-penalty/10 px-3 py-1.5">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border bg-penalty/10 px-3 py-1.5 sm:gap-4">
             <span className="text-xs font-semibold text-red-400">
               {t("match.live.penalties.title")}
             </span>
@@ -828,10 +913,17 @@ export function MatchLivePage(): React.ReactNode {
           </div>
         )}
 
-        {/* Next suggestion */}
+        {/* Quick substitute button - When suggestion available */}
         {nextSuggestion && (
-          <div className="flex items-center gap-2 px-3 py-1.5">
-            <span className="text-xs text-amber-400">
+          <button
+            type="button"
+            onClick={handleQuickSubstitute}
+            className={cn(
+              "flex min-h-12 w-full touch-manipulation items-center justify-between gap-2 border-b border-border bg-amber-900/20 px-3 py-2",
+              "transition-colors hover:bg-amber-900/30",
+            )}
+          >
+            <span className="text-sm text-amber-400">
               {t("match.live.suggestion.next", {
                 playerIn:
                   match.roster.find(
@@ -844,7 +936,10 @@ export function MatchLivePage(): React.ReactNode {
                 time: formatTime(nextSuggestion.timestamp),
               })}
             </span>
-          </div>
+            <span className="rounded-md bg-amber-600 px-3 py-1 text-xs font-semibold text-white">
+              {t("match.live.suggestion.execute")}
+            </span>
+          </button>
         )}
 
         {/* Warnings */}
@@ -856,6 +951,21 @@ export function MatchLivePage(): React.ReactNode {
               </span>
             ))}
           </div>
+        )}
+
+        {/* Mobile undo button */}
+        {lastAction && (
+          <button
+            type="button"
+            onClick={undoLastAction}
+            className={cn(
+              "flex min-h-12 w-full touch-manipulation items-center justify-center gap-2 border-t border-border bg-muted/50 px-3 py-2 sm:hidden",
+              "text-sm text-muted-foreground transition-colors hover:bg-muted",
+            )}
+          >
+            <span>↩</span>
+            <span>{t("match.live.undo.button")}</span>
+          </button>
         )}
       </div>
 
