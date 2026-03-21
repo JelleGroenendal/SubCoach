@@ -167,7 +167,13 @@
         "execute": "Substitute"
       },
       "selection": {
-        "selected": "Selected: {{name}}"
+        "selected": "Selected: {{name}}",
+        "tapFieldPlayer": "Tap field player to substitute with {{name}}"
+      },
+      "out": {
+        "title": "Out",
+        "injured": "Injured",
+        "redCard": "Red card"
       },
       "endMatch": {
         "title": "End match",

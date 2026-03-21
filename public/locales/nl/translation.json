@@ -167,7 +167,13 @@
         "execute": "Wisselen"
       },
       "selection": {
-        "selected": "Geselecteerd: {{name}}"
+        "selected": "Geselecteerd: {{name}}",
+        "tapFieldPlayer": "Tik op veldspeler om te wisselen met {{name}}"
+      },
+      "out": {
+        "title": "Uit",
+        "injured": "Geblesseerd",
+        "redCard": "Rode kaart"
       },
       "endMatch": {
         "title": "Wedstrijd beëindigen",

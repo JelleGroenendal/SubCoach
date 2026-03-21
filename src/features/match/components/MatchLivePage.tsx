@@ -11,7 +11,6 @@ import { requestWakeLock } from "@/lib/pwa";
 import { getSportProfile } from "@/engine/sport-profiles";
 import type { MatchPlayer } from "@/data/schemas";
 
-type PlayerAction = "penalty" | "redCard" | "injury";
 type MobileTab = "field" | "bench";
 
 export function MatchLivePage(): React.ReactNode {
@@ -57,17 +56,10 @@ export function MatchLivePage(): React.ReactNode {
     autoSave,
   } = useMatchStore();
 
-  const [actionMenuPlayerId, setActionMenuPlayerId] = useState<
-    string | undefined
-  >(undefined);
   const [goalScorerMode, setGoalScorerMode] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("field");
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
-  const longPressTriggeredRef = useRef(false);
   const tickRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const autoSaveRef = useRef<ReturnType<typeof setInterval> | undefined>(
     undefined,
@@ -167,6 +159,7 @@ export function MatchLivePage(): React.ReactNode {
     }
   }, [match, endPenalty]);
 
+  // Player lists
   const fieldPlayers = useMemo(
     () => (match ? match.roster.filter((p) => p.status === "field") : []),
     [match],
@@ -179,6 +172,17 @@ export function MatchLivePage(): React.ReactNode {
 
   const penaltyPlayers = useMemo(
     () => (match ? match.roster.filter((p) => p.status === "penalty") : []),
+    [match],
+  );
+
+  // Players who are out (injured or red-carded) - can be replaced
+  const outPlayers = useMemo(
+    () =>
+      match
+        ? match.roster.filter(
+            (p) => p.status === "injured" || p.status === "redCard",
+          )
+        : [],
     [match],
   );
 
@@ -198,7 +202,16 @@ export function MatchLivePage(): React.ReactNode {
     [match],
   );
 
-  // Substitution logic
+  // Get selected player info
+  const selectedPlayer = useMemo(() => {
+    if (!selectedPlayerId || !match) return undefined;
+    return match.roster.find((p) => p.playerId === selectedPlayerId);
+  }, [selectedPlayerId, match]);
+
+  const isSelectedOnField = selectedPlayer?.status === "field";
+  const isSelectedOnBench = selectedPlayer?.status === "bench";
+
+  // Handle field player tap - select for substitution or goal
   const handleFieldPlayerTap = useCallback(
     (playerId: string) => {
       if (goalScorerMode) {
@@ -207,30 +220,26 @@ export function MatchLivePage(): React.ReactNode {
         return;
       }
 
-      if (selectedPlayerId && selectedPlayerId !== playerId) {
-        // A bench player was selected, now tapping a field player -> substitute
-        const selectedOnBench = benchPlayers.find(
-          (p) => p.playerId === selectedPlayerId,
-        );
-        if (selectedOnBench) {
-          executeSubstitution(selectedPlayerId, playerId);
-          return;
-        }
+      // If a bench player is selected, execute substitution
+      if (isSelectedOnBench && selectedPlayerId) {
+        executeSubstitution(selectedPlayerId, playerId);
+        return;
       }
-      // Select/deselect this field player
+
+      // Toggle selection
       selectPlayer(selectedPlayerId === playerId ? undefined : playerId);
-      setActionMenuPlayerId(undefined);
     },
     [
       selectedPlayerId,
       goalScorerMode,
-      benchPlayers,
+      isSelectedOnBench,
       selectPlayer,
       executeSubstitution,
       registerGoal,
     ],
   );
 
+  // Handle bench player tap - select for substitution
   const handleBenchPlayerTap = useCallback(
     (playerId: string) => {
       if (goalScorerMode) {
@@ -238,87 +247,57 @@ export function MatchLivePage(): React.ReactNode {
         return;
       }
 
-      if (selectedPlayerId && selectedPlayerId !== playerId) {
-        // A field player was selected, now tapping a bench player -> substitute
-        const selectedOnField = fieldPlayers.find(
-          (p) => p.playerId === selectedPlayerId,
-        );
-        if (selectedOnField) {
-          executeSubstitution(playerId, selectedPlayerId);
-          return;
-        }
+      // If a field player is selected, execute substitution
+      if (isSelectedOnField && selectedPlayerId) {
+        executeSubstitution(playerId, selectedPlayerId);
+        return;
       }
-      // Select/deselect this bench player
+
+      // Toggle selection
       selectPlayer(selectedPlayerId === playerId ? undefined : playerId);
     },
     [
       selectedPlayerId,
-      fieldPlayers,
+      isSelectedOnField,
       selectPlayer,
       executeSubstitution,
       goalScorerMode,
     ],
   );
 
-  // Long-press for field player actions
-  const handleFieldPointerDown = useCallback((playerId: string) => {
-    longPressTriggeredRef.current = false;
-    longPressTimerRef.current = setTimeout(() => {
-      longPressTriggeredRef.current = true;
-      setActionMenuPlayerId((prev) =>
-        prev === playerId ? undefined : playerId,
-      );
-    }, 600);
-  }, []);
+  // Handle action buttons (penalty, red card, injury) for selected field player
+  const handlePenalty = useCallback(() => {
+    if (!selectedPlayerId || !isSelectedOnField) return;
+    registerPenalty(selectedPlayerId, defaultPenaltyDuration);
+    selectPlayer(undefined);
+  }, [
+    selectedPlayerId,
+    isSelectedOnField,
+    registerPenalty,
+    defaultPenaltyDuration,
+    selectPlayer,
+  ]);
 
-  const handleFieldPointerUp = useCallback(
-    (playerId: string) => {
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = undefined;
-      }
-      if (!longPressTriggeredRef.current) {
-        handleFieldPlayerTap(playerId);
-      }
-    },
-    [handleFieldPlayerTap],
-  );
+  const handleRedCard = useCallback(() => {
+    if (!selectedPlayerId || !isSelectedOnField) return;
+    registerRedCard(selectedPlayerId, defaultPenaltyDuration);
+    selectPlayer(undefined);
+  }, [
+    selectedPlayerId,
+    isSelectedOnField,
+    registerRedCard,
+    defaultPenaltyDuration,
+    selectPlayer,
+  ]);
 
-  const handleFieldPointerLeave = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = undefined;
-    }
-  }, []);
-
-  const handlePlayerAction = useCallback(
-    (playerId: string, action: PlayerAction) => {
-      setActionMenuPlayerId(undefined);
-      selectPlayer(undefined);
-      switch (action) {
-        case "penalty":
-          registerPenalty(playerId, defaultPenaltyDuration);
-          break;
-        case "redCard":
-          registerRedCard(playerId, defaultPenaltyDuration);
-          break;
-        case "injury":
-          registerInjury(playerId);
-          break;
-      }
-    },
-    [
-      selectPlayer,
-      registerPenalty,
-      registerRedCard,
-      registerInjury,
-      defaultPenaltyDuration,
-    ],
-  );
+  const handleInjury = useCallback(() => {
+    if (!selectedPlayerId || !isSelectedOnField) return;
+    registerInjury(selectedPlayerId);
+    selectPlayer(undefined);
+  }, [selectedPlayerId, isSelectedOnField, registerInjury, selectPlayer]);
 
   const handleHomeGoal = useCallback(() => {
     setGoalScorerMode(true);
-    setActionMenuPlayerId(undefined);
     selectPlayer(undefined);
   }, [selectPlayer]);
 
@@ -397,16 +376,12 @@ export function MatchLivePage(): React.ReactNode {
   }, [nextSuggestion, executeSubstitution]);
 
   // Determine which tab should be active based on selection
-  // When a field player is selected, show bench (and vice versa) to make substitution easier
   const effectiveMobileTab = useMemo((): MobileTab => {
     if (selectedPlayerId) {
-      const isFieldPlayer = fieldPlayers.some(
-        (p) => p.playerId === selectedPlayerId,
-      );
-      return isFieldPlayer ? "bench" : "field";
+      return isSelectedOnField ? "bench" : "field";
     }
     return mobileTab;
-  }, [selectedPlayerId, fieldPlayers, mobileTab]);
+  }, [selectedPlayerId, isSelectedOnField, mobileTab]);
 
   // No match loaded
   if (!match) {
@@ -428,146 +403,141 @@ export function MatchLivePage(): React.ReactNode {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-background">
-      {/* Top Bar - Compact on mobile */}
-      <div className="flex flex-col border-b border-border">
-        {/* Row 1: Timer + Score */}
-        <div className="flex items-center justify-between px-2 py-1.5 sm:px-3 sm:py-2">
-          {/* Timer */}
+      {/* Top Bar */}
+      <div className="flex items-center justify-between border-b border-border px-2 py-1.5 sm:px-3 sm:py-2">
+        {/* Timer */}
+        <button
+          type="button"
+          onClick={handleTimerTap}
+          className={cn(
+            "flex min-h-12 touch-manipulation flex-col items-center rounded-lg px-3 py-1 sm:px-4",
+            "transition-colors",
+            match.status === "playing" && "bg-field/20",
+            match.status === "paused" && "bg-amber-900/30",
+            match.status === "setup" && "bg-primary/10",
+          )}
+          aria-label={t("match.live.timer.toggle")}
+        >
+          <span className="text-2xl font-bold tabular-nums leading-tight text-foreground sm:text-3xl lg:text-4xl">
+            {displayTime}
+          </span>
+          <span className="text-[10px] text-muted-foreground sm:text-xs">
+            {match.status === "playing" && t("match.live.timer.running")}
+            {match.status === "paused" &&
+              !periodFinished &&
+              t("match.live.timer.paused")}
+            {match.status === "setup" && t("match.live.timer.tapToStart")}
+            {periodFinished &&
+              !isLastPeriod &&
+              t("match.live.timer.startNextPeriod", {
+                period: match.currentPeriod + 1,
+              })}
+            {periodFinished && isLastPeriod && t("match.live.timer.matchEnded")}
+          </span>
+        </button>
+
+        {/* Score */}
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             type="button"
-            onClick={handleTimerTap}
+            onClick={handleHomeGoal}
             className={cn(
-              "flex min-h-12 touch-manipulation flex-col items-center rounded-lg px-3 py-1 sm:px-4",
-              "transition-colors",
-              match.status === "playing" && "bg-field/20",
-              match.status === "paused" && "bg-amber-900/30",
-              match.status === "setup" && "bg-primary/10",
+              "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
+              "text-xs font-medium text-green-400",
+              "transition-colors hover:bg-green-900/30",
+              goalScorerMode && "bg-green-900/50 ring-2 ring-green-400",
             )}
-            aria-label={t("match.live.timer.toggle")}
+            aria-label={t("match.live.score.addHome")}
           >
-            <span className="text-2xl font-bold tabular-nums leading-tight text-foreground sm:text-3xl lg:text-4xl">
-              {displayTime}
-            </span>
-            <span className="text-[10px] text-muted-foreground sm:text-xs">
-              {match.status === "playing" && t("match.live.timer.running")}
-              {match.status === "paused" &&
-                !periodFinished &&
-                t("match.live.timer.paused")}
-              {match.status === "setup" && t("match.live.timer.tapToStart")}
-              {periodFinished &&
-                !isLastPeriod &&
-                t("match.live.timer.startNextPeriod", {
-                  period: match.currentPeriod + 1,
-                })}
-              {periodFinished &&
-                isLastPeriod &&
-                t("match.live.timer.matchEnded")}
-            </span>
+            +1
           </button>
+          <span className="min-w-8 text-center text-2xl font-bold tabular-nums text-foreground sm:min-w-10 sm:text-3xl lg:text-4xl">
+            {match.homeScore}
+          </span>
+          <span className="text-xl font-light text-muted-foreground sm:text-2xl">
+            -
+          </span>
+          <span className="min-w-8 text-center text-2xl font-bold tabular-nums text-foreground sm:min-w-10 sm:text-3xl lg:text-4xl">
+            {match.awayScore}
+          </span>
+          <button
+            type="button"
+            onClick={() => registerOpponentGoal()}
+            className={cn(
+              "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
+              "text-xs font-medium text-red-400",
+              "transition-colors hover:bg-red-900/30",
+            )}
+            aria-label={t("match.live.score.addAway")}
+          >
+            +1
+          </button>
+        </div>
 
-          {/* Score - More compact */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            <button
-              type="button"
-              onClick={handleHomeGoal}
-              className={cn(
-                "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
-                "text-xs font-medium text-green-400",
-                "transition-colors hover:bg-green-900/30",
-                goalScorerMode && "bg-green-900/50 ring-2 ring-green-400",
-              )}
-              aria-label={t("match.live.score.addHome")}
-            >
-              +1
-            </button>
-            <span className="min-w-8 text-center text-2xl font-bold tabular-nums text-foreground sm:min-w-10 sm:text-3xl lg:text-4xl">
-              {match.homeScore}
+        {/* Period + Menu */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          <div className="flex flex-col items-center">
+            <span className="text-xs font-medium text-muted-foreground sm:text-sm">
+              {t("match.live.period", { period: match.currentPeriod })}
             </span>
-            <span className="text-xl font-light text-muted-foreground sm:text-2xl">
-              -
+            <span className="text-[10px] tabular-nums text-muted-foreground sm:text-xs">
+              {periodTimeDisplay}
             </span>
-            <span className="min-w-8 text-center text-2xl font-bold tabular-nums text-foreground sm:min-w-10 sm:text-3xl lg:text-4xl">
-              {match.awayScore}
-            </span>
-            <button
-              type="button"
-              onClick={() => registerOpponentGoal()}
-              className={cn(
-                "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
-                "text-xs font-medium text-red-400",
-                "transition-colors hover:bg-red-900/30",
-              )}
-              aria-label={t("match.live.score.addAway")}
-            >
-              +1
-            </button>
           </div>
 
-          {/* Period + Menu */}
-          <div className="flex items-center gap-1 sm:gap-2">
-            <div className="flex flex-col items-center">
-              <span className="text-xs font-medium text-muted-foreground sm:text-sm">
-                {t("match.live.period", { period: match.currentPeriod })}
-              </span>
-              <span className="text-[10px] tabular-nums text-muted-foreground sm:text-xs">
-                {periodTimeDisplay}
-              </span>
-            </div>
+          {/* Undo */}
+          <button
+            type="button"
+            onClick={undoLastAction}
+            disabled={!lastAction}
+            className={cn(
+              "hidden min-h-12 min-w-12 touch-manipulation rounded-lg px-2 sm:flex",
+              "items-center justify-center text-sm font-medium text-muted-foreground",
+              "transition-colors hover:bg-accent",
+              !lastAction && "opacity-30",
+            )}
+            aria-label={t("match.live.undo.button")}
+          >
+            ↩
+          </button>
 
-            {/* Undo - Hidden on smallest screens, shown in bottom bar instead */}
+          {/* Menu */}
+          <div className="relative">
             <button
               type="button"
-              onClick={undoLastAction}
-              disabled={!lastAction}
+              onClick={() => setShowMenu((v) => !v)}
               className={cn(
-                "hidden min-h-12 min-w-12 touch-manipulation rounded-lg px-2 sm:flex",
-                "items-center justify-center text-sm font-medium text-muted-foreground",
+                "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
+                "text-lg text-muted-foreground",
                 "transition-colors hover:bg-accent",
-                !lastAction && "opacity-30",
               )}
-              aria-label={t("match.live.undo.button")}
+              aria-label={t("match.live.menu.button")}
             >
-              ↩
+              &#8942;
             </button>
-
-            {/* Menu */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowMenu((v) => !v)}
-                className={cn(
-                  "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
-                  "text-lg text-muted-foreground",
-                  "transition-colors hover:bg-accent",
-                )}
-                aria-label={t("match.live.menu.button")}
-              >
-                &#8942;
-              </button>
-              {showMenu && (
-                <div className="absolute right-0 top-full z-50 mt-1 min-w-48 rounded-lg border border-border bg-card p-1 shadow-lg">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowMenu(false);
-                      setShowEndConfirm(true);
-                    }}
-                    className={cn(
-                      "flex min-h-12 w-full touch-manipulation items-center rounded-md px-3 py-2",
-                      "text-sm font-medium text-destructive",
-                      "transition-colors hover:bg-destructive/10",
-                    )}
-                  >
-                    {t("match.live.menu.endMatch")}
-                  </button>
-                </div>
-              )}
-            </div>
+            {showMenu && (
+              <div className="absolute right-0 top-full z-50 mt-1 min-w-48 rounded-lg border border-border bg-card p-1 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    setShowEndConfirm(true);
+                  }}
+                  className={cn(
+                    "flex min-h-12 w-full touch-manipulation items-center rounded-md px-3 py-2",
+                    "text-sm font-medium text-destructive",
+                    "transition-colors hover:bg-destructive/10",
+                  )}
+                >
+                  {t("match.live.menu.endMatch")}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Goal scorer overlay */}
+      {/* Goal scorer mode overlay */}
       {goalScorerMode && (
         <div className="flex items-center justify-between border-b border-amber-700 bg-amber-900/30 px-4 py-2">
           <span className="text-sm font-medium text-amber-300">
@@ -577,25 +547,75 @@ export function MatchLivePage(): React.ReactNode {
             type="button"
             onClick={() => setGoalScorerMode(false)}
             className={cn(
-              "min-h-12 touch-manipulation rounded-md px-4 py-2",
+              "min-h-10 touch-manipulation rounded-md px-4 py-2",
               "text-sm text-amber-300",
               "transition-colors hover:bg-amber-900/50",
             )}
-            aria-label={t("common.cancel")}
           >
             {t("common.cancel")}
           </button>
         </div>
       )}
 
-      {/* Selection indicator bar - shows when player selected */}
-      {selectedPlayerId && (
-        <div className="flex items-center justify-between border-b border-orange-700 bg-orange-900/30 px-3 py-2">
-          <span className="text-sm font-medium text-orange-300">
-            {t("match.live.selection.selected", {
-              name:
-                match.roster.find((p) => p.playerId === selectedPlayerId)
-                  ?.name ?? "?",
+      {/* Action bar - Shows when field player selected */}
+      {isSelectedOnField && selectedPlayer && (
+        <div className="flex items-center gap-2 border-b border-orange-700 bg-orange-900/30 px-3 py-2">
+          <span className="flex-1 text-sm font-medium text-orange-300">
+            {selectedPlayer.name}
+          </span>
+          <button
+            type="button"
+            onClick={handlePenalty}
+            className={cn(
+              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
+              "text-sm font-medium text-amber-400",
+              "bg-amber-900/50 transition-colors hover:bg-amber-900/70",
+            )}
+          >
+            {t("match.live.actions.penalty")}
+          </button>
+          <button
+            type="button"
+            onClick={handleRedCard}
+            className={cn(
+              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
+              "text-sm font-medium text-red-400",
+              "bg-red-900/50 transition-colors hover:bg-red-900/70",
+            )}
+          >
+            {t("match.live.actions.redCard")}
+          </button>
+          <button
+            type="button"
+            onClick={handleInjury}
+            className={cn(
+              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
+              "text-sm font-medium text-orange-400",
+              "bg-orange-900/50 transition-colors hover:bg-orange-900/70",
+            )}
+          >
+            {t("match.live.actions.injury")}
+          </button>
+          <button
+            type="button"
+            onClick={() => selectPlayer(undefined)}
+            className={cn(
+              "min-h-10 min-w-10 touch-manipulation rounded-md px-2 py-1.5",
+              "text-sm text-orange-300",
+              "transition-colors hover:bg-orange-900/50",
+            )}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Selection hint - Shows when bench player selected */}
+      {isSelectedOnBench && selectedPlayer && (
+        <div className="flex items-center justify-between border-b border-primary/50 bg-primary/10 px-3 py-2">
+          <span className="text-sm font-medium text-primary">
+            {t("match.live.selection.tapFieldPlayer", {
+              name: selectedPlayer.name,
             })}
           </span>
           <button
@@ -603,8 +623,8 @@ export function MatchLivePage(): React.ReactNode {
             onClick={() => selectPlayer(undefined)}
             className={cn(
               "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
-              "text-sm text-orange-300",
-              "transition-colors hover:bg-orange-900/50",
+              "text-sm text-primary",
+              "transition-colors hover:bg-primary/20",
             )}
           >
             {t("common.cancel")}
@@ -612,7 +632,7 @@ export function MatchLivePage(): React.ReactNode {
         </div>
       )}
 
-      {/* Mobile Tab Bar - Only visible on small screens */}
+      {/* Mobile Tab Bar */}
       <div className="flex border-b border-border sm:hidden">
         <button
           type="button"
@@ -636,13 +656,14 @@ export function MatchLivePage(): React.ReactNode {
               : "text-muted-foreground",
           )}
         >
-          {t("match.live.bench.title")} ({benchPlayers.length})
+          {t("match.live.bench.title")} (
+          {benchPlayers.length + outPlayers.length})
         </button>
       </div>
 
-      {/* Main Area: Field + Bench - Split on tablet+, tabs on mobile */}
+      {/* Main Area */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Field Players - Always visible on tablet+, tab-controlled on mobile */}
+        {/* Field Players */}
         <div
           className={cn(
             "flex flex-col border-r border-border",
@@ -650,7 +671,6 @@ export function MatchLivePage(): React.ReactNode {
             effectiveMobileTab !== "field" && "hidden sm:flex",
           )}
         >
-          {/* Header - Hidden on mobile (using tabs) */}
           <div className="hidden items-center justify-between px-3 py-2 sm:flex">
             <h2 className="text-sm font-semibold text-green-400">
               {t("match.live.field.title")} ({fieldPlayers.length})
@@ -662,124 +682,48 @@ export function MatchLivePage(): React.ReactNode {
                 const isSelected = selectedPlayerId === player.playerId;
                 const isSuggestedOut =
                   nextSuggestion?.playerOutId === player.playerId;
-                const showActions = actionMenuPlayerId === player.playerId;
                 const playTimeSeconds = getPlayerPlayTime(player);
 
                 return (
-                  <div key={player.playerId} className="relative">
-                    <button
-                      type="button"
-                      onPointerDown={() =>
-                        handleFieldPointerDown(player.playerId)
-                      }
-                      onPointerUp={() => handleFieldPointerUp(player.playerId)}
-                      onPointerLeave={handleFieldPointerLeave}
-                      className={cn(
-                        "flex min-h-20 w-full touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl p-2 sm:min-h-16 sm:rounded-lg",
-                        "text-center transition-all select-none",
-                        "bg-field text-white",
-                        isSelected && "ring-4 ring-orange-400",
-                        isSuggestedOut &&
-                          !isSelected &&
-                          "ring-2 ring-amber-500/60",
-                        goalScorerMode && "ring-2 ring-amber-400/50",
-                      )}
-                      aria-label={t("match.live.field.playerAction", {
-                        name: player.name,
-                      })}
-                    >
-                      <div className="flex items-center gap-1">
-                        {player.number !== undefined && (
-                          <span className="text-xs font-bold opacity-70">
-                            #{player.number}
-                          </span>
-                        )}
-                        {player.goals > 0 && (
-                          <span className="text-xs">
-                            {"⚽".repeat(Math.min(player.goals, 5))}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-base font-semibold leading-tight sm:text-base lg:text-lg">
-                        {player.name}
-                      </span>
-                      <span className="text-xs tabular-nums opacity-70">
-                        {formatTime(Math.floor(playTimeSeconds))}
-                      </span>
-                    </button>
-
-                    {/* Action menu button - Larger on mobile */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActionMenuPlayerId(
-                          actionMenuPlayerId === player.playerId
-                            ? undefined
-                            : player.playerId,
-                        );
-                      }}
-                      className={cn(
-                        "absolute right-1 top-1 flex h-8 w-8 touch-manipulation items-center justify-center sm:h-6 sm:w-6",
-                        "rounded-full bg-black/20 text-sm text-white/80 sm:bg-transparent sm:text-xs sm:text-white/60",
-                        "transition-colors hover:bg-white/20",
-                      )}
-                      aria-label={t("match.live.field.moreActions", {
-                        name: player.name,
-                      })}
-                    >
-                      &#8942;
-                    </button>
-
-                    {/* Inline action menu - Full width on mobile */}
-                    {showActions && (
-                      <div className="absolute left-0 top-full z-40 mt-1 flex w-full min-w-40 flex-col gap-1 rounded-lg border border-border bg-card p-1 shadow-lg">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handlePlayerAction(player.playerId, "penalty")
-                          }
-                          className={cn(
-                            "min-h-12 touch-manipulation rounded-md px-3 py-2",
-                            "text-left text-sm font-medium text-amber-400",
-                            "transition-colors hover:bg-amber-900/30",
-                          )}
-                        >
-                          {t("match.live.actions.penalty")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handlePlayerAction(player.playerId, "redCard")
-                          }
-                          className={cn(
-                            "min-h-12 touch-manipulation rounded-md px-3 py-2",
-                            "text-left text-sm font-medium text-red-400",
-                            "transition-colors hover:bg-red-900/30",
-                          )}
-                        >
-                          {t("match.live.actions.redCard")}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handlePlayerAction(player.playerId, "injury")
-                          }
-                          className={cn(
-                            "min-h-12 touch-manipulation rounded-md px-3 py-2",
-                            "text-left text-sm font-medium text-orange-400",
-                            "transition-colors hover:bg-orange-900/30",
-                          )}
-                        >
-                          {t("match.live.actions.injury")}
-                        </button>
-                      </div>
+                  <button
+                    key={player.playerId}
+                    type="button"
+                    onClick={() => handleFieldPlayerTap(player.playerId)}
+                    className={cn(
+                      "flex min-h-20 w-full touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl p-2 sm:min-h-16 sm:rounded-lg",
+                      "text-center transition-all select-none",
+                      "bg-field text-white",
+                      isSelected && "ring-4 ring-orange-400",
+                      isSuggestedOut &&
+                        !isSelected &&
+                        "ring-2 ring-amber-500/60",
+                      goalScorerMode && "ring-2 ring-amber-400/50",
                     )}
-                  </div>
+                    aria-label={player.name}
+                  >
+                    <div className="flex items-center gap-1">
+                      {player.number !== undefined && (
+                        <span className="text-xs font-bold opacity-70">
+                          #{player.number}
+                        </span>
+                      )}
+                      {player.goals > 0 && (
+                        <span className="text-xs">
+                          {"⚽".repeat(Math.min(player.goals, 5))}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-base font-semibold leading-tight sm:text-base lg:text-lg">
+                      {player.name}
+                    </span>
+                    <span className="text-xs tabular-nums opacity-70">
+                      {formatTime(Math.floor(playTimeSeconds))}
+                    </span>
+                  </button>
                 );
               })}
 
-              {/* Penalty players shown in field area with penalty styling */}
+              {/* Penalty players */}
               {penaltyPlayers.map((player) => {
                 const penalty = activePenalties.find(
                   (p) => p.playerId === player.playerId,
@@ -802,11 +746,7 @@ export function MatchLivePage(): React.ReactNode {
                     </span>
                     {penalty && (
                       <span className="text-xs font-bold tabular-nums text-red-300">
-                        {t("match.live.field.penaltyRemaining", {
-                          time: formatTime(
-                            Math.floor(penalty.remainingSeconds),
-                          ),
-                        })}
+                        {formatTime(Math.floor(penalty.remainingSeconds))}
                       </span>
                     )}
                   </div>
@@ -816,7 +756,7 @@ export function MatchLivePage(): React.ReactNode {
           </div>
         </div>
 
-        {/* Bench Players - Always visible on tablet+, tab-controlled on mobile */}
+        {/* Bench + Out Players */}
         <div
           className={cn(
             "flex flex-col",
@@ -824,7 +764,6 @@ export function MatchLivePage(): React.ReactNode {
             effectiveMobileTab !== "bench" && "hidden sm:flex",
           )}
         >
-          {/* Header - Hidden on mobile (using tabs) */}
           <div className="hidden items-center justify-between px-3 py-2 sm:flex">
             <h2 className="text-sm font-semibold text-muted-foreground">
               {t("match.live.bench.title")} ({benchPlayers.length})
@@ -832,6 +771,7 @@ export function MatchLivePage(): React.ReactNode {
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             <div className="flex flex-col gap-2">
+              {/* Bench players */}
               {benchPlayers.map((player) => {
                 const isSelected = selectedPlayerId === player.playerId;
                 const isSuggestedIn =
@@ -852,9 +792,7 @@ export function MatchLivePage(): React.ReactNode {
                         !isSelected &&
                         "ring-2 ring-amber-500/60",
                     )}
-                    aria-label={t("match.live.bench.selectPlayer", {
-                      name: player.name,
-                    })}
+                    aria-label={player.name}
                   >
                     {player.number !== undefined && (
                       <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground sm:h-8 sm:w-8 sm:rounded-md">
@@ -878,7 +816,52 @@ export function MatchLivePage(): React.ReactNode {
                 );
               })}
 
-              {benchPlayers.length === 0 && (
+              {/* Out players (injured/red card) - can still be selected for replacement */}
+              {outPlayers.length > 0 && (
+                <>
+                  <div className="mt-2 border-t border-border pt-2">
+                    <span className="text-xs font-semibold text-muted-foreground">
+                      {t("match.live.out.title")}
+                    </span>
+                  </div>
+                  {outPlayers.map((player) => {
+                    const playTimeSeconds = getPlayerPlayTime(player);
+                    const isInjured = player.status === "injured";
+                    const isRedCarded = player.status === "redCard";
+
+                    return (
+                      <div
+                        key={player.playerId}
+                        className={cn(
+                          "flex min-h-14 w-full items-center gap-3 rounded-lg p-3",
+                          "text-left opacity-60",
+                          isInjured && "bg-orange-900/20",
+                          isRedCarded && "bg-red-900/20",
+                        )}
+                      >
+                        {player.number !== undefined && (
+                          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-sm font-bold text-muted-foreground">
+                            {player.number}
+                          </span>
+                        )}
+                        <div className="flex flex-1 flex-col">
+                          <span className="text-sm font-medium leading-tight text-muted-foreground">
+                            {player.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {isInjured && t("match.live.out.injured")}
+                            {isRedCarded && t("match.live.out.redCard")}
+                            {" • "}
+                            {formatTime(Math.floor(playTimeSeconds))}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+
+              {benchPlayers.length === 0 && outPlayers.length === 0 && (
                 <p className="py-4 text-center text-sm text-muted-foreground">
                   {t("match.live.bench.empty")}
                 </p>
@@ -888,7 +871,7 @@ export function MatchLivePage(): React.ReactNode {
         </div>
       </div>
 
-      {/* Bottom Bar - More info on mobile */}
+      {/* Bottom Bar */}
       <div className="flex flex-col border-t border-border">
         {/* Active penalties */}
         {activePenalties.length > 0 && (
@@ -913,8 +896,8 @@ export function MatchLivePage(): React.ReactNode {
           </div>
         )}
 
-        {/* Quick substitute button - When suggestion available */}
-        {nextSuggestion && (
+        {/* Quick substitute button */}
+        {nextSuggestion && !selectedPlayerId && (
           <button
             type="button"
             onClick={handleQuickSubstitute}
@@ -986,7 +969,6 @@ export function MatchLivePage(): React.ReactNode {
               "text-sm font-semibold text-primary-foreground",
               "transition-colors hover:bg-primary/90",
             )}
-            aria-label={t("match.live.undo.action")}
           >
             {t("match.live.undo.action")}
           </button>
@@ -998,14 +980,13 @@ export function MatchLivePage(): React.ReactNode {
               "text-sm text-muted-foreground",
               "transition-colors hover:bg-accent",
             )}
-            aria-label={t("common.dismiss")}
           >
             ✕
           </button>
         </div>
       )}
 
-      {/* End Match Confirmation Modal */}
+      {/* End Match Modal */}
       {showEndConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="mx-4 flex max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-2xl">
@@ -1037,14 +1018,11 @@ export function MatchLivePage(): React.ReactNode {
         </div>
       )}
 
-      {/* Dismiss overlay for action menu and general menu */}
-      {(actionMenuPlayerId !== undefined || showMenu) && (
+      {/* Dismiss overlay */}
+      {showMenu && (
         <div
           className="fixed inset-0 z-30"
-          onClick={() => {
-            setActionMenuPlayerId(undefined);
-            setShowMenu(false);
-          }}
+          onClick={() => setShowMenu(false)}
           aria-hidden="true"
         />
       )}
