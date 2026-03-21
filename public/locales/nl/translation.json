@@ -84,6 +84,13 @@
         "add": "Toevoegen",
         "edit": "Bewerk {{name}}",
         "remove": "Verwijder {{name}}"
+      },
+      "dangerZone": {
+        "title": "Gevarenzone",
+        "description": "Verwijder dit team en alle spelers permanent. Dit kan niet ongedaan worden gemaakt.",
+        "deleteTeam": "Team verwijderen",
+        "confirmMessage": "Weet je zeker dat je \"{{name}}\" wilt verwijderen? Alle spelers en wedstrijdgeschiedenis gaan verloren.",
+        "confirmDelete": "Ja, verwijder team"
       }
     }
   },

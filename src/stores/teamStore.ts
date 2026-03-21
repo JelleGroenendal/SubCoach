@@ -44,7 +44,9 @@ interface TeamState {
   // Team CRUD
   createTeam: (name: string, sportProfileId: string) => Team;
   updateTeam: (
-    updates: Partial<Pick<Team, "name" | "clubName" | "settings">>,
+    updates: Partial<
+      Pick<Team, "name" | "clubName" | "sportProfileId" | "settings">
+    >,
   ) => void;
   deleteTeam: (teamId: string) => void;
   // Player CRUD
@@ -138,8 +140,13 @@ export const useTeamStore = create<TeamState>((set, get) => ({
     saveTeamInfo(activeTeamId, updated);
 
     // Update team ref if name or sport changed
-    if (updates.name) {
-      updateTeamRef(activeTeamId, { name: updates.name });
+    if (updates.name || updates.sportProfileId) {
+      updateTeamRef(activeTeamId, {
+        ...(updates.name && { name: updates.name }),
+        ...(updates.sportProfileId && {
+          sportProfileId: updates.sportProfileId,
+        }),
+      });
     }
 
     set({ team: updated });

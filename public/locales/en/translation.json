@@ -84,6 +84,13 @@
         "add": "Add",
         "edit": "Edit {{name}}",
         "remove": "Remove {{name}}"
+      },
+      "dangerZone": {
+        "title": "Danger zone",
+        "description": "Permanently delete this team and all its players. This cannot be undone.",
+        "deleteTeam": "Delete team",
+        "confirmMessage": "Are you sure you want to delete \"{{name}}\"? All players and match history will be lost.",
+        "confirmDelete": "Yes, delete team"
       }
     }
   },

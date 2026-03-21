@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
 import { Button } from "@/components/ui/button";
-import { getSportProfile } from "@/engine/sport-profiles";
+import { getAllSportProfiles, getSportProfile } from "@/engine/sport-profiles";
 import type { Player } from "@/data/schemas";
 
 const PERIOD_DURATION_OPTIONS = [10, 15, 20, 25, 30] as const;
@@ -15,6 +16,7 @@ const PLAYERS_ON_FIELD_OPTIONS = [
 
 export function TeamEditPage(): React.ReactNode {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const {
     team,
     players,
@@ -22,6 +24,7 @@ export function TeamEditPage(): React.ReactNode {
     initialize,
     createTeam,
     updateTeam,
+    deleteTeam,
     addPlayer,
     updatePlayer,
     removePlayer,
@@ -29,6 +32,7 @@ export function TeamEditPage(): React.ReactNode {
 
   const [newPlayerName, setNewPlayerName] = useState("");
   const [newPlayerNumber, setNewPlayerNumber] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingPlayerId, setEditingPlayerId] = useState<string | undefined>(
     undefined,
   );
@@ -145,10 +149,31 @@ export function TeamEditPage(): React.ReactNode {
     [removePlayer, editingPlayerId],
   );
 
-  const sportProfile = useMemo(
-    () => (team ? getSportProfile(team.sportProfileId) : undefined),
-    [team],
+  const allSportProfiles = useMemo(() => getAllSportProfiles(), []);
+
+  const handleSportChange = useCallback(
+    (newSportProfileId: string) => {
+      const profile = getSportProfile(newSportProfileId);
+      if (!profile) return;
+
+      // Update sport and reset settings to sport defaults
+      updateTeam({
+        sportProfileId: newSportProfileId,
+        settings: {
+          periodDurationMinutes: profile.match.defaultPeriodDurationMinutes,
+          periodCount: profile.match.defaultPeriodCount,
+          playersOnField: profile.players.defaultPlayersOnField,
+        },
+      });
+    },
+    [updateTeam],
   );
+
+  const handleDeleteTeam = useCallback(() => {
+    if (!team) return;
+    deleteTeam(team.id);
+    navigate("/");
+  }, [team, deleteTeam, navigate]);
 
   if (loading || !team) {
     return (
@@ -164,7 +189,6 @@ export function TeamEditPage(): React.ReactNode {
     0,
     activePlayers.length - team.settings.playersOnField,
   );
-  const sportName = sportProfile ? t(sportProfile.name) : team.sportProfileId;
 
   return (
     <div className="flex flex-col gap-8 py-6">
@@ -228,19 +252,30 @@ export function TeamEditPage(): React.ReactNode {
           />
         </div>
 
-        {/* Sport Profile (disabled for MVP) */}
+        {/* Sport Profile */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-muted-foreground">
+          <label
+            htmlFor="sport-profile"
+            className="text-sm font-medium text-muted-foreground"
+          >
             {t("team.edit.settings.sport")}
           </label>
-          <div
+          <select
+            id="sport-profile"
+            value={team.sportProfileId}
+            onChange={(e) => handleSportChange(e.target.value)}
             className={cn(
-              "min-h-12 flex items-center rounded-lg border border-input bg-muted px-3 py-2",
-              "text-base text-muted-foreground",
+              "min-h-12 touch-manipulation rounded-lg border border-input bg-background px-3 py-2",
+              "text-base text-foreground",
+              "focus:outline-none focus:ring-2 focus:ring-ring",
             )}
           >
-            {sportName}
-          </div>
+            {allSportProfiles.map((profile) => (
+              <option key={profile.id} value={profile.id}>
+                {t(profile.name)}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Period Duration */}
@@ -511,6 +546,51 @@ export function TeamEditPage(): React.ReactNode {
             {t("team.edit.players.add")}
           </Button>
         </div>
+      </section>
+
+      {/* Danger Zone */}
+      <section className="flex flex-col gap-4 rounded-xl border border-destructive/50 bg-card p-5">
+        <h2 className="text-lg font-semibold text-destructive">
+          {t("team.edit.dangerZone.title")}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {t("team.edit.dangerZone.description")}
+        </p>
+
+        {!showDeleteConfirm ? (
+          <Button
+            size="xl"
+            variant="destructive"
+            className="touch-manipulation self-start"
+            onClick={() => setShowDeleteConfirm(true)}
+          >
+            {t("team.edit.dangerZone.deleteTeam")}
+          </Button>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm font-medium text-destructive">
+              {t("team.edit.dangerZone.confirmMessage", { name: team.name })}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                size="xl"
+                variant="destructive"
+                className="touch-manipulation"
+                onClick={handleDeleteTeam}
+              >
+                {t("team.edit.dangerZone.confirmDelete")}
+              </Button>
+              <Button
+                size="xl"
+                variant="ghost"
+                className="touch-manipulation"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                {t("common.cancel")}
+              </Button>
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );
