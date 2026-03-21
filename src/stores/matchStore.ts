@@ -2,21 +2,24 @@ import { create } from "zustand";
 import type { Match, MatchPlayer, MatchEvent } from "@/data/schemas";
 import type { SubstitutionPlan } from "@/engine/substitution/types";
 import {
-  getCurrentMatchFromYjs,
-  saveCurrentMatchToYjs,
+  getCurrentMatch,
+  saveCurrentMatch,
   clearCurrentMatch,
-  saveMatchToHistory,
-} from "@/data/yjs/matchDoc";
+  saveMatch,
+} from "@/data/yjs";
 import { recalculateSchedule } from "@/engine/substitution/recalculate";
 import { getTotalMatchSeconds } from "@/engine/timer/matchTimer";
 
 interface MatchState {
+  // Current team context (must be set before using match operations)
+  teamId: string | undefined;
   match: Match | undefined;
   selectedPlayerId: string | undefined;
   substitutionPlan: SubstitutionPlan;
   lastAction: { event: MatchEvent; index: number } | undefined;
   showUndo: boolean;
 
+  setTeamId: (teamId: string | undefined) => void;
   loadMatch: () => void;
   createMatch: (params: {
     teamId: string;
@@ -46,14 +49,31 @@ interface MatchState {
 }
 
 export const useMatchStore = create<MatchState>((set, get) => ({
+  teamId: undefined,
   match: undefined,
   selectedPlayerId: undefined,
   substitutionPlan: { suggestions: [], warnings: [] },
   lastAction: undefined,
   showUndo: false,
 
+  setTeamId: (teamId) => {
+    set({ teamId });
+    if (teamId) {
+      const match = getCurrentMatch(teamId) as Match | undefined;
+      set({ match });
+      if (match && match.status !== "finished") {
+        const plan = recalcSchedule(match);
+        set({ substitutionPlan: plan });
+      }
+    } else {
+      set({ match: undefined });
+    }
+  },
+
   loadMatch: () => {
-    const match = getCurrentMatchFromYjs();
+    const { teamId } = get();
+    if (!teamId) return;
+    const match = getCurrentMatch(teamId) as Match | undefined;
     set({ match });
     if (match && match.status !== "finished") {
       const plan = recalcSchedule(match);
@@ -80,14 +100,14 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       events: [],
       createdAt: now,
     };
-    saveCurrentMatchToYjs(match);
+    saveCurrentMatch(params.teamId, match);
     const plan = recalcSchedule(match);
-    set({ match, substitutionPlan: plan });
+    set({ teamId: params.teamId, match, substitutionPlan: plan });
   },
 
   startTimer: () => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     const event: MatchEvent = {
       type: "periodStart",
       timestamp: match.elapsedSeconds,
@@ -108,15 +128,15 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       }
       return p;
     });
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     set({ match: updated });
   },
 
   pauseTimer: () => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     const updated: Match = { ...match, status: "paused" };
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     set({ match: updated });
   },
 
@@ -129,8 +149,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   startNextPeriod: () => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     const updated: Match = {
       ...match,
       status: "playing",
@@ -151,7 +171,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       }
       return p;
     });
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
     set({ match: updated, substitutionPlan: plan });
   },
@@ -161,8 +181,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   executeSubstitution: (playerInId, playerOutId) => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     const event: MatchEvent = {
       type: "substitution",
       timestamp: match.elapsedSeconds,
@@ -192,7 +212,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       roster,
       events: [...match.events, event],
     };
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
     set({
       match: updated,
@@ -207,8 +227,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   registerGoal: (playerId) => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     const event: MatchEvent = {
       type: "goal",
       timestamp: match.elapsedSeconds,
@@ -223,7 +243,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       roster,
       events: [...match.events, event],
     };
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     set({
       match: updated,
       lastAction: { event, index: updated.events.length - 1 },
@@ -235,8 +255,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   registerOpponentGoal: () => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     const event: MatchEvent = {
       type: "opponentGoal",
       timestamp: match.elapsedSeconds,
@@ -246,7 +266,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       awayScore: match.awayScore + 1,
       events: [...match.events, event],
     };
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     set({
       match: updated,
       lastAction: { event, index: updated.events.length - 1 },
@@ -258,8 +278,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   registerPenalty: (playerId, durationSeconds) => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     const penaltyId = crypto.randomUUID();
     const event: MatchEvent = {
       type: "penalty",
@@ -284,7 +304,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       roster,
       events: [...match.events, event],
     };
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
     set({
       match: updated,
@@ -298,8 +318,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   endPenalty: (penaltyId) => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     const event: MatchEvent = {
       type: "penaltyEnd",
       timestamp: match.elapsedSeconds,
@@ -324,14 +344,14 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       roster,
       events: [...match.events, event],
     };
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
     set({ match: updated, substitutionPlan: plan });
   },
 
   registerRedCard: (playerId) => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     const event: MatchEvent = {
       type: "redCard",
       timestamp: match.elapsedSeconds,
@@ -362,7 +382,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       roster,
       events: [...match.events, event, penaltyEvent],
     };
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
     set({
       match: updated,
@@ -376,8 +396,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   registerInjury: (playerId) => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     const event: MatchEvent = {
       type: "injury",
       timestamp: match.elapsedSeconds,
@@ -399,7 +419,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       roster,
       events: [...match.events, event],
     };
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
     set({
       match: updated,
@@ -413,8 +433,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   undoLastAction: () => {
-    const { match, lastAction } = get();
-    if (!match || !lastAction) return;
+    const { teamId, match, lastAction } = get();
+    if (!teamId || !match || !lastAction) return;
     const event = lastAction.event;
     const updated = { ...match };
 
@@ -507,7 +527,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     };
     updated.events = [...updated.events, undoEvent];
 
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
     set({
       match: updated,
@@ -522,8 +542,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   endMatch: () => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     // Close all open play periods
     const roster = match.roster.map((p) => {
       if (p.status === "field") {
@@ -567,14 +587,16 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       ],
     };
 
-    saveMatchToHistory(updated);
-    clearCurrentMatch();
+    // Save to match history
+    saveMatch(teamId, updated.id, updated);
+    // Clear current match
+    clearCurrentMatch(teamId);
     set({ match: updated, showUndo: false, lastAction: undefined });
   },
 
   autoSave: () => {
-    const { match } = get();
-    if (!match || match.status === "finished") return;
+    const { teamId, match } = get();
+    if (!teamId || !match || match.status === "finished") return;
     // Update play times before saving
     const roster = match.roster.map((p) => {
       const totalPlayTimeSeconds = p.periods.reduce((sum, per) => {
@@ -584,17 +606,17 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       return { ...p, totalPlayTimeSeconds };
     });
     const updated = { ...match, roster };
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
   },
 
   adjustScore: (side, score) => {
-    const { match } = get();
-    if (!match) return;
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
     const updated = {
       ...match,
       [side === "home" ? "homeScore" : "awayScore"]: Math.max(0, score),
     };
-    saveCurrentMatchToYjs(updated);
+    saveCurrentMatch(teamId, updated);
     set({ match: updated });
   },
 }));

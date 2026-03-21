@@ -6,11 +6,11 @@ import { useTeamStore } from "@/stores/teamStore";
 
 export function HomePage(): React.ReactNode {
   const { t } = useTranslation();
-  const { team, loading, loadTeam } = useTeamStore();
+  const { team, players, loading, initialize } = useTeamStore();
 
   useEffect(() => {
-    loadTeam();
-  }, [loadTeam]);
+    initialize();
+  }, [initialize]);
 
   if (loading) {
     return (
@@ -54,7 +54,7 @@ export function HomePage(): React.ReactNode {
     );
   }
 
-  const activePlayers = team.players.filter((p) => p.active);
+  const activePlayers = players.filter((p) => p.active);
   const benchCount = Math.max(
     0,
     activePlayers.length - team.settings.playersOnField,

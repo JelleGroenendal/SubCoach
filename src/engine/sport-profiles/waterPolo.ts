@@ -1,14 +1,20 @@
 import type { SportProfile } from "@/data/schemas/sportProfile";
 
-export const handballProfile: SportProfile = {
-  id: "handball",
-  name: "sport.handball.name",
+/**
+ * Water polo profile.
+ *
+ * Exclusion fouls last 20 seconds and end on a goal.
+ * 3rd exclusion foul results in permanent removal (substitution allowed).
+ */
+export const waterPoloProfile: SportProfile = {
+  id: "water-polo",
+  name: "sport.water-polo.name",
 
   match: {
-    defaultPeriodCount: 2,
-    defaultPeriodDurationMinutes: 25, // youth default (senior = 30)
+    defaultPeriodCount: 4, // quarters
+    defaultPeriodDurationMinutes: 8,
     hasTimeout: true,
-    stoppedClock: false,
+    stoppedClock: true,
   },
 
   players: {
@@ -25,16 +31,16 @@ export const handballProfile: SportProfile = {
   penalties: {
     timePenalties: [
       {
-        name: "2min",
-        durationSeconds: 120,
+        name: "exclusion",
+        durationSeconds: 20,
         teamPlaysShort: true,
-        endsOnGoal: false,
+        endsOnGoal: true,
       },
     ],
     maxTimePenalties: 3,
-    cards: ["yellow", "red"],
+    cards: [],
     secondYellowIsRed: false,
-    redCardPermanent: false, // team plays -1 for 2 min, then can fill spot
+    redCardPermanent: false,
     personalFoulLimit: undefined,
   },
 

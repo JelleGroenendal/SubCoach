@@ -4,6 +4,12 @@ export const TimePenaltyConfigSchema = z.object({
   name: z.string(),
   durationSeconds: z.number().int().min(1),
   teamPlaysShort: z.boolean(),
+  endsOnGoal: z.boolean(),
+});
+
+export const ScoringValueSchema = z.object({
+  name: z.string(),
+  value: z.number().int().min(1),
 });
 
 export const SportProfileSchema = z.object({
@@ -14,6 +20,7 @@ export const SportProfileSchema = z.object({
     defaultPeriodCount: z.number().int().min(1).max(4),
     defaultPeriodDurationMinutes: z.number().int().min(5).max(45),
     hasTimeout: z.boolean(),
+    stoppedClock: z.boolean(),
   }),
 
   players: z.object({
@@ -26,21 +33,24 @@ export const SportProfileSchema = z.object({
     flying: z.boolean(),
     maxSubstitutions: z.number().int().min(1).optional(),
     canSubBack: z.boolean(),
+    substitutionWindows: z.number().int().min(1).optional(),
   }),
 
   penalties: z.object({
     timePenalties: z.array(TimePenaltyConfigSchema),
     maxTimePenalties: z.number().int().min(1).optional(),
     cards: z.array(z.string()),
+    secondYellowIsRed: z.boolean(),
+    redCardPermanent: z.boolean(),
     personalFoulLimit: z.number().int().min(1).optional(),
-    penaltyEndsOnGoal: z.boolean(),
   }),
 
   scoring: z.object({
     type: z.enum(["goals", "points"]),
-    values: z.array(z.number().int().min(1)),
+    values: z.array(ScoringValueSchema),
   }),
 });
 
 export type TimePenaltyConfig = z.infer<typeof TimePenaltyConfigSchema>;
+export type ScoringValue = z.infer<typeof ScoringValueSchema>;
 export type SportProfile = z.infer<typeof SportProfileSchema>;

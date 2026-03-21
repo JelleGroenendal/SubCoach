@@ -22,6 +22,8 @@ export const MatchPlayerSchema = z.object({
   totalPlayTimeSeconds: z.number().min(0),
   goals: z.number().int().min(0),
   periods: z.array(PlayPeriodSchema),
+  isKeeper: z.boolean().optional(),
+  hasBeenSubstitutedOut: z.boolean().optional(),
 });
 
 export const MatchSchema = z.object({
@@ -42,6 +44,11 @@ export const MatchSchema = z.object({
 
   roster: z.array(MatchPlayerSchema),
   events: z.array(MatchEventSchema),
+
+  sportProfileId: z.string().min(1).optional(),
+  keeperPlayerId: z.string().optional(),
+  substitutionsUsed: z.number().int().min(0).optional(),
+  substitutionWindowsUsed: z.number().int().min(0).optional(),
 
   createdAt: z.number(),
   finishedAt: z.number().optional(),

@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { PlayerSchema } from "./player";
 
 export const TeamSettingsSchema = z.object({
   periodDurationMinutes: z.number().int().min(5).max(45),
@@ -13,10 +12,17 @@ export const TeamSchema = z.object({
   clubName: z.string().max(100).optional(),
   sportProfileId: z.string().min(1),
   settings: TeamSettingsSchema,
-  players: z.array(PlayerSchema),
   createdAt: z.number(),
   updatedAt: z.number(),
 });
 
+export const TeamRefSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(100),
+  sportProfileId: z.string().min(1),
+  createdAt: z.number(),
+});
+
 export type TeamSettings = z.infer<typeof TeamSettingsSchema>;
 export type Team = z.infer<typeof TeamSchema>;
+export type TeamRef = z.infer<typeof TeamRefSchema>;

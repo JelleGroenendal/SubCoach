@@ -52,12 +52,14 @@ describe("handball profile", () => {
   });
 
   it("penalty does not end on goal", () => {
-    expect(handballProfile.penalties.penaltyEndsOnGoal).toBe(false);
+    expect(handballProfile.penalties.timePenalties[0]?.endsOnGoal).toBe(false);
   });
 
   it("scoring is goals with value 1", () => {
     expect(handballProfile.scoring.type).toBe("goals");
-    expect(handballProfile.scoring.values).toEqual([1]);
+    expect(handballProfile.scoring.values).toEqual([
+      { name: "goal", value: 1 },
+    ]);
   });
 });
 

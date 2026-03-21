@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { destroyYjs } from "@/data/yjs/yjsProvider";
+import { destroyAll } from "@/data/yjs";
 import { Button } from "@/components/ui/button";
 
 const THEME_KEY = "subcoach-theme";
@@ -45,7 +45,7 @@ export function SettingsPage(): React.ReactNode {
     if (!first) return;
     const second = window.confirm(t("settings.deleteConfirm2"));
     if (!second) return;
-    destroyYjs();
+    destroyAll();
     window.location.reload();
   }, [t]);
 

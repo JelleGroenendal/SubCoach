@@ -1,11 +1,9 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import {
-  getMatchHistoryFromYjs,
-  deleteMatchFromHistory,
-} from "@/data/yjs/matchDoc";
+import { useTeamStore } from "@/stores/teamStore";
+import { useMatchHistory } from "@/data/yjs";
 import type { Match } from "@/data/schemas";
 
 function formatMatchDate(timestamp: number, locale: string): string {
@@ -21,15 +19,20 @@ function formatMatchDate(timestamp: number, locale: string): string {
 export function HistoryListPage(): React.ReactNode {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [matches, setMatches] = useState<Match[]>(() =>
-    getMatchHistoryFromYjs(),
-  );
+  const { activeTeamId, initialize } = useTeamStore();
+  const { matches, deleteFromHistory } = useMatchHistory(activeTeamId);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
 
   const filtered = useMemo(() => {
     const query = search.toLowerCase().trim();
     if (!query) return matches;
-    return matches.filter((m) => m.opponentName.toLowerCase().includes(query));
+    return matches.filter((m: Match) =>
+      m.opponentName.toLowerCase().includes(query),
+    );
   }, [matches, search]);
 
   const handleDelete = useCallback(
@@ -38,10 +41,9 @@ export function HistoryListPage(): React.ReactNode {
         t("history.list.deleteConfirm", { opponent: opponentName }),
       );
       if (!confirmed) return;
-      deleteMatchFromHistory(matchId);
-      setMatches((prev) => prev.filter((m) => m.id !== matchId));
+      deleteFromHistory(matchId);
     },
-    [t],
+    [t, deleteFromHistory],
   );
 
   return (
@@ -69,7 +71,7 @@ export function HistoryListPage(): React.ReactNode {
         </div>
       ) : (
         <div className="space-y-2">
-          {filtered.map((match) => (
+          {filtered.map((match: Match) => (
             <div key={match.id} className="flex items-center gap-2">
               <button
                 type="button"

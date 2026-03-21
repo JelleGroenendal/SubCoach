@@ -1,16 +1,53 @@
 import { create } from "zustand";
-import type { Team, Player } from "@/data/schemas";
-import { getTeamFromYjs, saveTeamToYjs } from "@/data/yjs/teamDoc";
+import type { Team, Player, TeamRef } from "@/data/schemas";
+import {
+  getTeamInfo,
+  saveTeamInfo,
+  getPlayers,
+  addPlayer as addPlayerToYjs,
+  updatePlayer as updatePlayerInYjs,
+  removePlayer as removePlayerFromYjs,
+  addTeamRef,
+  updateTeamRef,
+  removeTeamRef,
+  getActiveTeamId,
+  setActiveTeamId,
+  destroyTeamDoc,
+} from "@/data/yjs";
 import { getSportProfileOrThrow } from "@/engine/sport-profiles";
 
+/**
+ * Team store for managing multi-team state.
+ * This store handles:
+ * - Active team selection
+ * - Creating/deleting teams
+ * - Team CRUD operations (delegating to Yjs)
+ * - Player CRUD operations (delegating to Yjs)
+ *
+ * Note: The actual data is stored in Yjs and persisted via y-indexeddb.
+ * This store provides imperative actions and caches the current state.
+ */
+
 interface TeamState {
+  // Currently active team ID
+  activeTeamId: string | undefined;
+  // Cached team info (updated when activeTeamId changes)
   team: Team | undefined;
+  // Cached players (updated when activeTeamId changes)
+  players: Player[];
+  // Loading state
   loading: boolean;
-  loadTeam: () => void;
+  // Initialization
+  initialize: () => void;
+  // Team selection
+  selectTeam: (teamId: string) => void;
+  // Team CRUD
   createTeam: (name: string, sportProfileId: string) => Team;
   updateTeam: (
     updates: Partial<Pick<Team, "name" | "clubName" | "settings">>,
   ) => void;
+  deleteTeam: (teamId: string) => void;
+  // Player CRUD
   addPlayer: (name: string, number?: number) => void;
   updatePlayer: (
     playerId: string,
@@ -18,21 +55,42 @@ interface TeamState {
   ) => void;
   removePlayer: (playerId: string) => void;
   reorderPlayers: (fromIndex: number, toIndex: number) => void;
+  // Refresh from Yjs
+  refreshTeam: () => void;
+  refreshPlayers: () => void;
 }
 
 export const useTeamStore = create<TeamState>((set, get) => ({
+  activeTeamId: undefined,
   team: undefined,
+  players: [],
   loading: true,
 
-  loadTeam: () => {
-    const team = getTeamFromYjs();
-    set({ team, loading: false });
+  initialize: () => {
+    const activeId = getActiveTeamId();
+    if (activeId) {
+      const team = getTeamInfo(activeId);
+      const players = getPlayers(activeId);
+      set({ activeTeamId: activeId, team, players, loading: false });
+    } else {
+      set({ loading: false });
+    }
+  },
+
+  selectTeam: (teamId) => {
+    setActiveTeamId(teamId);
+    const team = getTeamInfo(teamId);
+    const players = getPlayers(teamId);
+    set({ activeTeamId: teamId, team, players });
   },
 
   createTeam: (name, sportProfileId) => {
     const profile = getSportProfileOrThrow(sportProfileId);
+    const teamId = crypto.randomUUID();
+    const now = Date.now();
+
     const team: Team = {
-      id: crypto.randomUUID(),
+      id: teamId,
       name,
       sportProfileId,
       settings: {
@@ -40,79 +98,134 @@ export const useTeamStore = create<TeamState>((set, get) => ({
         periodCount: profile.match.defaultPeriodCount,
         playersOnField: profile.players.defaultPlayersOnField,
       },
-      players: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: now,
+      updatedAt: now,
     };
-    saveTeamToYjs(team);
-    set({ team });
+
+    // Save team info to its own Yjs doc
+    saveTeamInfo(teamId, team);
+
+    // Add reference to app doc
+    const teamRef: TeamRef = {
+      id: teamId,
+      name,
+      sportProfileId,
+      createdAt: now,
+    };
+    addTeamRef(teamRef);
+
+    // Select the new team
+    setActiveTeamId(teamId);
+    set({ activeTeamId: teamId, team, players: [] });
+
     return team;
   },
 
   updateTeam: (updates) => {
-    const { team } = get();
-    if (!team) return;
-    const updated = { ...team, ...updates, updatedAt: Date.now() };
+    const { activeTeamId, team } = get();
+    if (!activeTeamId || !team) return;
+
+    const updated: Team = {
+      ...team,
+      ...updates,
+      updatedAt: Date.now(),
+    };
+
     if (updates.settings) {
       updated.settings = { ...team.settings, ...updates.settings };
     }
-    saveTeamToYjs(updated);
+
+    saveTeamInfo(activeTeamId, updated);
+
+    // Update team ref if name or sport changed
+    if (updates.name) {
+      updateTeamRef(activeTeamId, { name: updates.name });
+    }
+
     set({ team: updated });
   },
 
+  deleteTeam: (teamId) => {
+    const { activeTeamId } = get();
+
+    // Remove from app doc
+    removeTeamRef(teamId);
+
+    // Destroy the team's Yjs doc and IndexedDB
+    destroyTeamDoc(teamId);
+
+    // If this was the active team, clear selection
+    if (activeTeamId === teamId) {
+      set({ activeTeamId: undefined, team: undefined, players: [] });
+    }
+  },
+
   addPlayer: (name, number) => {
-    const { team } = get();
-    if (!team) return;
+    const { activeTeamId } = get();
+    if (!activeTeamId) return;
+
     const player: Player = {
       id: crypto.randomUUID(),
       name,
       number,
       active: true,
     };
-    const updated = {
-      ...team,
-      players: [...team.players, player],
-      updatedAt: Date.now(),
-    };
-    saveTeamToYjs(updated);
-    set({ team: updated });
+
+    addPlayerToYjs(activeTeamId, player);
+
+    // Refresh players from Yjs
+    const players = getPlayers(activeTeamId);
+    set({ players });
   },
 
   updatePlayer: (playerId, updates) => {
-    const { team } = get();
-    if (!team) return;
-    const updated = {
-      ...team,
-      players: team.players.map((p) =>
-        p.id === playerId ? { ...p, ...updates } : p,
-      ),
-      updatedAt: Date.now(),
-    };
-    saveTeamToYjs(updated);
-    set({ team: updated });
+    const { activeTeamId } = get();
+    if (!activeTeamId) return;
+
+    updatePlayerInYjs(activeTeamId, playerId, updates);
+
+    // Refresh players from Yjs
+    const players = getPlayers(activeTeamId);
+    set({ players });
   },
 
   removePlayer: (playerId) => {
-    const { team } = get();
-    if (!team) return;
-    const updated = {
-      ...team,
-      players: team.players.filter((p) => p.id !== playerId),
-      updatedAt: Date.now(),
-    };
-    saveTeamToYjs(updated);
-    set({ team: updated });
+    const { activeTeamId } = get();
+    if (!activeTeamId) return;
+
+    removePlayerFromYjs(activeTeamId, playerId);
+
+    // Refresh players from Yjs
+    const players = getPlayers(activeTeamId);
+    set({ players });
   },
 
   reorderPlayers: (fromIndex, toIndex) => {
-    const { team } = get();
-    if (!team) return;
-    const players = [...team.players];
-    const [moved] = players.splice(fromIndex, 1);
-    if (!moved) return;
-    players.splice(toIndex, 0, moved);
-    const updated = { ...team, players, updatedAt: Date.now() };
-    saveTeamToYjs(updated);
-    set({ team: updated });
+    const { activeTeamId, players } = get();
+    if (!activeTeamId) return;
+
+    // Reordering is tricky with a Map-based Yjs structure
+    // For now, we just update the local state
+    // TODO: Implement proper ordering via a Y.Array or order field
+    const newPlayers = [...players];
+    const [moved] = newPlayers.splice(fromIndex, 1);
+    if (moved) {
+      newPlayers.splice(toIndex, 0, moved);
+      set({ players: newPlayers });
+    }
+  },
+
+  refreshTeam: () => {
+    const { activeTeamId } = get();
+    if (!activeTeamId) return;
+    const team = getTeamInfo(activeTeamId);
+    set({ team });
+  },
+
+  refreshPlayers: () => {
+    const { activeTeamId } = get();
+    if (!activeTeamId) return;
+    const players = getPlayers(activeTeamId);
+    set({ players });
   },
 }));

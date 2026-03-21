@@ -202,6 +202,30 @@
       }
     }
   },
+  "teamSelector": {
+    "selectTeam": "Selecteer team",
+    "noTeam": "Geen team geselecteerd",
+    "teamList": "Beschikbare teams"
+  },
+  "crashRecovery": {
+    "title": "Wedstrijd hervatten?",
+    "description": "Een wedstrijd tegen {{opponent}} ({{score}}) werd onderbroken. Wil je deze hervatten?",
+    "opponent": "Tegenstander",
+    "score": "Stand",
+    "period": "Helft",
+    "resume": "Hervat wedstrijd",
+    "discard": "Verwijderen"
+  },
+  "pwa": {
+    "updateAvailable": "Update beschikbaar",
+    "updateDescription": "Er is een nieuwe versie van SubCoach beschikbaar.",
+    "update": "Nu updaten",
+    "later": "Later"
+  },
+  "offline": {
+    "offline": "Je bent offline - app werkt normaal",
+    "online": "Weer online"
+  },
   "settings": {
     "title": "Instellingen",
     "language": "Taal",

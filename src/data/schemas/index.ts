@@ -2,8 +2,10 @@ export { PlayerSchema, type Player } from "./player";
 export {
   TeamSchema,
   TeamSettingsSchema,
+  TeamRefSchema,
   type Team,
   type TeamSettings,
+  type TeamRef,
 } from "./team";
 export {
   MatchSchema,
@@ -44,6 +46,8 @@ export {
 export {
   SportProfileSchema,
   TimePenaltyConfigSchema,
+  ScoringValueSchema,
   type SportProfile,
   type TimePenaltyConfig,
+  type ScoringValue,
 } from "./sportProfile";

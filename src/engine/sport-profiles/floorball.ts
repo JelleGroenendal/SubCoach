@@ -1,18 +1,23 @@
 import type { SportProfile } from "@/data/schemas/sportProfile";
 
-export const handballProfile: SportProfile = {
-  id: "handball",
-  name: "sport.handball.name",
+/**
+ * Floorball (unihockey) profile.
+ *
+ * Uses verbal warnings and time penalties instead of cards.
+ */
+export const floorballProfile: SportProfile = {
+  id: "floorball",
+  name: "sport.floorball.name",
 
   match: {
-    defaultPeriodCount: 2,
-    defaultPeriodDurationMinutes: 25, // youth default (senior = 30)
+    defaultPeriodCount: 3,
+    defaultPeriodDurationMinutes: 20,
     hasTimeout: true,
     stoppedClock: false,
   },
 
   players: {
-    defaultPlayersOnField: 7,
+    defaultPlayersOnField: 6,
     hasKeeper: true,
   },
 
@@ -30,11 +35,16 @@ export const handballProfile: SportProfile = {
         teamPlaysShort: true,
         endsOnGoal: false,
       },
+      {
+        name: "5min",
+        durationSeconds: 300,
+        teamPlaysShort: true,
+        endsOnGoal: false,
+      },
     ],
-    maxTimePenalties: 3,
-    cards: ["yellow", "red"],
+    cards: [],
     secondYellowIsRed: false,
-    redCardPermanent: false, // team plays -1 for 2 min, then can fill spot
+    redCardPermanent: false,
     personalFoulLimit: undefined,
   },
 

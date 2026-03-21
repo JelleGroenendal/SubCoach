@@ -1,6 +1,8 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { TeamSelector } from "./TeamSelector";
+import { CrashRecovery } from "./CrashRecovery";
 
 const NAV_ITEMS = [
   { path: "/", labelKey: "nav.home" },
@@ -29,16 +31,20 @@ export function Layout(): React.ReactNode {
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <CrashRecovery />
       {!hideNav && (
         <header className="border-b border-border px-4 py-3">
           <div className="mx-auto flex max-w-4xl items-center justify-between">
-            <Link
-              to="/"
-              className="min-h-12 touch-manipulation text-xl font-bold text-foreground"
-              aria-label={t("nav.home")}
-            >
-              SubCoach
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                to="/"
+                className="min-h-12 touch-manipulation text-xl font-bold text-foreground"
+                aria-label={t("nav.home")}
+              >
+                SubCoach
+              </Link>
+              <TeamSelector />
+            </div>
             <nav className="flex gap-1">
               {NAV_ITEMS.map((item) => (
                 <Link

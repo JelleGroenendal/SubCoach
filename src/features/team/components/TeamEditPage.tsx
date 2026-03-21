@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
 import { Button } from "@/components/ui/button";
+import type { Player } from "@/data/schemas";
 
 const PERIOD_DURATION_OPTIONS = [10, 15, 20, 25, 30] as const;
 const PLAYERS_ON_FIELD_OPTIONS = [
@@ -15,8 +16,9 @@ export function TeamEditPage(): React.ReactNode {
   const { t } = useTranslation();
   const {
     team,
+    players,
     loading,
-    loadTeam,
+    initialize,
     createTeam,
     updateTeam,
     addPlayer,
@@ -40,8 +42,8 @@ export function TeamEditPage(): React.ReactNode {
   );
 
   useEffect(() => {
-    loadTeam();
-  }, [loadTeam]);
+    initialize();
+  }, [initialize]);
 
   // Auto-create team with defaults if none exists
   useEffect(() => {
@@ -151,7 +153,7 @@ export function TeamEditPage(): React.ReactNode {
     );
   }
 
-  const activePlayers = team.players.filter((p) => p.active);
+  const activePlayers = players.filter((p: Player) => p.active);
   const benchCount = Math.max(
     0,
     activePlayers.length - team.settings.playersOnField,
@@ -335,14 +337,14 @@ export function TeamEditPage(): React.ReactNode {
         </div>
 
         {/* Player Cards */}
-        {team.players.length === 0 && (
+        {players.length === 0 && (
           <p className="py-4 text-center text-muted-foreground">
             {t("team.edit.players.empty")}
           </p>
         )}
 
         <div className="flex flex-col gap-2">
-          {team.players.map((player) => {
+          {players.map((player: Player) => {
             const isEditing = editingPlayerId === player.id;
 
             if (isEditing) {

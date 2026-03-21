@@ -1,8 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
-import { getMatchHistoryFromYjs } from "@/data/yjs/matchDoc";
+import { useTeamStore } from "@/stores/teamStore";
+import { useMatchHistory } from "@/data/yjs";
 import { calculateFairnessScore } from "@/engine/fairness/calculateFairness";
 import { formatTime } from "@/engine/timer/matchTimer";
 import { Button } from "@/components/ui/button";
@@ -100,10 +101,16 @@ export function HistoryDetailPage(): React.ReactNode {
   const { id } = useParams<{ id: string }>();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const { activeTeamId, initialize } = useTeamStore();
+  const { matches } = useMatchHistory(activeTeamId);
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
   const match = useMemo((): Match | undefined => {
-    const history = getMatchHistoryFromYjs();
-    return history.find((m) => m.id === id);
-  }, [id]);
+    return matches.find((m: Match) => m.id === id);
+  }, [matches, id]);
 
   const rosterMap = useMemo(() => {
     if (!match) return new Map<string, MatchPlayer>();

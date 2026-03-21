@@ -202,6 +202,30 @@
       }
     }
   },
+  "teamSelector": {
+    "selectTeam": "Select team",
+    "noTeam": "No team selected",
+    "teamList": "Available teams"
+  },
+  "crashRecovery": {
+    "title": "Resume match?",
+    "description": "A match against {{opponent}} ({{score}}) was interrupted. Would you like to resume?",
+    "opponent": "Opponent",
+    "score": "Score",
+    "period": "Period",
+    "resume": "Resume match",
+    "discard": "Discard"
+  },
+  "pwa": {
+    "updateAvailable": "Update available",
+    "updateDescription": "A new version of SubCoach is available.",
+    "update": "Update now",
+    "later": "Later"
+  },
+  "offline": {
+    "offline": "You're offline - app works normally",
+    "online": "Back online"
+  },
   "settings": {
     "title": "Settings",
     "language": "Language",

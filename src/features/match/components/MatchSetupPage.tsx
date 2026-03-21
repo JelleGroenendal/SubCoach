@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
 import { useMatchStore } from "@/stores/matchStore";
 import { Button } from "@/components/ui/button";
-import type { MatchPlayer } from "@/data/schemas";
+import type { MatchPlayer, Player } from "@/data/schemas";
 
 const PERIOD_DURATION_OPTIONS = [10, 15, 20, 25, 30] as const;
 const PLAYERS_ON_FIELD_OPTIONS = [
@@ -21,36 +21,29 @@ type PlayerSelection = {
   assignment: "field" | "bench" | "unavailable";
 };
 
-function buildInitialSelections(team: {
-  players: Array<{
-    id: string;
-    name: string;
-    number?: number;
-    active: boolean;
-  }>;
-  settings: { playersOnField: number };
-}): PlayerSelection[] {
-  const activePlayers = team.players.filter((p) => p.active);
+function buildInitialSelections(
+  players: Player[],
+  playersOnField: number,
+): PlayerSelection[] {
+  const activePlayers = players.filter((p) => p.active);
   return activePlayers.map((p, index) => ({
     playerId: p.id,
     name: p.name,
     number: p.number,
     assignment:
-      index < team.settings.playersOnField
-        ? ("field" as const)
-        : ("bench" as const),
+      index < playersOnField ? ("field" as const) : ("bench" as const),
   }));
 }
 
 export function MatchSetupPage(): React.ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { team, loading, loadTeam } = useTeamStore();
+  const { team, players, loading, initialize } = useTeamStore();
   const { createMatch } = useMatchStore();
 
   useEffect(() => {
-    loadTeam();
-  }, [loadTeam]);
+    initialize();
+  }, [initialize]);
 
   // Render a sub-component once team is loaded to avoid
   // the "setState in effect" issue. Initial state derives from team.
@@ -63,7 +56,8 @@ export function MatchSetupPage(): React.ReactNode {
     );
   }
 
-  if (team.players.filter((p) => p.active).length < 2) {
+  const activePlayers = players.filter((p: Player) => p.active);
+  if (activePlayers.length < 2) {
     return (
       <div className="flex flex-col items-center gap-6 py-12">
         <h1 className="text-2xl font-bold">{t("match.setup.title")}</h1>
@@ -83,28 +77,29 @@ export function MatchSetupPage(): React.ReactNode {
   }
 
   return (
-    <MatchSetupForm team={team} createMatch={createMatch} navigate={navigate} />
+    <MatchSetupForm
+      teamId={team.id}
+      players={players}
+      settings={team.settings}
+      createMatch={createMatch}
+      navigate={navigate}
+    />
   );
 }
 
 function MatchSetupForm({
-  team,
+  teamId,
+  players,
+  settings,
   createMatch,
   navigate,
 }: {
-  team: {
-    id: string;
-    players: Array<{
-      id: string;
-      name: string;
-      number?: number;
-      active: boolean;
-    }>;
-    settings: {
-      periodDurationMinutes: number;
-      periodCount: number;
-      playersOnField: number;
-    };
+  teamId: string;
+  players: Player[];
+  settings: {
+    periodDurationMinutes: number;
+    periodCount: number;
+    playersOnField: number;
   };
   createMatch: (params: {
     teamId: string;
@@ -121,14 +116,12 @@ function MatchSetupForm({
   // State initialized directly from team (no effects needed)
   const [opponentName, setOpponentName] = useState("");
   const [periodDuration, setPeriodDuration] = useState(
-    team.settings.periodDurationMinutes,
+    settings.periodDurationMinutes,
   );
-  const [periodCount] = useState(team.settings.periodCount);
-  const [playersOnField, setPlayersOnField] = useState(
-    team.settings.playersOnField,
-  );
+  const [periodCount] = useState(settings.periodCount);
+  const [playersOnField, setPlayersOnField] = useState(settings.playersOnField);
   const [selections, setSelections] = useState<PlayerSelection[]>(() =>
-    buildInitialSelections(team),
+    buildInitialSelections(players, settings.playersOnField),
   );
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
@@ -232,7 +225,7 @@ function MatchSetupForm({
       }));
 
     createMatch({
-      teamId: team.id,
+      teamId,
       opponentName: opponentName.trim(),
       roster,
       periodDurationMinutes: periodDuration,
@@ -248,7 +241,7 @@ function MatchSetupForm({
     periodDuration,
     periodCount,
     requiredOnField,
-    team.id,
+    teamId,
     createMatch,
     navigate,
   ]);
