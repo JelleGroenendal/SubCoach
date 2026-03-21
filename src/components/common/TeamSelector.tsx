@@ -36,7 +36,7 @@ export function TeamSelector(): React.ReactNode {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex min-h-10 items-center gap-2 rounded-lg border border-border px-3 py-1.5",
+          "flex min-h-12 items-center gap-2 rounded-lg border border-border px-3 py-2",
           "touch-manipulation text-sm font-medium transition-colors",
           "hover:bg-accent",
         )}
@@ -87,7 +87,7 @@ export function TeamSelector(): React.ReactNode {
                 type="button"
                 onClick={() => handleSelect(ref.id)}
                 className={cn(
-                  "flex w-full items-center gap-2 px-3 py-2 text-left text-sm",
+                  "flex min-h-12 w-full items-center gap-2 px-3 py-2 text-left text-sm",
                   "touch-manipulation transition-colors first:rounded-t-lg last:rounded-b-lg",
                   ref.id === activeTeamId
                     ? "bg-accent text-accent-foreground"

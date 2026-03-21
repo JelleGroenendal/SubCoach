@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
 import { Button } from "@/components/ui/button";
+import { getSportProfile } from "@/engine/sport-profiles";
 import type { Player } from "@/data/schemas";
 
 const PERIOD_DURATION_OPTIONS = [10, 15, 20, 25, 30] as const;
@@ -144,6 +145,11 @@ export function TeamEditPage(): React.ReactNode {
     [removePlayer, editingPlayerId],
   );
 
+  const sportProfile = useMemo(
+    () => (team ? getSportProfile(team.sportProfileId) : undefined),
+    [team],
+  );
+
   if (loading || !team) {
     return (
       <div className="flex flex-col items-center gap-4 py-16">
@@ -158,6 +164,7 @@ export function TeamEditPage(): React.ReactNode {
     0,
     activePlayers.length - team.settings.playersOnField,
   );
+  const sportName = sportProfile ? t(sportProfile.name) : team.sportProfileId;
 
   return (
     <div className="flex flex-col gap-8 py-6">
@@ -232,7 +239,7 @@ export function TeamEditPage(): React.ReactNode {
               "text-base text-muted-foreground",
             )}
           >
-            {t("sport.handball.name")}
+            {sportName}
           </div>
         </div>
 

@@ -15,6 +15,30 @@
   "sport": {
     "handball": {
       "name": "Handbal"
+    },
+    "football": {
+      "name": "Voetbal"
+    },
+    "futsal": {
+      "name": "Zaalvoetbal"
+    },
+    "basketball": {
+      "name": "Basketbal"
+    },
+    "floorball": {
+      "name": "Floorball"
+    },
+    "iceHockey": {
+      "name": "IJshockey"
+    },
+    "fieldHockey": {
+      "name": "Hockey"
+    },
+    "korfball": {
+      "name": "Korfbal"
+    },
+    "waterPolo": {
+      "name": "Waterpolo"
     }
   },
   "home": {

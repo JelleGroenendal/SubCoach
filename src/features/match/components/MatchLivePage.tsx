@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useMatchStore } from "@/stores/matchStore";
+import { useTeamStore } from "@/stores/teamStore";
 import { Button } from "@/components/ui/button";
 import { formatTime, isPeriodFinished } from "@/engine/timer/matchTimer";
 import { getActivePenalties } from "@/engine/timer/penaltyTimer";
 import { requestWakeLock } from "@/lib/pwa";
+import { getSportProfile } from "@/engine/sport-profiles";
 import type { MatchPlayer } from "@/data/schemas";
 
 type PlayerAction = "penalty" | "redCard" | "injury";
@@ -14,6 +16,20 @@ type PlayerAction = "penalty" | "redCard" | "injury";
 export function MatchLivePage(): React.ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
+
+  const { team } = useTeamStore();
+  const sportProfile = useMemo(
+    () => (team ? getSportProfile(team.sportProfileId) : undefined),
+    [team],
+  );
+
+  // Get the default penalty duration from the sport profile (e.g., 2 minutes for handball)
+  const defaultPenaltyDuration = useMemo((): number => {
+    const timePenalties = sportProfile?.penalties.timePenalties;
+    if (!timePenalties || timePenalties.length === 0) return 120;
+    const firstPenalty = timePenalties[0];
+    return firstPenalty ? firstPenalty.durationSeconds : 120;
+  }, [sportProfile]);
 
   const {
     match,
@@ -279,17 +295,23 @@ export function MatchLivePage(): React.ReactNode {
       selectPlayer(undefined);
       switch (action) {
         case "penalty":
-          registerPenalty(playerId, 120);
+          registerPenalty(playerId, defaultPenaltyDuration);
           break;
         case "redCard":
-          registerRedCard(playerId);
+          registerRedCard(playerId, defaultPenaltyDuration);
           break;
         case "injury":
           registerInjury(playerId);
           break;
       }
     },
-    [selectPlayer, registerPenalty, registerRedCard, registerInjury],
+    [
+      selectPlayer,
+      registerPenalty,
+      registerRedCard,
+      registerInjury,
+      defaultPenaltyDuration,
+    ],
   );
 
   const handleHomeGoal = useCallback(() => {
@@ -536,7 +558,7 @@ export function MatchLivePage(): React.ReactNode {
             type="button"
             onClick={() => setGoalScorerMode(false)}
             className={cn(
-              "min-h-10 touch-manipulation rounded-md px-3 py-1",
+              "min-h-12 touch-manipulation rounded-md px-4 py-2",
               "text-sm text-amber-300",
               "transition-colors hover:bg-amber-900/50",
             )}
@@ -640,7 +662,7 @@ export function MatchLivePage(): React.ReactNode {
                             handlePlayerAction(player.playerId, "penalty")
                           }
                           className={cn(
-                            "min-h-10 touch-manipulation rounded-md px-2 py-1",
+                            "min-h-12 touch-manipulation rounded-md px-3 py-2",
                             "text-left text-sm font-medium text-amber-400",
                             "transition-colors hover:bg-amber-900/30",
                           )}
@@ -653,7 +675,7 @@ export function MatchLivePage(): React.ReactNode {
                             handlePlayerAction(player.playerId, "redCard")
                           }
                           className={cn(
-                            "min-h-10 touch-manipulation rounded-md px-2 py-1",
+                            "min-h-12 touch-manipulation rounded-md px-3 py-2",
                             "text-left text-sm font-medium text-red-400",
                             "transition-colors hover:bg-red-900/30",
                           )}
@@ -666,7 +688,7 @@ export function MatchLivePage(): React.ReactNode {
                             handlePlayerAction(player.playerId, "injury")
                           }
                           className={cn(
-                            "min-h-10 touch-manipulation rounded-md px-2 py-1",
+                            "min-h-12 touch-manipulation rounded-md px-3 py-2",
                             "text-left text-sm font-medium text-orange-400",
                             "transition-colors hover:bg-orange-900/30",
                           )}
@@ -850,7 +872,7 @@ export function MatchLivePage(): React.ReactNode {
             type="button"
             onClick={undoLastAction}
             className={cn(
-              "min-h-10 touch-manipulation rounded-md bg-primary px-3 py-1",
+              "min-h-12 touch-manipulation rounded-md bg-primary px-4 py-2",
               "text-sm font-semibold text-primary-foreground",
               "transition-colors hover:bg-primary/90",
             )}
@@ -862,7 +884,7 @@ export function MatchLivePage(): React.ReactNode {
             type="button"
             onClick={dismissUndo}
             className={cn(
-              "min-h-10 min-w-10 touch-manipulation rounded-md px-2 py-1",
+              "min-h-12 min-w-12 touch-manipulation rounded-md px-3 py-2",
               "text-sm text-muted-foreground",
               "transition-colors hover:bg-accent",
             )}

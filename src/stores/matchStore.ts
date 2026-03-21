@@ -39,7 +39,7 @@ interface MatchState {
   registerOpponentGoal: () => void;
   registerPenalty: (playerId: string, durationSeconds: number) => void;
   endPenalty: (penaltyId: string) => void;
-  registerRedCard: (playerId: string) => void;
+  registerRedCard: (playerId: string, penaltyDurationSeconds?: number) => void;
   registerInjury: (playerId: string) => void;
   undoLastAction: () => void;
   dismissUndo: () => void;
@@ -349,7 +349,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     set({ match: updated, substitutionPlan: plan });
   },
 
-  registerRedCard: (playerId) => {
+  registerRedCard: (playerId, penaltyDurationSeconds = 120) => {
     const { teamId, match } = get();
     if (!teamId || !match) return;
     const event: MatchEvent = {
@@ -357,13 +357,13 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       timestamp: match.elapsedSeconds,
       playerId,
     };
-    // Also start a 2-min penalty for numerical disadvantage
+    // Also start a penalty for numerical disadvantage (duration from sport profile)
     const penaltyId = crypto.randomUUID();
     const penaltyEvent: MatchEvent = {
       type: "penalty",
       timestamp: match.elapsedSeconds,
       playerId,
-      durationSeconds: 120,
+      durationSeconds: penaltyDurationSeconds,
       penaltyId,
     };
     const roster = match.roster.map((p) => {

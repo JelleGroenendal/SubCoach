@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
+import { getSportProfile } from "@/engine/sport-profiles";
 
 export function HomePage(): React.ReactNode {
   const { t } = useTranslation();
@@ -11,6 +12,12 @@ export function HomePage(): React.ReactNode {
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  // Must call hooks before any early returns
+  const sportProfile = useMemo(
+    () => (team ? getSportProfile(team.sportProfileId) : undefined),
+    [team],
+  );
 
   if (loading) {
     return (
@@ -59,6 +66,7 @@ export function HomePage(): React.ReactNode {
     0,
     activePlayers.length - team.settings.playersOnField,
   );
+  const sportName = sportProfile ? t(sportProfile.name) : team.sportProfileId;
 
   return (
     <div className="flex flex-col items-center gap-8 py-8">
@@ -73,9 +81,7 @@ export function HomePage(): React.ReactNode {
           <p className="mt-1 text-sm text-muted-foreground">{team.clubName}</p>
         )}
         <div className="mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground">
-          <span>
-            {t("home.teamInfo.sport", { sport: t("sport.handball.name") })}
-          </span>
+          <span>{t("home.teamInfo.sport", { sport: sportName })}</span>
           <span className="text-border">|</span>
           <span>
             {t("home.teamInfo.playerCount", {
