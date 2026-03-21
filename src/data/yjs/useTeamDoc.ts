@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useCallback, useMemo } from "react";
+import { useSyncExternalStore, useCallback, useRef } from "react";
 import type { Player, Team } from "@/data/schemas";
 import {
   getTeamDoc,
@@ -22,6 +22,12 @@ export function useTeamInfo(teamId: string | undefined): {
   loading: boolean;
   save: (team: Team) => void;
 } {
+  // Cache the snapshot to avoid creating new objects on every render
+  const cacheRef = useRef<{ data: Team | undefined; json: string }>({
+    data: undefined,
+    json: "",
+  });
+
   const subscribe = useCallback(
     (callback: () => void) => {
       if (!teamId) return () => {};
@@ -36,15 +42,17 @@ export function useTeamInfo(teamId: string | undefined): {
 
   const getSnapshot = useCallback((): Team | undefined => {
     if (!teamId) return undefined;
-    return getTeamInfo(teamId);
+    const newData = getTeamInfo(teamId);
+    const newJson = JSON.stringify(newData);
+    if (newJson !== cacheRef.current.json) {
+      cacheRef.current = { data: newData, json: newJson };
+    }
+    return cacheRef.current.data;
   }, [teamId]);
 
   const team = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const loading = useMemo(() => {
-    if (!teamId) return false;
-    return !isTeamSynced(teamId);
-  }, [teamId]);
+  const loading = teamId ? !isTeamSynced(teamId) : false;
 
   const save = useCallback(
     (newTeam: Team) => {
@@ -67,6 +75,12 @@ export function useTeamPlayers(teamId: string | undefined): {
   updatePlayer: (playerId: string, updates: Partial<Player>) => void;
   removePlayer: (playerId: string) => void;
 } {
+  // Cache the snapshot to avoid creating new arrays on every render
+  const cacheRef = useRef<{ data: Player[]; json: string }>({
+    data: [],
+    json: "[]",
+  });
+
   const subscribe = useCallback(
     (callback: () => void) => {
       if (!teamId) return () => {};
@@ -80,16 +94,18 @@ export function useTeamPlayers(teamId: string | undefined): {
   );
 
   const getSnapshot = useCallback((): Player[] => {
-    if (!teamId) return [];
-    return getPlayers(teamId);
+    if (!teamId) return cacheRef.current.data;
+    const newData = getPlayers(teamId);
+    const newJson = JSON.stringify(newData);
+    if (newJson !== cacheRef.current.json) {
+      cacheRef.current = { data: newData, json: newJson };
+    }
+    return cacheRef.current.data;
   }, [teamId]);
 
   const players = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const loading = useMemo(() => {
-    if (!teamId) return false;
-    return !isTeamSynced(teamId);
-  }, [teamId]);
+  const loading = teamId ? !isTeamSynced(teamId) : false;
 
   const addPlayer = useCallback(
     (player: Player) => {

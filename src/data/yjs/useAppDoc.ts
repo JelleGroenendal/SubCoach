@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useCallback, useMemo } from "react";
+import { useSyncExternalStore, useCallback, useRef } from "react";
 import type { TeamRef } from "@/data/schemas";
 import { getAppDoc, waitForAppSync, isAppSynced } from "@/data/yjs/yjsProvider";
 import {
@@ -23,6 +23,12 @@ export function useTeamRefs(): {
   ) => void;
   removeTeamRef: (teamId: string) => void;
 } {
+  // Cache the snapshot to avoid creating new arrays on every render
+  const cacheRef = useRef<{ data: TeamRef[]; json: string }>({
+    data: [],
+    json: "[]",
+  });
+
   const subscribe = useCallback((callback: () => void) => {
     const doc = getAppDoc();
     const arr = doc.getArray<TeamRef>("teamRefs");
@@ -32,12 +38,18 @@ export function useTeamRefs(): {
   }, []);
 
   const getSnapshot = useCallback((): TeamRef[] => {
-    return getTeamRefs();
+    const newData = getTeamRefs();
+    const newJson = JSON.stringify(newData);
+    // Only return a new array if data actually changed
+    if (newJson !== cacheRef.current.json) {
+      cacheRef.current = { data: newData, json: newJson };
+    }
+    return cacheRef.current.data;
   }, []);
 
   const teamRefs = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const loading = useMemo(() => !isAppSynced(), []);
+  const loading = !isAppSynced();
 
   const addTeamRef = useCallback((ref: TeamRef) => {
     addTeamRefToYjs(ref);

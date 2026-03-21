@@ -1,4 +1,4 @@
-import { useSyncExternalStore, useCallback, useMemo } from "react";
+import { useSyncExternalStore, useCallback, useRef } from "react";
 import type { Match } from "@/data/schemas";
 import { getTeamDoc, isTeamSynced } from "@/data/yjs/yjsProvider";
 import {
@@ -19,6 +19,12 @@ export function useCurrentMatch(teamId: string | undefined): {
   saveMatch: (match: Match) => void;
   clearMatch: () => void;
 } {
+  // Cache the snapshot to avoid creating new objects on every render
+  const cacheRef = useRef<{ data: Match | undefined; json: string }>({
+    data: undefined,
+    json: "",
+  });
+
   const subscribe = useCallback(
     (callback: () => void) => {
       if (!teamId) return () => {};
@@ -33,15 +39,17 @@ export function useCurrentMatch(teamId: string | undefined): {
 
   const getSnapshot = useCallback((): Match | undefined => {
     if (!teamId) return undefined;
-    return getCurrentMatchFromYjs(teamId) as Match | undefined;
+    const newData = getCurrentMatchFromYjs(teamId) as Match | undefined;
+    const newJson = JSON.stringify(newData);
+    if (newJson !== cacheRef.current.json) {
+      cacheRef.current = { data: newData, json: newJson };
+    }
+    return cacheRef.current.data;
   }, [teamId]);
 
   const match = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const loading = useMemo(() => {
-    if (!teamId) return false;
-    return !isTeamSynced(teamId);
-  }, [teamId]);
+  const loading = teamId ? !isTeamSynced(teamId) : false;
 
   const saveMatch = useCallback(
     (newMatch: Match) => {
@@ -68,6 +76,12 @@ export function useMatchHistory(teamId: string | undefined): {
   saveToHistory: (match: Match) => void;
   deleteFromHistory: (matchId: string) => void;
 } {
+  // Cache the snapshot to avoid creating new arrays on every render
+  const cacheRef = useRef<{ data: Match[]; json: string }>({
+    data: [],
+    json: "[]",
+  });
+
   const subscribe = useCallback(
     (callback: () => void) => {
       if (!teamId) return () => {};
@@ -81,18 +95,22 @@ export function useMatchHistory(teamId: string | undefined): {
   );
 
   const getSnapshot = useCallback((): Match[] => {
-    if (!teamId) return [];
+    if (!teamId) return cacheRef.current.data;
     const raw = getMatches(teamId);
     // Sort by date descending
-    return (raw as Match[]).sort((a, b) => (b.date ?? 0) - (a.date ?? 0));
+    const newData = (raw as Match[]).sort(
+      (a, b) => (b.date ?? 0) - (a.date ?? 0),
+    );
+    const newJson = JSON.stringify(newData);
+    if (newJson !== cacheRef.current.json) {
+      cacheRef.current = { data: newData, json: newJson };
+    }
+    return cacheRef.current.data;
   }, [teamId]);
 
   const matches = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
-  const loading = useMemo(() => {
-    if (!teamId) return false;
-    return !isTeamSynced(teamId);
-  }, [teamId]);
+  const loading = teamId ? !isTeamSynced(teamId) : false;
 
   const saveToHistory = useCallback(
     (match: Match) => {
