@@ -9,6 +9,9 @@ import { formatTime, isPeriodFinished } from "@/engine/timer/matchTimer";
 import { getActivePenalties } from "@/engine/timer/penaltyTimer";
 import { requestWakeLock } from "@/lib/pwa";
 import { getSportProfile } from "@/engine/sport-profiles";
+import { getTeamDoc } from "@/data/yjs/yjsProvider";
+import { useP2PSync } from "@/data/sync";
+import { P2PSyncPanel } from "./P2PSyncPanel";
 import type { MatchPlayer } from "@/data/schemas";
 
 type MobileTab = "field" | "bench";
@@ -59,7 +62,15 @@ export function MatchLivePage(): React.ReactNode {
   const [goalScorerMode, setGoalScorerMode] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showSyncPanel, setShowSyncPanel] = useState(false);
   const [mobileTab, setMobileTab] = useState<MobileTab>("field");
+
+  // P2P sync
+  const { isConnected, peerCount } = useP2PSync();
+  const teamDoc = useMemo(
+    () => (team ? getTeamDoc(team.id) : undefined),
+    [team],
+  );
   const tickRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const autoSaveRef = useRef<ReturnType<typeof setInterval> | undefined>(
     undefined,
@@ -501,6 +512,23 @@ export function MatchLivePage(): React.ReactNode {
             </button>
             {showMenu && (
               <div className="absolute right-0 top-full z-50 mt-1 min-w-48 rounded-lg border border-border bg-card p-1 shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    setShowSyncPanel(true);
+                  }}
+                  className={cn(
+                    "flex min-h-12 w-full touch-manipulation items-center gap-2 rounded-md px-3 py-2",
+                    "text-sm font-medium",
+                    "transition-colors hover:bg-accent",
+                    isConnected ? "text-green-400" : "text-foreground",
+                  )}
+                >
+                  {isConnected
+                    ? `${t("sync.connected")} (${peerCount + 1})`
+                    : t("sync.title")}
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -1028,6 +1056,13 @@ export function MatchLivePage(): React.ReactNode {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Sync Panel Modal */}
+      {showSyncPanel && teamDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <P2PSyncPanel doc={teamDoc} onClose={() => setShowSyncPanel(false)} />
         </div>
       )}
 

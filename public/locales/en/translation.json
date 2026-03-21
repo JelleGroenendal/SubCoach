@@ -268,6 +268,22 @@
     "offline": "You're offline - app works normally",
     "online": "Back online"
   },
+  "sync": {
+    "title": "Sync with another coach",
+    "description": "Connect with another coach's device to share live match data. Both coaches see the same match in real-time.",
+    "hostRoom": "Start sync session",
+    "joinRoom": "Join sync session",
+    "enterCode": "Enter 6-letter code from the other coach",
+    "roomCode": "Sync code",
+    "coaches": "Connected coaches",
+    "shareCode": "Share this code with the other coach",
+    "shareCodeInstructions": "Give this code to the other coach. They can join using \"Join sync session\".",
+    "connected": "Synced",
+    "connecting": "Connecting...",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "waitingForCoaches": "Waiting for coaches"
+  },
   "settings": {
     "title": "Settings",
     "language": "Language",
