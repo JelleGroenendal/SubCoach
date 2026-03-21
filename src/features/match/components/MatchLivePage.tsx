@@ -40,6 +40,7 @@ export function MatchLivePage(): React.ReactNode {
     substitutionPlan,
     showUndo,
     lastAction,
+    setTeamId,
     loadMatch,
     startTimer,
     pauseTimer,
@@ -77,10 +78,19 @@ export function MatchLivePage(): React.ReactNode {
   );
   const lastTickTimeRef = useRef<number>(0);
 
+  // Set team ID and load match
+  useEffect(() => {
+    if (team) {
+      setTeamId(team.id);
+    }
+  }, [team, setTeamId]);
+
   // Load match if not present
   useEffect(() => {
-    loadMatch();
-  }, [loadMatch]);
+    if (team) {
+      loadMatch();
+    }
+  }, [team, loadMatch]);
 
   // Wake lock
   useEffect(() => {

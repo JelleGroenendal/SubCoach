@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
+import { useMatchStore } from "@/stores/matchStore";
 import { useCurrentMatch } from "@/data/yjs";
 import { Button } from "@/components/ui/button";
 import type { Match } from "@/data/schemas";
@@ -26,6 +27,7 @@ export function CrashRecovery(): React.ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { activeTeamId, initialize } = useTeamStore();
+  const { setTeamId } = useMatchStore();
   const { match, clearMatch } = useCurrentMatch(activeTeamId);
   const [dismissed, setDismissed] = useState(false);
 
@@ -40,9 +42,12 @@ export function CrashRecovery(): React.ReactNode {
   }, [match, dismissed]);
 
   const handleResume = useCallback(() => {
+    if (activeTeamId) {
+      setTeamId(activeTeamId);
+    }
     setDismissed(true);
     navigate("/match/live");
-  }, [navigate]);
+  }, [activeTeamId, setTeamId, navigate]);
 
   const handleDiscard = useCallback(() => {
     if (activeTeamId) {
