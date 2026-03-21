@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { destroyAll } from "@/data/yjs";
 import { Button } from "@/components/ui/button";
+import { KofiButton } from "@/components/common/KofiButton";
 
 const THEME_KEY = "subcoach-theme";
 
@@ -155,27 +156,19 @@ export function SettingsPage(): React.ReactNode {
         <p className="mt-2 text-sm text-muted-foreground">
           {t("settings.aboutDescription")}
         </p>
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 space-y-3">
           <a
             href="https://github.com/JelleGroenendal/SubCoach"
             target="_blank"
             rel="noopener noreferrer"
-            className="min-h-12 touch-manipulation text-sm text-primary underline-offset-4 hover:underline"
+            className="block min-h-12 touch-manipulation text-sm text-primary underline-offset-4 hover:underline"
             aria-label={t("settings.github")}
           >
             {t("settings.github")}
           </a>
-          <p>
-            <a
-              href="https://ko-fi.com/subcoach"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="min-h-12 touch-manipulation text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
-              aria-label={t("settings.donate")}
-            >
-              {t("settings.donate")}
-            </a>
-          </p>
+          <div>
+            <KofiButton />
+          </div>
         </div>
       </div>
 
