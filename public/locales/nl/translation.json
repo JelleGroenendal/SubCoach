@@ -175,7 +175,8 @@
       },
       "selection": {
         "selected": "Geselecteerd: {{name}}",
-        "tapFieldPlayer": "Tik op veldspeler om te wisselen met {{name}}"
+        "tapFieldPlayer": "Tik op veldspeler om te wisselen met {{name}}",
+        "tapBenchPlayer": "{{name}} geselecteerd - tik op bankspeler om te wisselen"
       },
       "out": {
         "title": "Uit",

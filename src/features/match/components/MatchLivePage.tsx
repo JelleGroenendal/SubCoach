@@ -265,37 +265,6 @@ export function MatchLivePage(): React.ReactNode {
     ],
   );
 
-  // Handle action buttons (penalty, red card, injury) for selected field player
-  const handlePenalty = useCallback(() => {
-    if (!selectedPlayerId || !isSelectedOnField) return;
-    registerPenalty(selectedPlayerId, defaultPenaltyDuration);
-    selectPlayer(undefined);
-  }, [
-    selectedPlayerId,
-    isSelectedOnField,
-    registerPenalty,
-    defaultPenaltyDuration,
-    selectPlayer,
-  ]);
-
-  const handleRedCard = useCallback(() => {
-    if (!selectedPlayerId || !isSelectedOnField) return;
-    registerRedCard(selectedPlayerId, defaultPenaltyDuration);
-    selectPlayer(undefined);
-  }, [
-    selectedPlayerId,
-    isSelectedOnField,
-    registerRedCard,
-    defaultPenaltyDuration,
-    selectPlayer,
-  ]);
-
-  const handleInjury = useCallback(() => {
-    if (!selectedPlayerId || !isSelectedOnField) return;
-    registerInjury(selectedPlayerId);
-    selectPlayer(undefined);
-  }, [selectedPlayerId, isSelectedOnField, registerInjury, selectPlayer]);
-
   const handleHomeGoal = useCallback(() => {
     setGoalScorerMode(true);
     selectPlayer(undefined);
@@ -572,55 +541,24 @@ export function MatchLivePage(): React.ReactNode {
         </div>
       )}
 
-      {/* Action bar - Shows when field player selected */}
+      {/* Selection indicator - Shows when field player selected (for substitution) */}
       {isSelectedOnField && selectedPlayer && (
-        <div className="flex items-center gap-2 border-b border-orange-700 bg-orange-900/30 px-3 py-2">
-          <span className="flex-1 text-sm font-medium text-orange-300">
-            {selectedPlayer.name}
+        <div className="flex items-center justify-between border-b border-green-700 bg-green-900/30 px-3 py-2">
+          <span className="text-sm font-medium text-green-300">
+            {t("match.live.selection.tapBenchPlayer", {
+              name: selectedPlayer.name,
+            })}
           </span>
-          <button
-            type="button"
-            onClick={handlePenalty}
-            className={cn(
-              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
-              "text-sm font-medium text-amber-400",
-              "bg-amber-900/50 transition-colors hover:bg-amber-900/70",
-            )}
-          >
-            {t("match.live.actions.penalty")}
-          </button>
-          <button
-            type="button"
-            onClick={handleRedCard}
-            className={cn(
-              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
-              "text-sm font-medium text-red-400",
-              "bg-red-900/50 transition-colors hover:bg-red-900/70",
-            )}
-          >
-            {t("match.live.actions.redCard")}
-          </button>
-          <button
-            type="button"
-            onClick={handleInjury}
-            className={cn(
-              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
-              "text-sm font-medium text-orange-400",
-              "bg-orange-900/50 transition-colors hover:bg-orange-900/70",
-            )}
-          >
-            {t("match.live.actions.injury")}
-          </button>
           <button
             type="button"
             onClick={() => selectPlayer(undefined)}
             className={cn(
-              "min-h-10 min-w-10 touch-manipulation rounded-md px-2 py-1.5",
-              "text-sm text-orange-300",
-              "transition-colors hover:bg-orange-900/50",
+              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
+              "text-sm text-green-300",
+              "transition-colors hover:bg-green-900/50",
             )}
           >
-            ✕
+            {t("common.cancel")}
           </button>
         </div>
       )}
@@ -706,43 +644,93 @@ export function MatchLivePage(): React.ReactNode {
                 const playTimeSeconds = getPlayerPlayTime(player);
 
                 return (
-                  <button
+                  <div
                     key={player.playerId}
-                    type="button"
-                    onClick={() =>
-                      handleFieldPlayerTapWithTabSwitch(player.playerId)
-                    }
                     className={cn(
-                      "flex min-h-20 w-full touch-manipulation flex-col items-center justify-center gap-0.5 rounded-xl p-2 sm:min-h-16 sm:rounded-lg",
-                      "text-center transition-all select-none",
+                      "flex min-h-24 w-full flex-col rounded-xl sm:min-h-20 sm:rounded-lg",
                       "bg-field text-white",
+                      "overflow-hidden",
                       isSelected && "ring-4 ring-orange-400",
                       isSuggestedOut &&
                         !isSelected &&
                         "ring-2 ring-amber-500/60",
                       goalScorerMode && "ring-2 ring-amber-400/50",
                     )}
-                    aria-label={player.name}
                   >
-                    <div className="flex items-center gap-1">
-                      {player.number !== undefined && (
-                        <span className="text-xs font-bold opacity-70">
-                          #{player.number}
-                        </span>
+                    {/* Main tap area - for substitution/goal */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleFieldPlayerTapWithTabSwitch(player.playerId)
+                      }
+                      className={cn(
+                        "flex flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 p-1.5",
+                        "text-center transition-all select-none",
                       )}
-                      {player.goals > 0 && (
-                        <span className="text-xs">
-                          {"⚽".repeat(Math.min(player.goals, 5))}
-                        </span>
-                      )}
+                      aria-label={player.name}
+                    >
+                      <div className="flex items-center gap-1">
+                        {player.number !== undefined && (
+                          <span className="text-xs font-bold opacity-70">
+                            #{player.number}
+                          </span>
+                        )}
+                        {player.goals > 0 && (
+                          <span className="text-xs">
+                            {"⚽".repeat(Math.min(player.goals, 5))}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm font-semibold leading-tight sm:text-base">
+                        {player.name}
+                      </span>
+                      <span className="text-[10px] tabular-nums opacity-70 sm:text-xs">
+                        {formatTime(Math.floor(playTimeSeconds))}
+                      </span>
+                    </button>
+                    {/* Quick action buttons */}
+                    <div className="flex border-t border-white/20">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          registerPenalty(
+                            player.playerId,
+                            defaultPenaltyDuration,
+                          );
+                        }}
+                        className="flex-1 touch-manipulation py-1.5 text-[10px] font-medium text-amber-300 transition-colors hover:bg-amber-900/50 sm:text-xs"
+                        aria-label={t("match.live.actions.penalty")}
+                      >
+                        2m
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          registerRedCard(
+                            player.playerId,
+                            defaultPenaltyDuration,
+                          );
+                        }}
+                        className="flex-1 touch-manipulation border-x border-white/20 py-1.5 text-[10px] font-medium text-red-400 transition-colors hover:bg-red-900/50 sm:text-xs"
+                        aria-label={t("match.live.actions.redCard")}
+                      >
+                        🟥
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          registerInjury(player.playerId);
+                        }}
+                        className="flex-1 touch-manipulation py-1.5 text-[10px] font-medium text-orange-300 transition-colors hover:bg-orange-900/50 sm:text-xs"
+                        aria-label={t("match.live.actions.injury")}
+                      >
+                        🤕
+                      </button>
                     </div>
-                    <span className="text-base font-semibold leading-tight sm:text-base lg:text-lg">
-                      {player.name}
-                    </span>
-                    <span className="text-xs tabular-nums opacity-70">
-                      {formatTime(Math.floor(playTimeSeconds))}
-                    </span>
-                  </button>
+                  </div>
                 );
               })}
 

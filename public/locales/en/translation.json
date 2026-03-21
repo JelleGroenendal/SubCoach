@@ -175,7 +175,8 @@
       },
       "selection": {
         "selected": "Selected: {{name}}",
-        "tapFieldPlayer": "Tap field player to substitute with {{name}}"
+        "tapFieldPlayer": "Tap field player to substitute with {{name}}",
+        "tapBenchPlayer": "{{name}} selected - tap bench player to substitute"
       },
       "out": {
         "title": "Out",
