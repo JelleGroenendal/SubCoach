@@ -9,19 +9,22 @@ import { HistoryListPage } from "@/features/history/components/HistoryListPage";
 import { HistoryDetailPage } from "@/features/history/components/HistoryDetailPage";
 import { SettingsPage } from "@/features/settings/components/SettingsPage";
 
-export const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Layout />,
-    children: [
-      { index: true, element: <HomePage /> },
-      { path: "team/edit", element: <TeamEditPage /> },
-      { path: "match/setup", element: <MatchSetupPage /> },
-      { path: "match/live", element: <MatchLivePage /> },
-      { path: "match/summary", element: <MatchSummaryPage /> },
-      { path: "history", element: <HistoryListPage /> },
-      { path: "history/:id", element: <HistoryDetailPage /> },
-      { path: "settings", element: <SettingsPage /> },
-    ],
-  },
-]);
+export const router = createBrowserRouter(
+  [
+    {
+      path: "/",
+      element: <Layout />,
+      children: [
+        { index: true, element: <HomePage /> },
+        { path: "team/edit", element: <TeamEditPage /> },
+        { path: "match/setup", element: <MatchSetupPage /> },
+        { path: "match/live", element: <MatchLivePage /> },
+        { path: "match/summary", element: <MatchSummaryPage /> },
+        { path: "history", element: <HistoryListPage /> },
+        { path: "history/:id", element: <HistoryDetailPage /> },
+        { path: "settings", element: <SettingsPage /> },
+      ],
+    },
+  ],
+  { basename: import.meta.env.BASE_URL },
+);

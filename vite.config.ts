@@ -4,7 +4,10 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 
+const base = process.env.GITHUB_ACTIONS ? "/SubCoach/" : "/";
+
 export default defineConfig({
+  base,
   plugins: [
     react(),
     tailwindcss(),
@@ -19,21 +22,21 @@ export default defineConfig({
         background_color: "#09090b",
         display: "standalone",
         orientation: "any",
-        scope: "/",
-        start_url: "/",
+        scope: base,
+        start_url: base,
         icons: [
           {
-            src: "/icons/icon-192.png",
+            src: "icons/icon-192.png",
             sizes: "192x192",
             type: "image/png",
           },
           {
-            src: "/icons/icon-512.png",
+            src: "icons/icon-512.png",
             sizes: "512x512",
             type: "image/png",
           },
           {
-            src: "/icons/icon-512-maskable.png",
+            src: "icons/icon-512-maskable.png",
             sizes: "512x512",
             type: "image/png",
             purpose: "maskable",
