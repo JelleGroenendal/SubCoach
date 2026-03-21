@@ -1,51 +1,223 @@
 {
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "dismiss": "Dismiss"
+  },
   "nav": {
     "home": "Home",
     "history": "History",
     "settings": "Settings"
+  },
+  "sport": {
+    "handball": {
+      "name": "Handball"
+    }
   },
   "home": {
     "title": "SubCoach",
     "subtitle": "Real-time substitution management for coaches",
     "editTeam": "Manage team",
     "startMatch": "Start match",
-    "matchHistory": "History"
+    "matchHistory": "History",
+    "welcome": {
+      "title": "Welcome to SubCoach",
+      "description": "Create your team and start with automatic substitution management. Works 100% offline.",
+      "createTeam": "Create your team"
+    },
+    "teamInfo": {
+      "sport": "{{sport}}",
+      "playerCount": "{{total}} players ({{field}} field, {{bench}} bench)",
+      "period": "{{count}}x {{duration}} min"
+    }
   },
   "team": {
     "edit": {
       "title": "Manage team",
-      "description": "Add players and adjust team settings."
+      "description": "Add players and adjust team settings.",
+      "defaultTeamName": "My team",
+      "settings": {
+        "title": "Team settings",
+        "teamName": "Team name",
+        "teamNamePlaceholder": "Enter team name",
+        "clubName": "Club name (optional)",
+        "clubNamePlaceholder": "Enter club name",
+        "sport": "Sport",
+        "periodDuration": "Period duration",
+        "periodDurationValue": "{{minutes}} minutes",
+        "periodCount": "Number of periods",
+        "playersOnField": "Players on field",
+        "playersOnFieldValue": "{{total}} players ({{format}})"
+      },
+      "players": {
+        "title": "Players",
+        "count": "{{total}} players ({{field}} on field, {{bench}} on bench)",
+        "empty": "No players added yet. Add your first player below.",
+        "namePlaceholder": "Player name",
+        "add": "Add",
+        "edit": "Edit {{name}}",
+        "remove": "Remove {{name}}"
+      }
     }
   },
   "match": {
     "setup": {
       "title": "Match setup",
-      "description": "Select available players and confirm settings."
+      "description": "Select available players and confirm settings.",
+      "notEnoughPlayers": "You need at least 2 active players. Go to team management to add players.",
+      "goToTeam": "Go to team management",
+      "opponent": {
+        "title": "Opponent",
+        "placeholder": "Opponent team name"
+      },
+      "settings": {
+        "title": "Match settings"
+      },
+      "players": {
+        "title": "Selection",
+        "fieldCount": "{{current}}/{{required}} on field ({{total}} available)",
+        "instructions": "Tap to toggle field/bench. Long-press or right-click to mark unavailable.",
+        "togglePlayer": "Toggle {{name}} between field/bench",
+        "statusField": "Field",
+        "statusBench": "Bench",
+        "statusUnavailable": "Unavailable"
+      },
+      "startMatch": "Start match",
+      "validation": {
+        "needOpponent": "Enter the opponent team name",
+        "needPlayers": "Select {{required}} field players (currently {{current}} selected)"
+      }
     },
     "live": {
-      "title": "Match"
+      "title": "Match",
+      "timer": {
+        "toggle": "Start or pause the clock",
+        "running": "Playing",
+        "paused": "Paused",
+        "tapToStart": "Tap to start",
+        "startNextPeriod": "Tap for period {{period}}",
+        "matchEnded": "Match ended"
+      },
+      "score": {
+        "addHome": "Home team goal",
+        "addAway": "Opponent goal"
+      },
+      "period": "Period {{period}}",
+      "field": {
+        "title": "Field",
+        "playerAction": "Action for {{name}}",
+        "moreActions": "More actions for {{name}}",
+        "penaltyRemaining": "{{time}}"
+      },
+      "bench": {
+        "title": "Bench",
+        "selectPlayer": "Select {{name}} for substitution",
+        "empty": "No players on bench"
+      },
+      "goal": {
+        "selectScorer": "Tap the goal scorer"
+      },
+      "actions": {
+        "penalty": "2-min penalty",
+        "redCard": "Red card",
+        "injury": "Injury"
+      },
+      "undo": {
+        "button": "Undo",
+        "action": "Undo",
+        "substitution": "Substitution: {{playerIn}} in, {{playerOut}} out",
+        "goal": "Goal by {{player}}",
+        "opponentGoal": "Opponent goal",
+        "penalty": "2-min penalty for {{player}}",
+        "redCard": "Red card for {{player}}",
+        "injury": "Injury of {{player}}"
+      },
+      "penalties": {
+        "title": "Penalties:"
+      },
+      "suggestion": {
+        "next": "Next sub: {{playerIn}} for {{playerOut}} ({{time}})"
+      },
+      "endMatch": {
+        "title": "End match",
+        "confirm": "Are you sure you want to end the match? This cannot be undone.",
+        "confirm_button": "End match"
+      },
+      "menu": {
+        "button": "Menu",
+        "endMatch": "End match"
+      }
+    },
+    "warnings": {
+      "tooManyPlayersForTime": "Too many players for remaining play time",
+      "lowPlayTime": "Some players are getting very little play time"
     },
     "summary": {
       "title": "Match summary",
-      "description": "Overview of play times, goals and substitutions."
+      "description": "Overview of play times, goals and substitutions.",
+      "noMatch": "No match found.",
+      "backHome": "Back to home",
+      "vs": "vs {{opponent}}",
+      "fairness": "Fairness score",
+      "fairnessDescription": "How equally play time is distributed (0-100).",
+      "playTime": "Play time per player",
+      "goals": "Goals",
+      "substitutions": "Substitutions",
+      "penalties": "Penalties",
+      "done": "Done"
     }
   },
   "history": {
     "list": {
       "title": "Match history",
-      "description": "All played matches."
+      "description": "All played matches.",
+      "searchPlaceholder": "Search by opponent...",
+      "empty": "No matches played yet.",
+      "noResults": "No matches found.",
+      "deleteConfirm": "Are you sure you want to delete the match against {{opponent}}?",
+      "viewMatch": "View match against {{opponent}}",
+      "deleteMatch": "Delete match against {{opponent}}"
     },
     "detail": {
       "title": "Match details",
-      "matchId": "Match: {{id}}"
+      "matchId": "Match: {{id}}",
+      "loading": "Loading...",
+      "notFound": "Match not found",
+      "notFoundDescription": "This match does not exist or has been deleted.",
+      "backToHistory": "Back to history",
+      "timeline": "Timeline",
+      "event": {
+        "substitution": "Substitution: {{playerOut}} \u2192 {{playerIn}}",
+        "goal": "Goal: {{player}}",
+        "opponentGoal": "Opponent goal",
+        "penalty": "{{duration}}-min penalty: {{player}}",
+        "redCard": "Red card: {{player}}",
+        "injury": "Injury: {{player}}",
+        "periodStart": "Period {{period}} started",
+        "periodEnd": "Period {{period}} ended",
+        "timeout": "Timeout"
+      }
     }
   },
   "settings": {
     "title": "Settings",
     "language": "Language",
     "languageDescription": "Choose the app language.",
+    "theme": "Theme",
+    "themeDescription": "Toggle between dark and light theme.",
+    "toggleTheme": "Toggle theme",
     "about": "About SubCoach",
-    "aboutDescription": "SubCoach is a free, open-source substitution management app for team sport coaches. Works 100% offline.",
+    "aboutDescription": "Open-source substitution management for coaches. Works 100% offline, no account needed.",
+    "github": "View on GitHub",
+    "donate": "Support SubCoach via Ko-fi",
+    "dangerZone": "Danger zone",
+    "dangerZoneDescription": "Delete all saved data, including teams and matches.",
+    "deleteAllData": "Delete all data",
+    "deleteConfirm1": "Are you sure?",
+    "deleteConfirm2": "Really sure? All teams and matches will be deleted.",
     "version": "Version {{version}}"
   }
 }

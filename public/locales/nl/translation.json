@@ -1,51 +1,223 @@
 {
+  "common": {
+    "loading": "Laden...",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "edit": "Bewerk",
+    "delete": "Verwijder",
+    "dismiss": "Sluiten"
+  },
   "nav": {
     "home": "Home",
     "history": "Geschiedenis",
     "settings": "Instellingen"
+  },
+  "sport": {
+    "handball": {
+      "name": "Handbal"
+    }
   },
   "home": {
     "title": "SubCoach",
     "subtitle": "Real-time wisselmanagement voor coaches",
     "editTeam": "Team beheren",
     "startMatch": "Wedstrijd starten",
-    "matchHistory": "Geschiedenis"
+    "matchHistory": "Geschiedenis",
+    "welcome": {
+      "title": "Welkom bij SubCoach",
+      "description": "Maak je team aan en start direct met automatisch wisselmanagement. Werkt 100% offline.",
+      "createTeam": "Maak je team aan"
+    },
+    "teamInfo": {
+      "sport": "{{sport}}",
+      "playerCount": "{{total}} spelers ({{field}} veld, {{bench}} bank)",
+      "period": "{{count}}x {{duration}} min"
+    }
   },
   "team": {
     "edit": {
       "title": "Team beheren",
-      "description": "Voeg spelers toe en pas teaminstellingen aan."
+      "description": "Voeg spelers toe en pas teaminstellingen aan.",
+      "defaultTeamName": "Mijn team",
+      "settings": {
+        "title": "Teaminstellingen",
+        "teamName": "Teamnaam",
+        "teamNamePlaceholder": "Voer teamnaam in",
+        "clubName": "Clubnaam (optioneel)",
+        "clubNamePlaceholder": "Voer clubnaam in",
+        "sport": "Sport",
+        "periodDuration": "Speeltijd per helft",
+        "periodDurationValue": "{{minutes}} minuten",
+        "periodCount": "Aantal helften",
+        "playersOnField": "Spelers op het veld",
+        "playersOnFieldValue": "{{total}} spelers ({{format}})"
+      },
+      "players": {
+        "title": "Spelers",
+        "count": "{{total}} spelers ({{field}} op veld, {{bench}} op bank)",
+        "empty": "Nog geen spelers toegevoegd. Voeg hieronder je eerste speler toe.",
+        "namePlaceholder": "Naam speler",
+        "add": "Toevoegen",
+        "edit": "Bewerk {{name}}",
+        "remove": "Verwijder {{name}}"
+      }
     }
   },
   "match": {
     "setup": {
       "title": "Wedstrijd voorbereiden",
-      "description": "Selecteer beschikbare spelers en bevestig de instellingen."
+      "description": "Selecteer beschikbare spelers en bevestig de instellingen.",
+      "notEnoughPlayers": "Je hebt minimaal 2 actieve spelers nodig. Ga naar teambeheer om spelers toe te voegen.",
+      "goToTeam": "Naar teambeheer",
+      "opponent": {
+        "title": "Tegenstander",
+        "placeholder": "Naam van de tegenstander"
+      },
+      "settings": {
+        "title": "Wedstrijdinstellingen"
+      },
+      "players": {
+        "title": "Selectie",
+        "fieldCount": "{{current}}/{{required}} op het veld ({{total}} beschikbaar)",
+        "instructions": "Tik om te wisselen tussen veld/bank. Lang indrukken of rechts-klik om afwezig te melden.",
+        "togglePlayer": "Wissel {{name}} tussen veld/bank",
+        "statusField": "Veld",
+        "statusBench": "Bank",
+        "statusUnavailable": "Afwezig"
+      },
+      "startMatch": "Start wedstrijd",
+      "validation": {
+        "needOpponent": "Vul de naam van de tegenstander in",
+        "needPlayers": "Selecteer {{required}} veldspelers (nu {{current}} geselecteerd)"
+      }
     },
     "live": {
-      "title": "Wedstrijd"
+      "title": "Wedstrijd",
+      "timer": {
+        "toggle": "Start of pauzeer de klok",
+        "running": "Speelt",
+        "paused": "Gepauzeerd",
+        "tapToStart": "Tik om te starten",
+        "startNextPeriod": "Tik voor helft {{period}}",
+        "matchEnded": "Wedstrijd afgelopen"
+      },
+      "score": {
+        "addHome": "Doelpunt eigen team",
+        "addAway": "Doelpunt tegenstander"
+      },
+      "period": "Helft {{period}}",
+      "field": {
+        "title": "Veld",
+        "playerAction": "Actie voor {{name}}",
+        "moreActions": "Meer acties voor {{name}}",
+        "penaltyRemaining": "{{time}}"
+      },
+      "bench": {
+        "title": "Bank",
+        "selectPlayer": "Selecteer {{name}} voor wissel",
+        "empty": "Geen spelers op de bank"
+      },
+      "goal": {
+        "selectScorer": "Tik op de doelpuntenmaker"
+      },
+      "actions": {
+        "penalty": "2-min straf",
+        "redCard": "Rode kaart",
+        "injury": "Blessure"
+      },
+      "undo": {
+        "button": "Herstel",
+        "action": "Ongedaan maken",
+        "substitution": "Wissel: {{playerIn}} erin, {{playerOut}} eruit",
+        "goal": "Doelpunt van {{player}}",
+        "opponentGoal": "Tegendoelpunt",
+        "penalty": "2-min straf voor {{player}}",
+        "redCard": "Rode kaart voor {{player}}",
+        "injury": "Blessure van {{player}}"
+      },
+      "penalties": {
+        "title": "Straffen:"
+      },
+      "suggestion": {
+        "next": "Volgende wissel: {{playerIn}} voor {{playerOut}} ({{time}})"
+      },
+      "endMatch": {
+        "title": "Wedstrijd beëindigen",
+        "confirm": "Weet je zeker dat je de wedstrijd wilt beëindigen? Dit kan niet ongedaan worden gemaakt.",
+        "confirm_button": "Beëindigen"
+      },
+      "menu": {
+        "button": "Menu",
+        "endMatch": "Wedstrijd beëindigen"
+      }
+    },
+    "warnings": {
+      "tooManyPlayersForTime": "Te veel spelers voor de resterende speeltijd",
+      "lowPlayTime": "Sommige spelers krijgen weinig speeltijd"
     },
     "summary": {
       "title": "Wedstrijd samenvatting",
-      "description": "Overzicht van speeltijden, doelpunten en wissels."
+      "description": "Overzicht van speeltijden, doelpunten en wissels.",
+      "noMatch": "Geen wedstrijd gevonden.",
+      "backHome": "Terug naar home",
+      "vs": "vs {{opponent}}",
+      "fairness": "Eerlijkheidsscore",
+      "fairnessDescription": "Hoe gelijk de speeltijd verdeeld is (0-100).",
+      "playTime": "Speeltijd per speler",
+      "goals": "Doelpunten",
+      "substitutions": "Wissels",
+      "penalties": "Straffen",
+      "done": "Klaar"
     }
   },
   "history": {
     "list": {
       "title": "Wedstrijdgeschiedenis",
-      "description": "Alle gespeelde wedstrijden."
+      "description": "Alle gespeelde wedstrijden.",
+      "searchPlaceholder": "Zoek op tegenstander...",
+      "empty": "Nog geen wedstrijden gespeeld.",
+      "noResults": "Geen wedstrijden gevonden.",
+      "deleteConfirm": "Weet je zeker dat je de wedstrijd tegen {{opponent}} wilt verwijderen?",
+      "viewMatch": "Bekijk wedstrijd tegen {{opponent}}",
+      "deleteMatch": "Verwijder wedstrijd tegen {{opponent}}"
     },
     "detail": {
       "title": "Wedstrijd details",
-      "matchId": "Wedstrijd: {{id}}"
+      "matchId": "Wedstrijd: {{id}}",
+      "loading": "Laden...",
+      "notFound": "Wedstrijd niet gevonden",
+      "notFoundDescription": "Deze wedstrijd bestaat niet of is verwijderd.",
+      "backToHistory": "Terug naar geschiedenis",
+      "timeline": "Tijdlijn",
+      "event": {
+        "substitution": "Wissel: {{playerOut}} \u2192 {{playerIn}}",
+        "goal": "Doelpunt: {{player}}",
+        "opponentGoal": "Tegendoelpunt",
+        "penalty": "{{duration}}-min straf: {{player}}",
+        "redCard": "Rode kaart: {{player}}",
+        "injury": "Blessure: {{player}}",
+        "periodStart": "Helft {{period}} gestart",
+        "periodEnd": "Helft {{period}} beëindigd",
+        "timeout": "Timeout"
+      }
     }
   },
   "settings": {
     "title": "Instellingen",
     "language": "Taal",
     "languageDescription": "Kies de taal van de app.",
+    "theme": "Thema",
+    "themeDescription": "Schakel tussen donker en licht thema.",
+    "toggleTheme": "Wissel thema",
     "about": "Over SubCoach",
-    "aboutDescription": "SubCoach is een gratis, open-source wisselmanagement app voor teamsportcoaches. Werkt 100% offline.",
+    "aboutDescription": "Open-source wisselmanagement voor coaches. Werkt 100% offline, geen account nodig.",
+    "github": "Bekijk op GitHub",
+    "donate": "Steun SubCoach via Ko-fi",
+    "dangerZone": "Gevarenzone",
+    "dangerZoneDescription": "Verwijder alle opgeslagen data, inclusief teams en wedstrijden.",
+    "deleteAllData": "Alle data wissen",
+    "deleteConfirm1": "Weet je het zeker?",
+    "deleteConfirm2": "Echt zeker? Alle teams en wedstrijden worden verwijderd.",
     "version": "Versie {{version}}"
   }
 }
