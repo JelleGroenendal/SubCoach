@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "home": "Home",
+    "history": "Geschiedenis",
+    "settings": "Instellingen"
+  },
+  "home": {
+    "title": "SubCoach",
+    "subtitle": "Real-time wisselmanagement voor coaches",
+    "editTeam": "Team beheren",
+    "startMatch": "Wedstrijd starten",
+    "matchHistory": "Geschiedenis"
+  },
+  "team": {
+    "edit": {
+      "title": "Team beheren",
+      "description": "Voeg spelers toe en pas teaminstellingen aan."
+    }
+  },
+  "match": {
+    "setup": {
+      "title": "Wedstrijd voorbereiden",
+      "description": "Selecteer beschikbare spelers en bevestig de instellingen."
+    },
+    "live": {
+      "title": "Wedstrijd"
+    },
+    "summary": {
+      "title": "Wedstrijd samenvatting",
+      "description": "Overzicht van speeltijden, doelpunten en wissels."
+    }
+  },
+  "history": {
+    "list": {
+      "title": "Wedstrijdgeschiedenis",
+      "description": "Alle gespeelde wedstrijden."
+    },
+    "detail": {
+      "title": "Wedstrijd details",
+      "matchId": "Wedstrijd: {{id}}"
+    }
+  },
+  "settings": {
+    "title": "Instellingen",
+    "language": "Taal",
+    "languageDescription": "Kies de taal van de app.",
+    "about": "Over SubCoach",
+    "aboutDescription": "SubCoach is een gratis, open-source wisselmanagement app voor teamsportcoaches. Werkt 100% offline.",
+    "version": "Versie {{version}}"
+  }
+}

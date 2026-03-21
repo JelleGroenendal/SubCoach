@@ -1,0 +1,51 @@
+{
+  "nav": {
+    "home": "Home",
+    "history": "History",
+    "settings": "Settings"
+  },
+  "home": {
+    "title": "SubCoach",
+    "subtitle": "Real-time substitution management for coaches",
+    "editTeam": "Manage team",
+    "startMatch": "Start match",
+    "matchHistory": "History"
+  },
+  "team": {
+    "edit": {
+      "title": "Manage team",
+      "description": "Add players and adjust team settings."
+    }
+  },
+  "match": {
+    "setup": {
+      "title": "Match setup",
+      "description": "Select available players and confirm settings."
+    },
+    "live": {
+      "title": "Match"
+    },
+    "summary": {
+      "title": "Match summary",
+      "description": "Overview of play times, goals and substitutions."
+    }
+  },
+  "history": {
+    "list": {
+      "title": "Match history",
+      "description": "All played matches."
+    },
+    "detail": {
+      "title": "Match details",
+      "matchId": "Match: {{id}}"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "languageDescription": "Choose the app language.",
+    "about": "About SubCoach",
+    "aboutDescription": "SubCoach is a free, open-source substitution management app for team sport coaches. Works 100% offline.",
+    "version": "Version {{version}}"
+  }
+}
