@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { destroyAll } from "@/data/yjs";
@@ -133,6 +134,25 @@ export function SettingsPage(): React.ReactNode {
             )}
           </button>
         </div>
+      </div>
+
+      {/* Help */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <h2 className="font-semibold">{t("settings.help")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t("settings.helpDescription")}
+        </p>
+        <Link
+          to="/help"
+          className={cn(
+            "mt-3 inline-flex min-h-12 touch-manipulation items-center gap-2 rounded-lg border border-border bg-background px-4 py-2",
+            "text-sm font-medium text-foreground",
+            "transition-colors hover:bg-accent",
+          )}
+        >
+          <span>❓</span>
+          {t("settings.helpLink")}
+        </Link>
       </div>
 
       {/* About */}

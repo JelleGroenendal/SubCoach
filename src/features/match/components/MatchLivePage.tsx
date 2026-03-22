@@ -636,6 +636,21 @@ export function MatchLivePage(): React.ReactNode {
                   type="button"
                   onClick={() => {
                     setShowMenu(false);
+                    navigate("/help");
+                  }}
+                  className={cn(
+                    "flex min-h-12 w-full touch-manipulation items-center gap-2 rounded-md px-3 py-2",
+                    "text-sm font-medium text-foreground",
+                    "transition-colors hover:bg-accent",
+                  )}
+                >
+                  <span>❓</span>
+                  {t("match.live.menu.help")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
                     setShowEndConfirm(true);
                   }}
                   className={cn(

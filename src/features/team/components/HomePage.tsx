@@ -1,13 +1,25 @@
 import { useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
 import { getSportProfile } from "@/engine/sport-profiles";
 
+function shouldShowHelp(): boolean {
+  return localStorage.getItem("subcoach_help_seen") !== "true";
+}
+
 export function HomePage(): React.ReactNode {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { team, players, loading, initialize } = useTeamStore();
+
+  // Redirect to help page on first use
+  useEffect(() => {
+    if (shouldShowHelp()) {
+      navigate("/help", { replace: true });
+    }
+  }, [navigate]);
 
   useEffect(() => {
     initialize();

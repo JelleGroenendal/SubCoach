@@ -3,6 +3,7 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "i18next";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { PWAUpdatePrompt } from "@/components/common/PWAUpdatePrompt";
+import { InstallPrompt } from "@/components/common/InstallPrompt";
 import { OfflineIndicator } from "@/components/common/OfflineIndicator";
 import { AutoSyncProvider } from "@/components/common/AutoSyncProvider";
 
@@ -25,6 +26,7 @@ export function Providers({ children }: ProvidersProps): ReactNode {
           <AutoSyncProvider />
           {children}
           <PWAUpdatePrompt />
+          <InstallPrompt />
         </Suspense>
       </I18nextProvider>
     </ErrorBoundary>

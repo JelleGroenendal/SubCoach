@@ -355,6 +355,7 @@
       },
       "menu": {
         "button": "Menu",
+        "help": "Hulp",
         "endMatch": "Wedstrijd beëindigen"
       }
     },
@@ -440,6 +441,14 @@
     "offline": "Je bent offline - app werkt normaal",
     "online": "Weer online"
   },
+  "pwa": {
+    "install": {
+      "title": "Installeer SubCoach",
+      "description": "Voeg toe aan je startscherm voor snelle toegang",
+      "button": "Installeren",
+      "later": "Later"
+    }
+  },
   "sync": {
     "title": "Synchroniseer met andere coach",
     "description": "Verbind met het apparaat van een andere coach om live wedstrijddata te delen. Beide coaches zien dezelfde wedstrijd in real-time.",
@@ -508,6 +517,9 @@
     "theme": "Thema",
     "themeDescription": "Schakel tussen donker en licht thema.",
     "toggleTheme": "Wissel thema",
+    "help": "Hulp",
+    "helpDescription": "Leer hoe SubCoach werkt.",
+    "helpLink": "Hoe werkt SubCoach?",
     "about": "Over SubCoach",
     "aboutDescription": "Open-source wisselmanagement voor coaches. Werkt 100% offline, geen account nodig.",
     "github": "Bekijk op GitHub",
@@ -540,5 +552,69 @@
     "avgPlayTime": "Gem",
     "playPercent": "%",
     "goals": "Goals"
+  },
+  "help": {
+    "skip": "Overslaan",
+    "start": "Aan de slag",
+    "welcome": {
+      "title": "Welkom bij SubCoach",
+      "subtitle": "De wisselassistent voor coaches"
+    },
+    "team": {
+      "title": "Team klaarzetten",
+      "item1": "Maak een team aan",
+      "item2": "Voeg spelers toe (naam + nummer)",
+      "item3": "Kies je sport"
+    },
+    "preparation": {
+      "title": "Wedstrijd voorbereiden",
+      "item1": "Vul de tegenstander in",
+      "item2": "Tik spelers aan voor het veld",
+      "item3": "Selecteer de keeper 🧤"
+    },
+    "match": {
+      "title": "Tijdens de wedstrijd",
+      "clock": {
+        "title": "Klok",
+        "description": "Tik op de tijd om te starten of pauzeren"
+      },
+      "substitution": {
+        "title": "Wisselen",
+        "description": "Tik veldspeler → tik bankspeler (of andersom)"
+      },
+      "goalHome": {
+        "title": "Doelpunt eigen team",
+        "description": "Tik ⚽ op de kaart van de scorer"
+      },
+      "goalAway": {
+        "title": "Doelpunt tegenstander",
+        "description": "Tik +1 naast de score"
+      },
+      "cards": {
+        "title": "Kaarten & straffen",
+        "description": "Gebruik de knoppen onder de spelerkaart"
+      },
+      "injury": {
+        "title": "Blessure",
+        "description": "Tik 🤕 om de speler eruit te halen"
+      }
+    },
+    "suggestions": {
+      "title": "Wisselvoorstellen",
+      "description": "De app toont wie je kunt wisselen voor eerlijke speeltijd.",
+      "action": "Tik op de suggestie om direct te wisselen, of negeer en kies zelf.",
+      "youDecide": "Jij beslist altijd!"
+    },
+    "keeper": {
+      "title": "Keeper",
+      "item1": "GK badge toont de keeper",
+      "item2": "Bij wisselen gaat de badge automatisch mee"
+    },
+    "tips": {
+      "title": "Tips",
+      "item1": "Werkt zonder internet",
+      "item2": "Installeer als app via je browsermenu",
+      "item3": "Data blijft op je apparaat"
+    }
   }
 }

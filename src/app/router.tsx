@@ -9,6 +9,7 @@ import { HistoryListPage } from "@/features/history/components/HistoryListPage";
 import { HistoryDetailPage } from "@/features/history/components/HistoryDetailPage";
 import { SeasonStatsPage } from "@/features/statistics/components/SeasonStatsPage";
 import { SettingsPage } from "@/features/settings/components/SettingsPage";
+import { HelpPage } from "@/features/help/components/HelpPage";
 
 export const router = createBrowserRouter(
   [
@@ -25,6 +26,7 @@ export const router = createBrowserRouter(
         { path: "history/:id", element: <HistoryDetailPage /> },
         { path: "stats", element: <SeasonStatsPage /> },
         { path: "settings", element: <SettingsPage /> },
+        { path: "help", element: <HelpPage /> },
       ],
     },
   ],

@@ -355,6 +355,7 @@
       },
       "menu": {
         "button": "Menu",
+        "help": "Help",
         "endMatch": "End match"
       }
     },
@@ -440,6 +441,14 @@
     "offline": "You're offline - app works normally",
     "online": "Back online"
   },
+  "pwa": {
+    "install": {
+      "title": "Install SubCoach",
+      "description": "Add to your home screen for quick access",
+      "button": "Install",
+      "later": "Later"
+    }
+  },
   "sync": {
     "title": "Sync with another coach",
     "description": "Connect with another coach's device to share live match data. Both coaches see the same match in real-time.",
@@ -508,6 +517,9 @@
     "theme": "Theme",
     "themeDescription": "Toggle between dark and light theme.",
     "toggleTheme": "Toggle theme",
+    "help": "Help",
+    "helpDescription": "Learn how SubCoach works.",
+    "helpLink": "How does SubCoach work?",
     "about": "About SubCoach",
     "aboutDescription": "Open-source substitution management for coaches. Works 100% offline, no account needed.",
     "github": "View on GitHub",
@@ -540,5 +552,69 @@
     "avgPlayTime": "Avg",
     "playPercent": "%",
     "goals": "Goals"
+  },
+  "help": {
+    "skip": "Skip",
+    "start": "Get started",
+    "welcome": {
+      "title": "Welcome to SubCoach",
+      "subtitle": "The substitution assistant for coaches"
+    },
+    "team": {
+      "title": "Set up your team",
+      "item1": "Create a team",
+      "item2": "Add players (name + number)",
+      "item3": "Choose your sport"
+    },
+    "preparation": {
+      "title": "Prepare the match",
+      "item1": "Enter the opponent",
+      "item2": "Tap players for the field",
+      "item3": "Select the goalkeeper 🧤"
+    },
+    "match": {
+      "title": "During the match",
+      "clock": {
+        "title": "Clock",
+        "description": "Tap the time to start or pause"
+      },
+      "substitution": {
+        "title": "Substitute",
+        "description": "Tap field player → tap bench player (or the other way around)"
+      },
+      "goalHome": {
+        "title": "Goal own team",
+        "description": "Tap ⚽ on the scorer's card"
+      },
+      "goalAway": {
+        "title": "Goal opponent",
+        "description": "Tap +1 next to the score"
+      },
+      "cards": {
+        "title": "Cards & penalties",
+        "description": "Use the buttons below the player card"
+      },
+      "injury": {
+        "title": "Injury",
+        "description": "Tap 🤕 to take the player out"
+      }
+    },
+    "suggestions": {
+      "title": "Substitution suggestions",
+      "description": "The app shows who you can substitute for fair playing time.",
+      "action": "Tap the suggestion to substitute directly, or ignore and choose yourself.",
+      "youDecide": "You always decide!"
+    },
+    "keeper": {
+      "title": "Goalkeeper",
+      "item1": "GK badge shows the goalkeeper",
+      "item2": "When substituting, the badge transfers automatically"
+    },
+    "tips": {
+      "title": "Tips",
+      "item1": "Works without internet",
+      "item2": "Install as app via your browser menu",
+      "item3": "Data stays on your device"
+    }
   }
 }
