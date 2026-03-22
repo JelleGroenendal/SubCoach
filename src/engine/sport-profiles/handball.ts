@@ -32,7 +32,9 @@ export const handballProfile: SportProfile = {
       },
     ],
     maxTimePenalties: 3,
-    cards: ["yellow", "red"],
+    // Handball: yellow card is WARNING ONLY (no game impact), not tracked
+    // Red card = direct disqualification (can be given after 3x 2-min penalties)
+    cards: ["red"],
     secondYellowIsRed: false,
     redCardPermanent: false, // team plays -1 for 2 min, then can fill spot
     personalFoulLimit: undefined,

@@ -11,6 +11,8 @@ const PERIOD_DURATION_OPTIONS = [
   5, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45,
 ] as const;
 
+const PERIOD_COUNT_OPTIONS = [1, 2, 3, 4] as const;
+
 // Generate player options from 4 to 11 (covers all sports)
 function getPlayersOnFieldOptions(): Array<{ value: number; label: string }> {
   const options = [];
@@ -125,7 +127,7 @@ function MatchSetupForm({
   const [periodDuration, setPeriodDuration] = useState(
     settings.periodDurationMinutes,
   );
-  const [periodCount] = useState(settings.periodCount);
+  const [periodCount, setPeriodCount] = useState(settings.periodCount);
   const [playersOnField, setPlayersOnField] = useState(settings.playersOnField);
   const [selections, setSelections] = useState<PlayerSelection[]>(() =>
     buildInitialSelections(players, settings.playersOnField),
@@ -316,17 +318,28 @@ function MatchSetupForm({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-muted-foreground">
+            <label
+              htmlFor="setup-period-count"
+              className="text-sm font-medium text-muted-foreground"
+            >
               {t("team.edit.settings.periodCount")}
             </label>
-            <div
+            <select
+              id="setup-period-count"
+              value={periodCount}
+              onChange={(e) => setPeriodCount(parseInt(e.target.value, 10))}
               className={cn(
-                "min-h-12 flex items-center rounded-lg border border-input bg-muted px-3 py-2",
-                "text-base text-muted-foreground",
+                "min-h-12 touch-manipulation rounded-lg border border-input bg-background px-3 py-2",
+                "text-base text-foreground",
+                "focus:outline-none focus:ring-2 focus:ring-ring",
               )}
             >
-              {periodCount}
-            </div>
+              {PERIOD_COUNT_OPTIONS.map((count) => (
+                <option key={count} value={count}>
+                  {count}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="flex flex-col gap-1.5">

@@ -43,8 +43,10 @@ describe("handball profile", () => {
     );
   });
 
-  it("has yellow and red cards", () => {
-    expect(handballProfile.penalties.cards).toEqual(["yellow", "red"]);
+  it("has red card only (yellow is warning only in handball)", () => {
+    // In handball, yellow card is just a warning with no game impact
+    // Red card is the only card that affects gameplay
+    expect(handballProfile.penalties.cards).toEqual(["red"]);
   });
 
   it("3rd penalty results in red card", () => {
