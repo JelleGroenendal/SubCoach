@@ -18,6 +18,7 @@ import {
   waitForTeamSync,
   setSyncRoomCode,
   clearSyncRoomCode,
+  initializeAppDoc,
 } from "@/data/yjs";
 import { getSportProfileOrThrow } from "@/engine/sport-profiles";
 import { generateRoomCode } from "@/data/sync";
@@ -80,6 +81,9 @@ export const useTeamStore = create<TeamState>((set, get) => ({
   initialize: async () => {
     // Wait for app doc to sync from IndexedDB
     await waitForAppSync();
+
+    // Initialize app doc with schema version if needed
+    initializeAppDoc();
 
     const activeId = getActiveTeamId();
     if (activeId) {

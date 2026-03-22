@@ -66,7 +66,7 @@ export function PWAUpdatePrompt(): React.ReactNode {
         <button
           type="button"
           onClick={handleDismiss}
-          className="touch-manipulation rounded-lg p-1 text-muted-foreground hover:bg-accent"
+          className="flex min-h-12 min-w-12 touch-manipulation items-center justify-center rounded-lg text-muted-foreground hover:bg-accent"
           aria-label={t("common.dismiss")}
         >
           <svg
@@ -91,10 +91,11 @@ export function PWAUpdatePrompt(): React.ReactNode {
           type="button"
           onClick={handleDismiss}
           className={cn(
-            "flex-1 rounded-lg border border-border px-4 py-2",
+            "min-h-12 flex-1 rounded-lg border border-border px-4 py-2",
             "touch-manipulation text-sm font-medium text-muted-foreground",
             "hover:bg-accent",
           )}
+          aria-label={t("pwa.later")}
         >
           {t("pwa.later")}
         </button>
@@ -102,10 +103,11 @@ export function PWAUpdatePrompt(): React.ReactNode {
           type="button"
           onClick={handleUpdate}
           className={cn(
-            "flex-1 rounded-lg bg-primary px-4 py-2",
+            "min-h-12 flex-1 rounded-lg bg-primary px-4 py-2",
             "touch-manipulation text-sm font-medium text-primary-foreground",
             "hover:bg-primary/90",
           )}
+          aria-label={t("pwa.update")}
         >
           {t("pwa.update")}
         </button>

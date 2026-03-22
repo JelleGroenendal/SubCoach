@@ -7,7 +7,16 @@
     "delete": "Delete",
     "dismiss": "Dismiss",
     "done": "Done",
-    "other": "Other"
+    "other": "Other",
+    "close": "Close",
+    "back": "Back"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "description": "An unexpected error occurred. Your data is safe.",
+    "details": "Error details",
+    "tryAgain": "Try again",
+    "reloadApp": "Reload app"
   },
   "nav": {
     "home": "Home",
@@ -306,6 +315,10 @@
         "selectPlayer": "Select {{name}} for substitution",
         "empty": "No players on bench"
       },
+      "tabs": {
+        "field": "View field players",
+        "bench": "View bench players"
+      },
       "goal": {
         "selectScorer": "Tap the goal scorer"
       },
@@ -347,6 +360,13 @@
         "title": "Out",
         "injured": "Injured",
         "redCard": "Red card"
+      },
+      "injury": {
+        "confirmTitle": "Mark as injured?",
+        "confirmMessage": "Is {{name}} injured and unable to continue?",
+        "confirmButton": "Yes, injured",
+        "recover": "Mark {{name}} as recovered",
+        "recoverButton": "Recovered"
       },
       "endMatch": {
         "title": "End match",
@@ -433,21 +453,16 @@
     "updateDescription": "A new version of SubCoach is available.",
     "update": "Update now",
     "later": "Later",
-    "install": "Install",
-    "installTitle": "Install SubCoach",
-    "installDescription": "Add to home screen for the best experience"
-  },
-  "offline": {
-    "offline": "You're offline - app works normally",
-    "online": "Back online"
-  },
-  "pwa": {
     "install": {
       "title": "Install SubCoach",
       "description": "Add to your home screen for quick access",
       "button": "Install",
       "later": "Later"
     }
+  },
+  "offline": {
+    "offline": "You're offline - app works normally",
+    "online": "Back online"
   },
   "sync": {
     "title": "Sync with another coach",
@@ -517,6 +532,13 @@
     "theme": "Theme",
     "themeDescription": "Toggle between dark and light theme.",
     "toggleTheme": "Toggle theme",
+    "pwa": {
+      "title": "Install App",
+      "description": "Install SubCoach on your device for quick access.",
+      "installed": "Installed ✓",
+      "button": "Install",
+      "notAvailable": "Install not available (already installed or not supported)"
+    },
     "help": "Help",
     "helpDescription": "Learn how SubCoach works.",
     "helpLink": "How does SubCoach work?",

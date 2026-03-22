@@ -50,6 +50,7 @@ interface MatchState {
   ) => void;
   registerRedCard: (playerId: string, penaltyDurationSeconds?: number) => void;
   registerInjury: (playerId: string) => void;
+  recoverFromInjury: (playerId: string) => void;
   undoLastAction: () => void;
   dismissUndo: () => void;
   endMatch: () => void;
@@ -68,7 +69,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   setTeamId: (teamId) => {
     set({ teamId });
     if (teamId) {
-      const match = getCurrentMatch(teamId) as Match | undefined;
+      const match = getCurrentMatch(teamId);
       set({ match });
       if (match && match.status !== "finished") {
         const plan = recalcSchedule(match);
@@ -82,7 +83,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   loadMatch: () => {
     const { teamId } = get();
     if (!teamId) return;
-    const match = getCurrentMatch(teamId) as Match | undefined;
+    const match = getCurrentMatch(teamId);
     set({ match });
     if (match && match.status !== "finished") {
       const plan = recalcSchedule(match);
@@ -545,6 +546,38 @@ export const useMatchStore = create<MatchState>((set, get) => ({
             : per,
         );
         return { ...p, status: "injured" as const, periods };
+      }
+      return p;
+    });
+    const updated: Match = {
+      ...match,
+      roster,
+      events: [...match.events, event],
+    };
+    saveCurrentMatch(teamId, updated);
+    const plan = recalcSchedule(updated);
+    set({
+      match: updated,
+      substitutionPlan: plan,
+      lastAction: { event, index: updated.events.length - 1 },
+      showUndo: true,
+    });
+    setTimeout(() => {
+      if (get().showUndo) set({ showUndo: false });
+    }, 5000);
+  },
+
+  recoverFromInjury: (playerId) => {
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
+    const event: MatchEvent = {
+      type: "injuryRecovery",
+      timestamp: match.elapsedSeconds,
+      playerId,
+    };
+    const roster = match.roster.map((p) => {
+      if (p.playerId === playerId && p.status === "injured") {
+        return { ...p, status: "bench" as const };
       }
       return p;
     });

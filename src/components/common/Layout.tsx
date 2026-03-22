@@ -5,6 +5,7 @@ import { TeamSelector } from "./TeamSelector";
 import { CrashRecovery } from "./CrashRecovery";
 import { InstallPrompt } from "./InstallPrompt";
 import { SyncIndicator } from "./SyncIndicator";
+import { Logo } from "./Logo";
 
 const NAV_ITEMS = [
   {
@@ -124,10 +125,11 @@ export function Layout(): React.ReactNode {
             <div className="flex items-center gap-4">
               <Link
                 to="/"
-                className="min-h-12 touch-manipulation text-xl font-bold text-foreground"
+                className="flex min-h-12 touch-manipulation items-center gap-2 text-xl font-bold text-foreground"
                 aria-label={t("nav.home")}
               >
-                SubCoach
+                <Logo size={32} />
+                <span>SubCoach</span>
               </Link>
               <TeamSelector />
               <SyncIndicator />
@@ -161,10 +163,11 @@ export function Layout(): React.ReactNode {
         <header className="flex items-center justify-between border-b border-border px-4 py-3 sm:hidden">
           <Link
             to="/"
-            className="min-h-12 touch-manipulation text-xl font-bold text-foreground"
+            className="flex min-h-12 touch-manipulation items-center gap-2 text-xl font-bold text-foreground"
             aria-label={t("nav.home")}
           >
-            SubCoach
+            <Logo size={28} />
+            <span>SubCoach</span>
           </Link>
           <div className="flex items-center gap-2">
             <SyncIndicator />

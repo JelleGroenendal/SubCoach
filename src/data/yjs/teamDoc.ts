@@ -1,5 +1,12 @@
 import { getTeamDoc } from "@/data/yjs/yjsProvider";
-import type { Player, Team } from "@/data/schemas";
+import {
+  type Player,
+  type Team,
+  type Match,
+  PlayerSchema,
+  TeamSchema,
+  MatchSchema,
+} from "@/data/schemas";
 
 // --- Team Info ---
 
@@ -9,7 +16,7 @@ export function getTeamInfo(teamId: string): Team | undefined {
   const id = info.get("id") as string | undefined;
   if (!id) return undefined;
 
-  return {
+  const rawTeam = {
     id: id,
     name: (info.get("name") as string) ?? "",
     clubName: info.get("clubName") as string | undefined,
@@ -26,6 +33,14 @@ export function getTeamInfo(teamId: string): Team | undefined {
     createdAt: (info.get("createdAt") as number) ?? Date.now(),
     updatedAt: (info.get("updatedAt") as number) ?? Date.now(),
   };
+
+  // Validate with Zod
+  const result = TeamSchema.safeParse(rawTeam);
+  if (!result.success) {
+    console.error("Invalid team data in IndexedDB:", result.error);
+    return undefined;
+  }
+  return result.data;
 }
 
 export function saveTeamInfo(teamId: string, team: Team): void {
@@ -60,9 +75,11 @@ export function getPlayers(teamId: string): Player[] {
   const playersMap = doc.getMap("players");
   const players: Player[] = [];
   playersMap.forEach((value) => {
-    const p = value as Record<string, unknown>;
-    if (p && typeof p === "object" && "id" in p) {
-      players.push(p as unknown as Player);
+    const result = PlayerSchema.safeParse(value);
+    if (result.success) {
+      players.push(result.data);
+    } else {
+      console.error("Invalid player data in IndexedDB:", result.error);
     }
   });
   return players;
@@ -100,29 +117,36 @@ export function removePlayer(teamId: string, playerId: string): void {
 
 // --- Matches ---
 
-export function getMatches(teamId: string): Record<string, unknown>[] {
+export function getMatches(teamId: string): Match[] {
   const doc = getTeamDoc(teamId);
   const matchesMap = doc.getMap("matches");
-  const matches: Record<string, unknown>[] = [];
+  const matches: Match[] = [];
   matchesMap.forEach((value) => {
-    if (value && typeof value === "object") {
-      matches.push(value as Record<string, unknown>);
+    const result = MatchSchema.safeParse(value);
+    if (result.success) {
+      matches.push(result.data);
+    } else {
+      console.error("Invalid match data in IndexedDB:", result.error);
     }
   });
   return matches;
 }
 
-export function getMatch(teamId: string, matchId: string): unknown {
+export function getMatch(teamId: string, matchId: string): Match | undefined {
   const doc = getTeamDoc(teamId);
   const matchesMap = doc.getMap("matches");
-  return matchesMap.get(matchId);
+  const raw = matchesMap.get(matchId);
+  if (!raw) return undefined;
+
+  const result = MatchSchema.safeParse(raw);
+  if (!result.success) {
+    console.error("Invalid match data in IndexedDB:", result.error);
+    return undefined;
+  }
+  return result.data;
 }
 
-export function saveMatch(
-  teamId: string,
-  matchId: string,
-  match: unknown,
-): void {
+export function saveMatch(teamId: string, matchId: string, match: Match): void {
   const doc = getTeamDoc(teamId);
   const matchesMap = doc.getMap("matches");
   doc.transact(() => {
@@ -140,13 +164,21 @@ export function deleteMatch(teamId: string, matchId: string): void {
 
 // --- Current Match ---
 
-export function getCurrentMatch(teamId: string): unknown {
+export function getCurrentMatch(teamId: string): Match | undefined {
   const doc = getTeamDoc(teamId);
   const current = doc.getMap("currentMatch");
-  return current.get("data");
+  const raw = current.get("data");
+  if (!raw) return undefined;
+
+  const result = MatchSchema.safeParse(raw);
+  if (!result.success) {
+    console.error("Invalid current match data in IndexedDB:", result.error);
+    return undefined;
+  }
+  return result.data;
 }
 
-export function saveCurrentMatch(teamId: string, match: unknown): void {
+export function saveCurrentMatch(teamId: string, match: Match): void {
   const doc = getTeamDoc(teamId);
   const current = doc.getMap("currentMatch");
   doc.transact(() => {

@@ -39,7 +39,7 @@ export function useCurrentMatch(teamId: string | undefined): {
 
   const getSnapshot = useCallback((): Match | undefined => {
     if (!teamId) return undefined;
-    const newData = getCurrentMatchFromYjs(teamId) as Match | undefined;
+    const newData = getCurrentMatchFromYjs(teamId);
     const newJson = JSON.stringify(newData);
     if (newJson !== cacheRef.current.json) {
       cacheRef.current = { data: newData, json: newJson };
@@ -97,10 +97,8 @@ export function useMatchHistory(teamId: string | undefined): {
   const getSnapshot = useCallback((): Match[] => {
     if (!teamId) return cacheRef.current.data;
     const raw = getMatches(teamId);
-    // Sort by date descending
-    const newData = (raw as Match[]).sort(
-      (a, b) => (b.date ?? 0) - (a.date ?? 0),
-    );
+    // Sort by date descending (raw is already Match[] with validation)
+    const newData = raw.sort((a, b) => (b.date ?? 0) - (a.date ?? 0));
     const newJson = JSON.stringify(newData);
     if (newJson !== cacheRef.current.json) {
       cacheRef.current = { data: newData, json: newJson };

@@ -141,7 +141,10 @@ function MatchSetupForm({
     () => getSportProfile(sportProfileId),
     [sportProfileId],
   );
-  const positions: Position[] = sportProfile?.players.positions ?? [];
+  const positions: Position[] = useMemo(
+    () => sportProfile?.players.positions ?? [],
+    [sportProfile],
+  );
 
   // Check if this sport has a keeper position
   const sportHasKeeper = useMemo(

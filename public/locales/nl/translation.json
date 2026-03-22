@@ -7,7 +7,16 @@
     "delete": "Verwijder",
     "dismiss": "Sluiten",
     "done": "Klaar",
-    "other": "Overig"
+    "other": "Overig",
+    "close": "Sluiten",
+    "back": "Terug"
+  },
+  "error": {
+    "title": "Er ging iets mis",
+    "description": "Er is een onverwachte fout opgetreden. Je gegevens zijn veilig.",
+    "details": "Foutdetails",
+    "tryAgain": "Probeer opnieuw",
+    "reloadApp": "App herladen"
   },
   "nav": {
     "home": "Home",
@@ -306,6 +315,10 @@
         "selectPlayer": "Selecteer {{name}} voor wissel",
         "empty": "Geen spelers op de bank"
       },
+      "tabs": {
+        "field": "Bekijk veldspelers",
+        "bench": "Bekijk bankspelers"
+      },
       "goal": {
         "selectScorer": "Tik op de doelpuntenmaker"
       },
@@ -347,6 +360,13 @@
         "title": "Uit",
         "injured": "Geblesseerd",
         "redCard": "Rode kaart"
+      },
+      "injury": {
+        "confirmTitle": "Markeren als geblesseerd?",
+        "confirmMessage": "Is {{name}} geblesseerd en kan niet verder spelen?",
+        "confirmButton": "Ja, geblesseerd",
+        "recover": "Markeer {{name}} als hersteld",
+        "recoverButton": "Hersteld"
       },
       "endMatch": {
         "title": "Wedstrijd beëindigen",
@@ -433,21 +453,16 @@
     "updateDescription": "Er is een nieuwe versie van SubCoach beschikbaar.",
     "update": "Nu updaten",
     "later": "Later",
-    "install": "Installeren",
-    "installTitle": "Installeer SubCoach",
-    "installDescription": "Voeg toe aan startscherm voor de beste ervaring"
-  },
-  "offline": {
-    "offline": "Je bent offline - app werkt normaal",
-    "online": "Weer online"
-  },
-  "pwa": {
     "install": {
       "title": "Installeer SubCoach",
       "description": "Voeg toe aan je startscherm voor snelle toegang",
       "button": "Installeren",
       "later": "Later"
     }
+  },
+  "offline": {
+    "offline": "Je bent offline - app werkt normaal",
+    "online": "Weer online"
   },
   "sync": {
     "title": "Synchroniseer met andere coach",
@@ -517,6 +532,13 @@
     "theme": "Thema",
     "themeDescription": "Schakel tussen donker en licht thema.",
     "toggleTheme": "Wissel thema",
+    "pwa": {
+      "title": "App installeren",
+      "description": "Installeer SubCoach op je apparaat voor snelle toegang.",
+      "installed": "Geïnstalleerd ✓",
+      "button": "Installeren",
+      "notAvailable": "Installeren niet beschikbaar (al geïnstalleerd of niet ondersteund)"
+    },
     "help": "Hulp",
     "helpDescription": "Leer hoe SubCoach werkt.",
     "helpLink": "Hoe werkt SubCoach?",

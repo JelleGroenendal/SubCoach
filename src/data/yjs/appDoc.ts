@@ -1,6 +1,34 @@
 import { getAppDoc } from "@/data/yjs/yjsProvider";
 import type { TeamRef } from "@/data/schemas";
 
+// Current schema version - increment when data structure changes
+export const SCHEMA_VERSION = 1;
+
+/**
+ * Initialize the app doc with schema version if not already set.
+ * Call this on app startup after Yjs syncs with IndexedDB.
+ */
+export function initializeAppDoc(): void {
+  const doc = getAppDoc();
+  const meta = doc.getMap("meta");
+
+  if (!meta.has("schemaVersion")) {
+    doc.transact(() => {
+      meta.set("schemaVersion", SCHEMA_VERSION);
+      meta.set("schemaUpdatedAt", Date.now());
+    });
+  }
+}
+
+/**
+ * Get the current schema version from the app doc.
+ */
+export function getSchemaVersion(): number {
+  const doc = getAppDoc();
+  const meta = doc.getMap("meta");
+  return (meta.get("schemaVersion") as number) ?? 0;
+}
+
 export function getTeamRefs(): TeamRef[] {
   const doc = getAppDoc();
   const arr = doc.getArray<TeamRef>("teamRefs");

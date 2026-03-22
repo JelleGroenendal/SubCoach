@@ -51,6 +51,12 @@ export const InjuryEventSchema = z.object({
   playerId: z.string(),
 });
 
+export const InjuryRecoveryEventSchema = z.object({
+  type: z.literal("injuryRecovery"),
+  timestamp: z.number(),
+  playerId: z.string(),
+});
+
 export const PeriodStartEventSchema = z.object({
   type: z.literal("periodStart"),
   timestamp: z.number(),
@@ -83,6 +89,7 @@ export const MatchEventSchema = z.discriminatedUnion("type", [
   YellowCardEventSchema,
   RedCardEventSchema,
   InjuryEventSchema,
+  InjuryRecoveryEventSchema,
   PeriodStartEventSchema,
   PeriodEndEventSchema,
   TimeoutEventSchema,
@@ -98,6 +105,7 @@ export type PenaltyEndEvent = z.infer<typeof PenaltyEndEventSchema>;
 export type YellowCardEvent = z.infer<typeof YellowCardEventSchema>;
 export type RedCardEvent = z.infer<typeof RedCardEventSchema>;
 export type InjuryEvent = z.infer<typeof InjuryEventSchema>;
+export type InjuryRecoveryEvent = z.infer<typeof InjuryRecoveryEventSchema>;
 export type PeriodStartEvent = z.infer<typeof PeriodStartEventSchema>;
 export type PeriodEndEvent = z.infer<typeof PeriodEndEventSchema>;
 export type TimeoutEvent = z.infer<typeof TimeoutEventSchema>;

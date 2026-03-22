@@ -64,7 +64,8 @@ export function P2PSyncPanel({
           <button
             type="button"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
+            className="flex min-h-12 min-w-12 touch-manipulation items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+            aria-label={t("common.close")}
           >
             ✕
           </button>
@@ -107,7 +108,8 @@ export function P2PSyncPanel({
           <button
             type="button"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
+            className="flex min-h-12 min-w-12 touch-manipulation items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+            aria-label={t("common.close")}
           >
             ✕
           </button>
@@ -143,7 +145,8 @@ export function P2PSyncPanel({
           <button
             type="button"
             onClick={() => setMode("choose")}
-            className="text-muted-foreground hover:text-foreground"
+            className="flex min-h-12 min-w-12 touch-manipulation items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+            aria-label={t("common.back")}
           >
             ←
           </button>
@@ -189,7 +192,8 @@ export function P2PSyncPanel({
         <button
           type="button"
           onClick={handleDisconnect}
-          className="text-muted-foreground hover:text-foreground"
+          className="flex min-h-12 min-w-12 touch-manipulation items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+          aria-label={t("common.close")}
         >
           ✕
         </button>

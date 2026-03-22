@@ -13,6 +13,9 @@ export {
 
 // App-level data access (team refs, settings)
 export {
+  SCHEMA_VERSION,
+  initializeAppDoc,
+  getSchemaVersion,
   getTeamRefs,
   addTeamRef,
   updateTeamRef,

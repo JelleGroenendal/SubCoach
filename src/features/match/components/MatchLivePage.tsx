@@ -55,6 +55,7 @@ export function MatchLivePage(): React.ReactNode {
     registerYellowCard,
     registerRedCard,
     registerInjury,
+    recoverFromInjury,
     endPenalty,
     undoLastAction,
     dismissUndo,
@@ -70,6 +71,9 @@ export function MatchLivePage(): React.ReactNode {
     null,
   );
   const [mobileTab, setMobileTab] = useState<MobileTab>("field");
+  const [pendingInjuryPlayerId, setPendingInjuryPlayerId] = useState<
+    string | null
+  >(null);
 
   // P2P sync
   const { isConnected, peerCount } = useP2PSync();
@@ -724,6 +728,8 @@ export function MatchLivePage(): React.ReactNode {
             // Highlight if bench player selected (indicating "tap here")
             hasBenchSelection && mobileTab !== "field" && "bg-primary/10",
           )}
+          aria-label={t("match.live.tabs.field")}
+          aria-selected={mobileTab === "field"}
         >
           {t("match.live.field.title")} ({fieldPlayers.length})
           {hasBenchSelection && mobileTab !== "field" && " ←"}
@@ -739,6 +745,8 @@ export function MatchLivePage(): React.ReactNode {
             // Highlight if field player selected (indicating "tap here")
             hasFieldSelection && mobileTab !== "bench" && "bg-primary/10",
           )}
+          aria-label={t("match.live.tabs.bench")}
+          aria-selected={mobileTab === "bench"}
         >
           {hasFieldSelection && mobileTab !== "bench" && "→ "}
           {t("match.live.bench.title")} (
@@ -914,7 +922,7 @@ export function MatchLivePage(): React.ReactNode {
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          registerInjury(player.playerId);
+                          setPendingInjuryPlayerId(player.playerId);
                         }}
                         className="flex-1 touch-manipulation py-1.5 text-[10px] font-medium text-orange-300 transition-colors hover:bg-orange-900/50 sm:text-xs"
                         aria-label={t("match.live.actions.injury")}
@@ -1138,9 +1146,9 @@ export function MatchLivePage(): React.ReactNode {
                         key={player.playerId}
                         className={cn(
                           "flex min-h-14 w-full items-center gap-3 rounded-lg p-3",
-                          "text-left opacity-60",
+                          "text-left",
                           isInjured && "bg-orange-900/20",
-                          isRedCarded && "bg-red-900/20",
+                          isRedCarded && "bg-red-900/20 opacity-60",
                         )}
                       >
                         {player.number !== undefined && (
@@ -1149,9 +1157,13 @@ export function MatchLivePage(): React.ReactNode {
                           </span>
                         )}
                         <div className="flex flex-1 flex-col">
-                          <span className="text-sm font-medium leading-tight text-muted-foreground">
-                            {player.name}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm font-medium leading-tight text-muted-foreground">
+                              {player.name}
+                            </span>
+                            {isInjured && <span className="text-sm">🤕</span>}
+                            {isRedCarded && <span className="text-sm">🟥</span>}
+                          </div>
                           <span className="text-xs text-muted-foreground">
                             {isInjured && t("match.live.out.injured")}
                             {isRedCarded && t("match.live.out.redCard")}
@@ -1159,6 +1171,23 @@ export function MatchLivePage(): React.ReactNode {
                             {formatTime(Math.floor(playTimeSeconds))}
                           </span>
                         </div>
+                        {/* Recovery button - only for injured players */}
+                        {isInjured && (
+                          <button
+                            type="button"
+                            onClick={() => recoverFromInjury(player.playerId)}
+                            className={cn(
+                              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
+                              "text-xs font-medium text-green-400",
+                              "bg-green-900/30 transition-colors hover:bg-green-900/50",
+                            )}
+                            aria-label={t("match.live.injury.recover", {
+                              name: player.name,
+                            })}
+                          >
+                            {t("match.live.injury.recoverButton")}
+                          </button>
+                        )}
                       </div>
                     );
                   })}
@@ -1309,6 +1338,48 @@ export function MatchLivePage(): React.ReactNode {
           </button>
         </div>
       )}
+
+      {/* Injury Confirmation Modal */}
+      {pendingInjuryPlayerId &&
+        (() => {
+          const player = match.roster.find(
+            (p) => p.playerId === pendingInjuryPlayerId,
+          );
+          if (!player) return null;
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+              <div className="mx-4 flex max-w-sm flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-2xl">
+                <h3 className="text-lg font-bold text-foreground">
+                  {t("match.live.injury.confirmTitle")}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {t("match.live.injury.confirmMessage", { name: player.name })}
+                </p>
+                <div className="flex gap-3">
+                  <Button
+                    size="xl"
+                    variant="ghost"
+                    className="flex-1 touch-manipulation"
+                    onClick={() => setPendingInjuryPlayerId(null)}
+                  >
+                    {t("common.cancel")}
+                  </Button>
+                  <Button
+                    size="xl"
+                    variant="default"
+                    className="flex-1 touch-manipulation bg-orange-600 hover:bg-orange-700"
+                    onClick={() => {
+                      registerInjury(pendingInjuryPlayerId);
+                      setPendingInjuryPlayerId(null);
+                    }}
+                  >
+                    {t("match.live.injury.confirmButton")}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
       {/* End Match Modal */}
       {showEndConfirm && (

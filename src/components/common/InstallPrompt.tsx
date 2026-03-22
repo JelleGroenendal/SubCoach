@@ -1,58 +1,36 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { usePWAInstall } from "@/lib/pwa";
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+// Check if dismissed recently (called once at module load, not during render)
+function checkDismissedRecently(): boolean {
+  const dismissedTime = localStorage.getItem("pwa_install_dismissed");
+  if (!dismissedTime) return false;
+  const parsed = parseInt(dismissedTime, 10);
+  return Date.now() - parsed < 7 * 24 * 60 * 60 * 1000;
 }
 
 export function InstallPrompt(): React.ReactNode {
   const { t } = useTranslation();
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
-  const [showBanner, setShowBanner] = useState(false);
+  const { isInstalled, isInstallable, install } = usePWAInstall();
+  // Initialize dismissed state based on localStorage (evaluated once)
+  const [dismissed, setDismissed] = useState(() => checkDismissedRecently());
 
-  useEffect(() => {
-    // Check if already installed or dismissed recently
-    const dismissed = localStorage.getItem("pwa_install_dismissed");
-    if (dismissed) {
-      const dismissedTime = parseInt(dismissed, 10);
-      // Don't show for 7 days after dismissal
-      if (Date.now() - dismissedTime < 7 * 24 * 60 * 60 * 1000) {
-        return;
-      }
+  // Derive showBanner from state (no useEffect needed)
+  const showBanner = isInstallable && !isInstalled && !dismissed;
+
+  const handleInstall = useCallback(async (): Promise<void> => {
+    const success = await install();
+    if (success) {
+      setDismissed(true);
     }
+  }, [install]);
 
-    const handler = (e: Event): void => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setShowBanner(true);
-    };
-
-    window.addEventListener("beforeinstallprompt", handler);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-    };
-  }, []);
-
-  const handleInstall = async (): Promise<void> => {
-    if (!deferredPrompt) return;
-
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === "accepted") {
-      setShowBanner(false);
-    }
-    setDeferredPrompt(null);
-  };
-
-  const handleDismiss = (): void => {
-    setShowBanner(false);
+  const handleDismiss = useCallback((): void => {
+    setDismissed(true);
     localStorage.setItem("pwa_install_dismissed", Date.now().toString());
-  };
+  }, []);
 
   if (!showBanner) return null;
 
