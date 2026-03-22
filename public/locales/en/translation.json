@@ -265,6 +265,11 @@
         "statusBench": "Bench",
         "statusUnavailable": "Unavailable"
       },
+      "keeper": {
+        "title": "Goalkeeper",
+        "description": "Select which field player is the goalkeeper.",
+        "noSelection": "No goalkeeper selected"
+      },
       "startMatch": "Start match",
       "validation": {
         "needOpponent": "Enter the opponent team name",

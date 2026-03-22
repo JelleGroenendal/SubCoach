@@ -265,6 +265,11 @@
         "statusBench": "Bank",
         "statusUnavailable": "Afwezig"
       },
+      "keeper": {
+        "title": "Keeper",
+        "description": "Selecteer welke veldspeler de keeper is.",
+        "noSelection": "Geen keeper geselecteerd"
+      },
       "startMatch": "Start wedstrijd",
       "validation": {
         "needOpponent": "Vul de naam van de tegenstander in",
