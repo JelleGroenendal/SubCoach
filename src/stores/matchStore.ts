@@ -213,6 +213,10 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       playerInId,
       playerOutId,
     };
+    // Check if the outgoing player is the keeper - transfer the flag to incoming player
+    const outgoingPlayer = match.roster.find((p) => p.playerId === playerOutId);
+    const transferKeeper = outgoingPlayer?.isKeeper ?? false;
+
     const roster = match.roster.map((p) => {
       if (p.playerId === playerOutId) {
         const periods = p.periods.map((per, i) =>
@@ -220,13 +224,16 @@ export const useMatchStore = create<MatchState>((set, get) => ({
             ? { ...per, outAt: match.elapsedSeconds }
             : per,
         );
-        return { ...p, status: "bench" as const, periods };
+        // Remove keeper flag when substituted out
+        return { ...p, status: "bench" as const, periods, isKeeper: false };
       }
       if (p.playerId === playerInId) {
         return {
           ...p,
           status: "field" as const,
           periods: [...p.periods, { inAt: match.elapsedSeconds }],
+          // Transfer keeper flag if the outgoing player was keeper
+          isKeeper: transferKeeper ? true : p.isKeeper,
         };
       }
       return p;
