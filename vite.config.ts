@@ -4,7 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import path from "node:path";
 
-const base = process.env.GITHUB_ACTIONS ? "/SubCoach/" : "/";
+// Always use "/" - custom domain subcoach.pulse-forge.org doesn't need a subpath
+const base = "/";
 
 export default defineConfig({
   base,
