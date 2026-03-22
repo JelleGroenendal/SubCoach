@@ -7,6 +7,7 @@ import { MatchLivePage } from "@/features/match/components/MatchLivePage";
 import { MatchSummaryPage } from "@/features/match/components/MatchSummaryPage";
 import { HistoryListPage } from "@/features/history/components/HistoryListPage";
 import { HistoryDetailPage } from "@/features/history/components/HistoryDetailPage";
+import { SeasonStatsPage } from "@/features/statistics/components/SeasonStatsPage";
 import { SettingsPage } from "@/features/settings/components/SettingsPage";
 
 export const router = createBrowserRouter(
@@ -22,6 +23,7 @@ export const router = createBrowserRouter(
         { path: "match/summary", element: <MatchSummaryPage /> },
         { path: "history", element: <HistoryListPage /> },
         { path: "history/:id", element: <HistoryDetailPage /> },
+        { path: "stats", element: <SeasonStatsPage /> },
         { path: "settings", element: <SettingsPage /> },
       ],
     },

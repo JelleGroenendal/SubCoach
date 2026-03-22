@@ -11,6 +11,7 @@
   "nav": {
     "home": "Home",
     "history": "Geschiedenis",
+    "stats": "Stats",
     "settings": "Instellingen"
   },
   "sport": {
@@ -435,5 +436,27 @@
     "deleteConfirm1": "Weet je het zeker?",
     "deleteConfirm2": "Echt zeker? Alle teams en wedstrijden worden verwijderd.",
     "version": "Versie {{version}}"
+  },
+  "stats": {
+    "title": "Seizoensstatistieken",
+    "description": "Overzicht van de prestaties van je team dit seizoen.",
+    "noMatches": "Nog geen afgeronde wedstrijden. Statistieken verschijnen hier na het spelen van wedstrijden.",
+    "teamStats": "Teamstatistieken",
+    "playerStats": "Spelerstatistieken",
+    "matchesPlayed": "Wedstrijden",
+    "wins": "W",
+    "draws": "G",
+    "losses": "V",
+    "winPercentage": "Win %",
+    "goalsScored": "Doelpunten voor",
+    "goalsConceded": "Doelpunten tegen",
+    "goalDifference": "Doelsaldo",
+    "perMatch": "/ wedstrijd",
+    "player": "Speler",
+    "matches": "W",
+    "playTime": "Tijd",
+    "avgPlayTime": "Gem",
+    "playPercent": "%",
+    "goals": "Goals"
   }
 }
