@@ -259,7 +259,8 @@
         "penalty": "2-min penalty",
         "yellowCard": "Yellow card",
         "redCard": "Red card",
-        "injury": "Injury"
+        "injury": "Injury",
+        "goal": "Goal"
       },
       "undo": {
         "button": "Undo",

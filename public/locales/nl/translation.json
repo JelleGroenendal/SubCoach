@@ -259,7 +259,8 @@
         "penalty": "2-min straf",
         "yellowCard": "Gele kaart",
         "redCard": "Rode kaart",
-        "injury": "Blessure"
+        "injury": "Blessure",
+        "goal": "Doelpunt"
       },
       "undo": {
         "button": "Herstel",

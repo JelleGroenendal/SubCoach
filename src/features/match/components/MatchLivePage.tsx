@@ -874,6 +874,21 @@ export function MatchLivePage(): React.ReactNode {
                           🟥
                         </button>
                       )}
+                      {/* Goal button - always shown for field players */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          registerGoal(player.playerId);
+                        }}
+                        className="flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium text-green-300 transition-colors hover:bg-green-900/50 sm:text-xs"
+                        aria-label={t("match.live.actions.goal")}
+                      >
+                        ⚽
+                        {player.goals > 0 && (
+                          <span className="ml-0.5">{player.goals}</span>
+                        )}
+                      </button>
                       {/* Injury button - always shown */}
                       <button
                         type="button"
