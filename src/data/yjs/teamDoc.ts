@@ -19,7 +19,10 @@ export function getTeamInfo(teamId: string): Team | undefined {
         (info.get("periodDurationMinutes") as number) ?? 25,
       periodCount: (info.get("periodCount") as number) ?? 2,
       playersOnField: (info.get("playersOnField") as number) ?? 7,
+      usePositionAwareSubstitutions:
+        (info.get("usePositionAwareSubstitutions") as boolean) ?? false,
     },
+    syncRoomCode: info.get("syncRoomCode") as string | undefined,
     createdAt: (info.get("createdAt") as number) ?? Date.now(),
     updatedAt: (info.get("updatedAt") as number) ?? Date.now(),
   };
@@ -36,6 +39,15 @@ export function saveTeamInfo(teamId: string, team: Team): void {
     info.set("periodDurationMinutes", team.settings.periodDurationMinutes);
     info.set("periodCount", team.settings.periodCount);
     info.set("playersOnField", team.settings.playersOnField);
+    info.set(
+      "usePositionAwareSubstitutions",
+      team.settings.usePositionAwareSubstitutions ?? false,
+    );
+    if (team.syncRoomCode) {
+      info.set("syncRoomCode", team.syncRoomCode);
+    } else {
+      info.delete("syncRoomCode");
+    }
     info.set("createdAt", team.createdAt);
     info.set("updatedAt", team.updatedAt);
   });
@@ -147,5 +159,31 @@ export function clearCurrentMatch(teamId: string): void {
   const current = doc.getMap("currentMatch");
   doc.transact(() => {
     current.delete("data");
+  });
+}
+
+// --- Sync Room Code ---
+
+export function getSyncRoomCode(teamId: string): string | undefined {
+  const doc = getTeamDoc(teamId);
+  const info = doc.getMap("info");
+  return info.get("syncRoomCode") as string | undefined;
+}
+
+export function setSyncRoomCode(teamId: string, code: string): void {
+  const doc = getTeamDoc(teamId);
+  const info = doc.getMap("info");
+  doc.transact(() => {
+    info.set("syncRoomCode", code);
+    info.set("updatedAt", Date.now());
+  });
+}
+
+export function clearSyncRoomCode(teamId: string): void {
+  const doc = getTeamDoc(teamId);
+  const info = doc.getMap("info");
+  doc.transact(() => {
+    info.delete("syncRoomCode");
+    info.set("updatedAt", Date.now());
   });
 }

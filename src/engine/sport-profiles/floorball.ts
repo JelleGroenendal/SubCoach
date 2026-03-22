@@ -19,22 +19,30 @@ export const floorballProfile: SportProfile = {
   players: {
     defaultPlayersOnField: 6,
     hasKeeper: true,
+    positionGroups: [
+      { id: "keeper", name: "sport.floorball.group.keeper" },
+      { id: "defense", name: "sport.floorball.group.defense" },
+      { id: "attack", name: "sport.floorball.group.attack" },
+    ],
     positions: [
       {
         id: "keeper",
         name: "sport.floorball.position.keeper",
         abbreviation: "sport.floorball.position.keeperAbbr",
         isKeeper: true,
+        groupId: "keeper",
       },
       {
         id: "defender",
         name: "sport.floorball.position.defender",
         abbreviation: "sport.floorball.position.defenderAbbr",
+        groupId: "defense",
       },
       {
         id: "forward",
         name: "sport.floorball.position.forward",
         abbreviation: "sport.floorball.position.forwardAbbr",
+        groupId: "attack",
       },
     ],
   },

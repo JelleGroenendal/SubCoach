@@ -63,7 +63,6 @@ export function MatchLivePage(): React.ReactNode {
     adjustScore,
   } = useMatchStore();
 
-  const [goalScorerMode, setGoalScorerMode] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showSyncPanel, setShowSyncPanel] = useState(false);
@@ -209,6 +208,65 @@ export function MatchLivePage(): React.ReactNode {
     });
   }, [match]);
 
+  // Group bench players by position group when position-aware substitutions is enabled
+  const benchPlayersByGroup = useMemo(() => {
+    if (
+      !match?.usePositionAwareSubstitutions ||
+      !sportProfile?.players.positionGroups
+    ) {
+      return null; // Return null to indicate ungrouped mode
+    }
+
+    const groups = sportProfile.players.positionGroups;
+    const positions = sportProfile.players.positions ?? [];
+
+    // Build positionId -> groupId map
+    const positionToGroup: Record<string, string> = {};
+    for (const pos of positions) {
+      if (pos.groupId) {
+        positionToGroup[pos.id] = pos.groupId;
+      }
+    }
+
+    // Group players by their position group
+    const grouped: Record<string, MatchPlayer[]> = {};
+    const ungrouped: MatchPlayer[] = [];
+
+    for (const player of benchPlayers) {
+      const groupId = player.positionId
+        ? positionToGroup[player.positionId]
+        : undefined;
+      if (groupId) {
+        if (!grouped[groupId]) {
+          grouped[groupId] = [];
+        }
+        grouped[groupId].push(player);
+      } else {
+        ungrouped.push(player);
+      }
+    }
+
+    // Build result array with group info
+    return groups
+      .map((group) => ({
+        groupId: group.id,
+        groupName: group.name,
+        players: grouped[group.id] ?? [],
+      }))
+      .filter((g) => g.players.length > 0 || g.groupId === "keeper") // Keep keeper group even if empty
+      .concat(
+        ungrouped.length > 0
+          ? [
+              {
+                groupId: "other",
+                groupName: "common.other",
+                players: ungrouped,
+              },
+            ]
+          : [],
+      );
+  }, [match?.usePositionAwareSubstitutions, sportProfile, benchPlayers]);
+
   const penaltyPlayers = useMemo(
     () => (match ? match.roster.filter((p) => p.status === "penalty") : []),
     [match],
@@ -261,15 +319,9 @@ export function MatchLivePage(): React.ReactNode {
   const hasFieldSelection = selectedFieldPlayerIds.length > 0;
   const hasBenchSelection = selectedBenchPlayerIds.length > 0;
 
-  // Handle field player tap - select for substitution or goal
+  // Handle field player tap - select for substitution
   const handleFieldPlayerTap = useCallback(
     (playerId: string) => {
-      if (goalScorerMode) {
-        registerGoal(playerId);
-        setGoalScorerMode(false);
-        return;
-      }
-
       // If bench players are selected, execute substitution with first selected bench player
       if (hasBenchSelection) {
         const benchPlayerId = selectedBenchPlayerIds[0];
@@ -298,21 +350,14 @@ export function MatchLivePage(): React.ReactNode {
       selectedBenchPlayerIds,
       hasBenchSelection,
       benchPlayers.length,
-      goalScorerMode,
       togglePlayerSelection,
       executeSubstitution,
-      registerGoal,
     ],
   );
 
   // Handle bench player tap - execute substitution with selected field player
   const handleBenchPlayerTap = useCallback(
     (playerId: string) => {
-      if (goalScorerMode) {
-        setGoalScorerMode(false);
-        return;
-      }
-
       // If field players are selected, execute substitution with first selected field player
       if (hasFieldSelection) {
         const fieldPlayerId = selectedFieldPlayerIds[0];
@@ -330,14 +375,8 @@ export function MatchLivePage(): React.ReactNode {
       hasFieldSelection,
       togglePlayerSelection,
       executeSubstitution,
-      goalScorerMode,
     ],
   );
-
-  const handleHomeGoal = useCallback(() => {
-    setGoalScorerMode(true);
-    clearSelection();
-  }, [clearSelection]);
 
   const handleTimerTap = useCallback(() => {
     if (!match) return;
@@ -425,16 +464,11 @@ export function MatchLivePage(): React.ReactNode {
       const wasSelected = selectedPlayerIds.includes(playerId);
       handleFieldPlayerTap(playerId);
       // If we just selected (not deselected) and no bench selection, switch to bench tab
-      if (!wasSelected && !goalScorerMode && !hasBenchSelection) {
+      if (!wasSelected && !hasBenchSelection) {
         setMobileTab("bench");
       }
     },
-    [
-      handleFieldPlayerTap,
-      selectedPlayerIds,
-      goalScorerMode,
-      hasBenchSelection,
-    ],
+    [handleFieldPlayerTap, selectedPlayerIds, hasBenchSelection],
   );
 
   const handleBenchPlayerTapWithTabSwitch = useCallback(
@@ -503,20 +537,8 @@ export function MatchLivePage(): React.ReactNode {
         </button>
 
         {/* Score */}
+        {/* Score display: home score (tap to edit) - away score - +1 for opponent */}
         <div className="flex items-center gap-1 sm:gap-2">
-          <button
-            type="button"
-            onClick={handleHomeGoal}
-            className={cn(
-              "min-h-12 min-w-12 touch-manipulation rounded-lg px-2",
-              "text-xs font-medium text-green-400",
-              "transition-colors hover:bg-green-900/30",
-              goalScorerMode && "bg-green-900/50 ring-2 ring-green-400",
-            )}
-            aria-label={t("match.live.score.addHome")}
-          >
-            +1
-          </button>
           <button
             type="button"
             onClick={() => setShowScoreEdit("home")}
@@ -629,26 +651,6 @@ export function MatchLivePage(): React.ReactNode {
           </div>
         </div>
       </div>
-
-      {/* Goal scorer mode overlay */}
-      {goalScorerMode && (
-        <div className="flex items-center justify-between border-b border-amber-700 bg-amber-900/30 px-4 py-2">
-          <span className="text-sm font-medium text-amber-300">
-            {t("match.live.goal.selectScorer")}
-          </span>
-          <button
-            type="button"
-            onClick={() => setGoalScorerMode(false)}
-            className={cn(
-              "min-h-12 touch-manipulation rounded-md px-4 py-2",
-              "text-sm text-amber-300",
-              "transition-colors hover:bg-amber-900/50",
-            )}
-          >
-            {t("common.cancel")}
-          </button>
-        </div>
-      )}
 
       {/* Selection indicator - Shows when field players selected (for substitution) */}
       {hasFieldSelection && (
@@ -768,7 +770,6 @@ export function MatchLivePage(): React.ReactNode {
                       isSuggestedOut &&
                         !isSelected &&
                         "ring-2 ring-amber-500/60",
-                      goalScorerMode && "ring-2 ring-amber-400/50",
                     )}
                   >
                     {/* Main tap area - for substitution/goal */}
@@ -953,64 +954,141 @@ export function MatchLivePage(): React.ReactNode {
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             <div className="flex flex-col gap-2">
-              {/* Bench players */}
-              {benchPlayers.map((player) => {
-                const isSelected = selectedPlayerIds.includes(player.playerId);
-                const isSuggestedIn =
-                  nextSuggestion?.playerInId === player.playerId;
-                const playTimeSeconds = getPlayerPlayTime(player);
-                const playerPosition = player.positionId
-                  ? sportProfile?.players.positions?.find(
-                      (p) => p.id === player.positionId,
-                    )
-                  : undefined;
+              {/* Bench players - grouped or ungrouped based on position-aware setting */}
+              {benchPlayersByGroup
+                ? // Grouped mode: show players by position group
+                  benchPlayersByGroup.map((group) => (
+                    <div key={group.groupId} className="flex flex-col gap-1">
+                      {/* Group header - only show if there are players */}
+                      {group.players.length > 0 && (
+                        <div className="mt-1 mb-0.5 flex items-center gap-2 px-1 first:mt-0">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                            {t(group.groupName)}
+                          </span>
+                          <span className="h-px flex-1 bg-border" />
+                        </div>
+                      )}
+                      {group.players.map((player) => {
+                        const isSelected = selectedPlayerIds.includes(
+                          player.playerId,
+                        );
+                        const isSuggestedIn =
+                          nextSuggestion?.playerInId === player.playerId;
+                        const playTimeSeconds = getPlayerPlayTime(player);
+                        const playerPosition = player.positionId
+                          ? sportProfile?.players.positions?.find(
+                              (p) => p.id === player.positionId,
+                            )
+                          : undefined;
 
-                return (
-                  <button
-                    key={player.playerId}
-                    type="button"
-                    onClick={() =>
-                      handleBenchPlayerTapWithTabSwitch(player.playerId)
-                    }
-                    className={cn(
-                      "flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-xl p-3 sm:min-h-14 sm:rounded-lg",
-                      "text-left transition-all select-none",
-                      "bg-bench text-foreground",
-                      isSelected && "ring-4 ring-orange-400",
-                      isSuggestedIn &&
-                        !isSelected &&
-                        "ring-2 ring-amber-500/60",
-                    )}
-                    aria-label={player.name}
-                  >
-                    {player.number !== undefined && (
-                      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground sm:h-8 sm:w-8 sm:rounded-md">
-                        {player.number}
-                      </span>
-                    )}
-                    <div className="flex flex-1 flex-col">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-base font-medium leading-tight">
-                          {player.name}
-                        </span>
-                        {playerPosition && (
-                          <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
-                            {t(playerPosition.abbreviation)}
+                        return (
+                          <button
+                            key={player.playerId}
+                            type="button"
+                            onClick={() =>
+                              handleBenchPlayerTapWithTabSwitch(player.playerId)
+                            }
+                            className={cn(
+                              "flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-xl p-3 sm:min-h-14 sm:rounded-lg",
+                              "text-left transition-all select-none",
+                              "bg-bench text-foreground",
+                              isSelected && "ring-4 ring-orange-400",
+                              isSuggestedIn &&
+                                !isSelected &&
+                                "ring-2 ring-amber-500/60",
+                            )}
+                            aria-label={player.name}
+                          >
+                            {player.number !== undefined && (
+                              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground sm:h-8 sm:w-8 sm:rounded-md">
+                                {player.number}
+                              </span>
+                            )}
+                            <div className="flex flex-1 flex-col">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-base font-medium leading-tight">
+                                  {player.name}
+                                </span>
+                                {playerPosition && (
+                                  <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
+                                    {t(playerPosition.abbreviation)}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-xs tabular-nums text-muted-foreground">
+                                {formatTime(Math.floor(playTimeSeconds))}
+                              </span>
+                            </div>
+                            {player.goals > 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                {"⚽".repeat(Math.min(player.goals, 5))}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))
+                : // Ungrouped mode: flat list of bench players
+                  benchPlayers.map((player) => {
+                    const isSelected = selectedPlayerIds.includes(
+                      player.playerId,
+                    );
+                    const isSuggestedIn =
+                      nextSuggestion?.playerInId === player.playerId;
+                    const playTimeSeconds = getPlayerPlayTime(player);
+                    const playerPosition = player.positionId
+                      ? sportProfile?.players.positions?.find(
+                          (p) => p.id === player.positionId,
+                        )
+                      : undefined;
+
+                    return (
+                      <button
+                        key={player.playerId}
+                        type="button"
+                        onClick={() =>
+                          handleBenchPlayerTapWithTabSwitch(player.playerId)
+                        }
+                        className={cn(
+                          "flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-xl p-3 sm:min-h-14 sm:rounded-lg",
+                          "text-left transition-all select-none",
+                          "bg-bench text-foreground",
+                          isSelected && "ring-4 ring-orange-400",
+                          isSuggestedIn &&
+                            !isSelected &&
+                            "ring-2 ring-amber-500/60",
+                        )}
+                        aria-label={player.name}
+                      >
+                        {player.number !== undefined && (
+                          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground sm:h-8 sm:w-8 sm:rounded-md">
+                            {player.number}
                           </span>
                         )}
-                      </div>
-                      <span className="text-xs tabular-nums text-muted-foreground">
-                        {formatTime(Math.floor(playTimeSeconds))}
-                      </span>
-                    </div>
-                    {player.goals > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {"⚽".repeat(Math.min(player.goals, 5))}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                        <div className="flex flex-1 flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base font-medium leading-tight">
+                              {player.name}
+                            </span>
+                            {playerPosition && (
+                              <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
+                                {t(playerPosition.abbreviation)}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            {formatTime(Math.floor(playTimeSeconds))}
+                          </span>
+                        </div>
+                        {player.goals > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            {"⚽".repeat(Math.min(player.goals, 5))}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
 
               {/* Out players (injured/red card) - can still be selected for replacement */}
               {outPlayers.length > 0 && (

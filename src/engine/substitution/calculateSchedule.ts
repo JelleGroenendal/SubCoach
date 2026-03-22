@@ -1,8 +1,58 @@
 import type {
   ScheduleInput,
+  SchedulePlayerInput,
   SubstitutionPlan,
   SubstitutionSuggestion,
 } from "./types";
+
+/**
+ * Find the best bench player for a substitution.
+ *
+ * When position-aware mode is OFF:
+ * - Simply return the bench player with least play time
+ *
+ * When position-aware mode is ON:
+ * - Prefer a bench player from the same position group as the outgoing field player
+ * - If no same-group bench player exists, fall back to any bench player
+ * - Players without a groupId (undefined) are wildcards and can match any group
+ */
+function findBestBenchPlayer(
+  sortedBench: SchedulePlayerInput[],
+  playerOutGroupId: string | undefined,
+  usePositionAware: boolean,
+): SchedulePlayerInput | undefined {
+  if (sortedBench.length === 0) return undefined;
+
+  // If not position-aware, just return the one with least play time
+  if (!usePositionAware) {
+    return sortedBench[0];
+  }
+
+  // Position-aware: prefer same group
+  // First, try to find a same-group player (or wildcard)
+  const sameGroupPlayer = sortedBench.find((p) => {
+    // Wildcards (no groupId) can match anyone
+    if (p.groupId === undefined || playerOutGroupId === undefined) {
+      return true;
+    }
+    return p.groupId === playerOutGroupId;
+  });
+
+  // If found, return the same-group player with least play time
+  if (sameGroupPlayer) {
+    // Filter all same-group players and get the one with least play time
+    const sameGroupPlayers = sortedBench.filter((p) => {
+      if (p.groupId === undefined || playerOutGroupId === undefined) {
+        return true;
+      }
+      return p.groupId === playerOutGroupId;
+    });
+    return sameGroupPlayers[0]; // Already sorted by play time
+  }
+
+  // Fall back to any bench player (cross-group substitution)
+  return sortedBench[0];
+}
 
 /**
  * Calculate substitution suggestions based on play time fairness.
@@ -11,6 +61,7 @@ import type {
  * 1. Calculate LIVE play time for each player (including current session)
  * 2. Find the field player with MOST play time (should come off)
  * 3. Find the bench player with LEAST play time (should go on)
+ *    - When position-aware, prefer same-group bench players
  * 4. If the difference exceeds a threshold, suggest a swap
  *
  * Pure function: same input always produces same output.
@@ -23,6 +74,7 @@ export function calculateSchedule(input: ScheduleInput): SubstitutionPlan {
     currentTimeSeconds,
     playersOnField,
     hasKeeper,
+    usePositionAwareSubstitutions = false,
   } = input;
 
   const fieldSlots = hasKeeper ? playersOnField - 1 : playersOnField;
@@ -68,8 +120,12 @@ export function calculateSchedule(input: ScheduleInput): SubstitutionPlan {
 
   // Get the player who should come off (most play time on field)
   const playerOut = sortedField[0];
-  // Get the player who should go on (least play time on bench)
-  const playerIn = sortedBench[0];
+  // Get the best bench player (position-aware or not)
+  const playerIn = findBestBenchPlayer(
+    sortedBench,
+    playerOut?.groupId,
+    usePositionAwareSubstitutions,
+  );
 
   if (playerOut && playerIn) {
     // Calculate the play time difference
@@ -110,7 +166,15 @@ export function calculateSchedule(input: ScheduleInput): SubstitutionPlan {
       sortedBench.length > 1
     ) {
       const nextFieldOut = sortedField[1];
-      const nextBenchIn = sortedBench[1];
+      // Filter out the player we just suggested, then find best match
+      const remainingBench = sortedBench.filter(
+        (p) => p.playerId !== playerIn.playerId,
+      );
+      const nextBenchIn = findBestBenchPlayer(
+        remainingBench,
+        nextFieldOut?.groupId,
+        usePositionAwareSubstitutions,
+      );
       if (nextFieldOut && nextBenchIn) {
         const nextDiff =
           nextFieldOut.totalPlayTimeSeconds - nextBenchIn.totalPlayTimeSeconds;

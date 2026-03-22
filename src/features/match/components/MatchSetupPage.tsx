@@ -95,6 +95,9 @@ export function MatchSetupPage(): React.ReactNode {
       sportProfileId={team.sportProfileId}
       players={players}
       settings={team.settings}
+      usePositionAwareSubstitutions={
+        team.settings.usePositionAwareSubstitutions ?? false
+      }
       createMatch={createMatch}
       navigate={navigate}
     />
@@ -106,6 +109,7 @@ function MatchSetupForm({
   sportProfileId,
   players,
   settings,
+  usePositionAwareSubstitutions,
   createMatch,
   navigate,
 }: {
@@ -117,6 +121,7 @@ function MatchSetupForm({
     periodCount: number;
     playersOnField: number;
   };
+  usePositionAwareSubstitutions: boolean;
   createMatch: (params: {
     teamId: string;
     opponentName: string;
@@ -124,6 +129,8 @@ function MatchSetupForm({
     periodDurationMinutes: number;
     periodCount: number;
     playersOnField: number;
+    sportProfileId?: string;
+    usePositionAwareSubstitutions?: boolean;
   }) => void;
   navigate: (path: string) => void;
 }): React.ReactNode {
@@ -255,6 +262,8 @@ function MatchSetupForm({
       periodDurationMinutes: periodDuration,
       periodCount,
       playersOnField: requiredOnField,
+      sportProfileId,
+      usePositionAwareSubstitutions,
     });
 
     navigate("/match/live");
@@ -266,6 +275,8 @@ function MatchSetupForm({
     periodCount,
     requiredOnField,
     teamId,
+    sportProfileId,
+    usePositionAwareSubstitutions,
     createMatch,
     navigate,
   ]);

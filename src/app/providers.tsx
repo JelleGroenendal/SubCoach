@@ -4,6 +4,7 @@ import i18n from "i18next";
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { PWAUpdatePrompt } from "@/components/common/PWAUpdatePrompt";
 import { OfflineIndicator } from "@/components/common/OfflineIndicator";
+import { AutoSyncProvider } from "@/components/common/AutoSyncProvider";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -21,6 +22,7 @@ export function Providers({ children }: ProvidersProps): ReactNode {
           }
         >
           <OfflineIndicator />
+          <AutoSyncProvider />
           {children}
           <PWAUpdatePrompt />
         </Suspense>

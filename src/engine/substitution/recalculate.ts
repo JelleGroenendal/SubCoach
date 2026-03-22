@@ -9,6 +9,9 @@ export type RecalculateInput = {
   playersOnField: number;
   hasKeeper: boolean;
   keeperPlayerId?: string;
+  usePositionAwareSubstitutions?: boolean;
+  /** Map from positionId to groupId (for position-aware substitutions) */
+  positionGroupMap?: Record<string, string>;
 };
 
 /**
@@ -42,6 +45,8 @@ export function recalculateSchedule(input: RecalculateInput): SubstitutionPlan {
     playersOnField,
     hasKeeper,
     keeperPlayerId,
+    usePositionAwareSubstitutions = false,
+    positionGroupMap = {},
   } = input;
 
   // Filter out unavailable players (injured, red card)
@@ -58,6 +63,8 @@ export function recalculateSchedule(input: RecalculateInput): SubstitutionPlan {
       : "bench") as "field" | "bench",
     isKeeper: keeperPlayerId === p.playerId,
     totalPlayTimeSeconds: getLivePlayTime(p, currentTimeSeconds),
+    // Map positionId to groupId for position-aware substitutions
+    groupId: p.positionId ? positionGroupMap[p.positionId] : undefined,
   }));
 
   const scheduleInput: ScheduleInput = {
@@ -66,6 +73,7 @@ export function recalculateSchedule(input: RecalculateInput): SubstitutionPlan {
     currentTimeSeconds,
     playersOnField,
     hasKeeper,
+    usePositionAwareSubstitutions,
   };
 
   return calculateSchedule(scheduleInput);

@@ -6,6 +6,7 @@ import { useTeamStore } from "@/stores/teamStore";
 import { Button } from "@/components/ui/button";
 import { getAllSportProfiles, getSportProfile } from "@/engine/sport-profiles";
 import { TeamSharePanel } from "./TeamSharePanel";
+import { TeamSyncSection } from "./TeamSyncSection";
 import type { Player } from "@/data/schemas";
 import type { Position } from "@/data/schemas/sportProfile";
 
@@ -397,6 +398,55 @@ export function TeamEditPage(): React.ReactNode {
             ))}
           </select>
         </div>
+
+        {/* Position-Aware Substitutions - only show if sport has positions */}
+        {positions.length > 0 && (
+          <div className="flex items-center justify-between gap-4 border-t border-border pt-4">
+            <div className="flex flex-col gap-0.5">
+              <label
+                htmlFor="position-aware"
+                className="text-sm font-medium text-foreground"
+              >
+                {t("team.edit.settings.positionAware")}
+              </label>
+              <span className="text-xs text-muted-foreground">
+                {t("team.edit.settings.positionAwareDescription")}
+              </span>
+            </div>
+            <button
+              id="position-aware"
+              type="button"
+              role="switch"
+              aria-checked={
+                team.settings.usePositionAwareSubstitutions ?? false
+              }
+              onClick={() =>
+                updateTeam({
+                  settings: {
+                    ...team.settings,
+                    usePositionAwareSubstitutions:
+                      !team.settings.usePositionAwareSubstitutions,
+                  },
+                })
+              }
+              className={cn(
+                "relative h-7 w-12 shrink-0 touch-manipulation rounded-full transition-colors",
+                "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                team.settings.usePositionAwareSubstitutions
+                  ? "bg-primary"
+                  : "bg-input",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-background shadow-sm transition-transform",
+                  team.settings.usePositionAwareSubstitutions &&
+                    "translate-x-5",
+                )}
+              />
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Player List */}
@@ -696,6 +746,9 @@ export function TeamEditPage(): React.ReactNode {
           </Button>
         )}
       </section>
+
+      {/* Persistent Sync */}
+      <TeamSyncSection teamId={team.id} syncRoomCode={team.syncRoomCode} />
 
       {/* Danger Zone */}
       <section className="flex flex-col gap-4 rounded-xl border border-destructive/50 bg-card p-5">

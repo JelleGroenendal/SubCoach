@@ -6,7 +6,8 @@
     "edit": "Edit",
     "delete": "Delete",
     "dismiss": "Dismiss",
-    "done": "Done"
+    "done": "Done",
+    "other": "Other"
   },
   "nav": {
     "home": "Home",
@@ -17,6 +18,11 @@
   "sport": {
     "handball": {
       "name": "Handball",
+      "group": {
+        "keeper": "Goalkeeper",
+        "defense": "Defense",
+        "attack": "Attack"
+      },
       "position": {
         "keeper": "Goalkeeper",
         "keeperAbbr": "GK",
@@ -36,6 +42,12 @@
     },
     "football": {
       "name": "Football",
+      "group": {
+        "keeper": "Goalkeeper",
+        "defense": "Defense",
+        "midfield": "Midfield",
+        "attack": "Attack"
+      },
       "position": {
         "keeper": "Goalkeeper",
         "keeperAbbr": "GK",
@@ -49,6 +61,11 @@
     },
     "futsal": {
       "name": "Futsal",
+      "group": {
+        "keeper": "Goalkeeper",
+        "defense": "Defense",
+        "attack": "Attack"
+      },
       "position": {
         "keeper": "Goalkeeper",
         "keeperAbbr": "GK",
@@ -62,6 +79,11 @@
     },
     "basketball": {
       "name": "Basketball",
+      "group": {
+        "guard": "Guards",
+        "forward": "Forwards",
+        "center": "Center"
+      },
       "position": {
         "pointGuard": "Point Guard",
         "pointGuardAbbr": "PG",
@@ -77,6 +99,11 @@
     },
     "floorball": {
       "name": "Floorball",
+      "group": {
+        "keeper": "Goalkeeper",
+        "defense": "Defense",
+        "attack": "Attack"
+      },
       "position": {
         "keeper": "Goalkeeper",
         "keeperAbbr": "GK",
@@ -88,6 +115,11 @@
     },
     "ice-hockey": {
       "name": "Ice Hockey",
+      "group": {
+        "goalie": "Goalie",
+        "defense": "Defense",
+        "forward": "Forwards"
+      },
       "position": {
         "goalie": "Goalie",
         "goalieAbbr": "G",
@@ -101,6 +133,12 @@
     },
     "field-hockey": {
       "name": "Field Hockey",
+      "group": {
+        "keeper": "Goalkeeper",
+        "defense": "Defense",
+        "midfield": "Midfield",
+        "attack": "Attack"
+      },
       "position": {
         "keeper": "Goalkeeper",
         "keeperAbbr": "GK",
@@ -114,6 +152,10 @@
     },
     "korfball": {
       "name": "Korfball",
+      "group": {
+        "attack": "Attack",
+        "defense": "Defense"
+      },
       "position": {
         "attack": "Attack",
         "attackAbbr": "ATT",
@@ -123,6 +165,11 @@
     },
     "water-polo": {
       "name": "Water Polo",
+      "group": {
+        "goalie": "Goalie",
+        "defense": "Defense",
+        "attack": "Attack"
+      },
       "position": {
         "goalie": "Goalie",
         "goalieAbbr": "G",
@@ -170,7 +217,9 @@
         "periodDurationValue": "{{minutes}} minutes",
         "periodCount": "Number of periods",
         "playersOnField": "Players on field",
-        "playersOnFieldValue": "{{total}} players ({{format}})"
+        "playersOnFieldValue": "{{total}} players ({{format}})",
+        "positionAware": "Position-aware substitutions",
+        "positionAwareDescription": "Prefer substituting players within the same position group (attack, defense, etc.)"
       },
       "players": {
         "title": "Players",
@@ -400,7 +449,32 @@
     "connecting": "Connecting...",
     "connect": "Connect",
     "disconnect": "Disconnect",
-    "waitingForCoaches": "Waiting for coaches"
+    "waitingForCoaches": "Waiting for coaches",
+    "enableSync": "Enable sync",
+    "enableSyncDescription": "Allow other coaches to sync with this team automatically when both devices are online.",
+    "syncEnabled": "Sync enabled",
+    "syncDisabled": "Sync disabled",
+    "disableSync": "Disable sync",
+    "peerDisconnected": "Other coach disconnected"
+  },
+  "syncIndicator": {
+    "connectedPeers": "{{count}} synced",
+    "connectedPeers_one": "1 synced",
+    "connectedPeers_other": "{{count}} synced",
+    "waiting": "Waiting...",
+    "connecting": "Connecting...",
+    "reconnecting": "Reconnecting...",
+    "retryingIn": "Retry in {{seconds}}s",
+    "error": "Sync error",
+    "disconnected": "Not synced",
+    "ariaConnected": "Sync active with {{count}} coach",
+    "ariaConnected_one": "Sync active with 1 other coach",
+    "ariaConnected_other": "Sync active with {{count}} other coaches",
+    "ariaWaiting": "Sync enabled, waiting for other coaches",
+    "ariaConnecting": "Connecting to sync...",
+    "ariaReconnecting": "Reconnecting to sync...",
+    "ariaError": "Sync error occurred",
+    "ariaDisconnected": "Sync not active"
   },
   "teamShare": {
     "sectionTitle": "Share team",

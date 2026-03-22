@@ -12,11 +12,17 @@ export const ScoringValueSchema = z.object({
   value: z.number().int().min(1),
 });
 
+export const PositionGroupSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1), // i18n key
+});
+
 export const PositionSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1), // i18n key
   abbreviation: z.string().min(1), // i18n key for short form (not the actual abbreviation)
   isKeeper: z.boolean().optional(),
+  groupId: z.string().optional(), // references PositionGroup.id
 });
 
 export const SportProfileSchema = z.object({
@@ -33,6 +39,7 @@ export const SportProfileSchema = z.object({
   players: z.object({
     defaultPlayersOnField: z.number().int().min(4).max(11),
     hasKeeper: z.boolean(),
+    positionGroups: z.array(PositionGroupSchema).optional(),
     positions: z.array(PositionSchema).optional(),
   }),
 
@@ -61,5 +68,6 @@ export const SportProfileSchema = z.object({
 
 export type TimePenaltyConfig = z.infer<typeof TimePenaltyConfigSchema>;
 export type ScoringValue = z.infer<typeof ScoringValueSchema>;
+export type PositionGroup = z.infer<typeof PositionGroupSchema>;
 export type Position = z.infer<typeof PositionSchema>;
 export type SportProfile = z.infer<typeof SportProfileSchema>;

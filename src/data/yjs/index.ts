@@ -39,6 +39,9 @@ export {
   getCurrentMatch,
   saveCurrentMatch,
   clearCurrentMatch,
+  getSyncRoomCode,
+  setSyncRoomCode,
+  clearSyncRoomCode,
 } from "./teamDoc";
 
 // React hooks for app-level data

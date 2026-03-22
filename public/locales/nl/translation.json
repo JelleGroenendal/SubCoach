@@ -6,7 +6,8 @@
     "edit": "Bewerk",
     "delete": "Verwijder",
     "dismiss": "Sluiten",
-    "done": "Klaar"
+    "done": "Klaar",
+    "other": "Overig"
   },
   "nav": {
     "home": "Home",
@@ -17,6 +18,11 @@
   "sport": {
     "handball": {
       "name": "Handbal",
+      "group": {
+        "keeper": "Keeper",
+        "defense": "Verdediging",
+        "attack": "Aanval"
+      },
       "position": {
         "keeper": "Keeper",
         "keeperAbbr": "K",
@@ -36,6 +42,12 @@
     },
     "football": {
       "name": "Voetbal",
+      "group": {
+        "keeper": "Keeper",
+        "defense": "Verdediging",
+        "midfield": "Middenveld",
+        "attack": "Aanval"
+      },
       "position": {
         "keeper": "Keeper",
         "keeperAbbr": "K",
@@ -49,6 +61,11 @@
     },
     "futsal": {
       "name": "Zaalvoetbal",
+      "group": {
+        "keeper": "Keeper",
+        "defense": "Verdediging",
+        "attack": "Aanval"
+      },
       "position": {
         "keeper": "Keeper",
         "keeperAbbr": "K",
@@ -62,6 +79,11 @@
     },
     "basketball": {
       "name": "Basketbal",
+      "group": {
+        "guard": "Guards",
+        "forward": "Forwards",
+        "center": "Center"
+      },
       "position": {
         "pointGuard": "Point Guard",
         "pointGuardAbbr": "PG",
@@ -77,6 +99,11 @@
     },
     "floorball": {
       "name": "Floorball",
+      "group": {
+        "keeper": "Keeper",
+        "defense": "Verdediging",
+        "attack": "Aanval"
+      },
       "position": {
         "keeper": "Keeper",
         "keeperAbbr": "K",
@@ -88,6 +115,11 @@
     },
     "ice-hockey": {
       "name": "IJshockey",
+      "group": {
+        "goalie": "Doelman",
+        "defense": "Verdediging",
+        "forward": "Aanval"
+      },
       "position": {
         "goalie": "Doelman",
         "goalieAbbr": "D",
@@ -101,6 +133,12 @@
     },
     "field-hockey": {
       "name": "Hockey",
+      "group": {
+        "keeper": "Keeper",
+        "defense": "Verdediging",
+        "midfield": "Middenveld",
+        "attack": "Aanval"
+      },
       "position": {
         "keeper": "Keeper",
         "keeperAbbr": "K",
@@ -114,6 +152,10 @@
     },
     "korfball": {
       "name": "Korfbal",
+      "group": {
+        "attack": "Aanval",
+        "defense": "Verdediging"
+      },
       "position": {
         "attack": "Aanval",
         "attackAbbr": "AAN",
@@ -123,6 +165,11 @@
     },
     "water-polo": {
       "name": "Waterpolo",
+      "group": {
+        "goalie": "Doelman",
+        "defense": "Verdediging",
+        "attack": "Aanval"
+      },
       "position": {
         "goalie": "Doelman",
         "goalieAbbr": "D",
@@ -170,7 +217,9 @@
         "periodDurationValue": "{{minutes}} minuten",
         "periodCount": "Aantal helften",
         "playersOnField": "Spelers op het veld",
-        "playersOnFieldValue": "{{total}} spelers ({{format}})"
+        "playersOnFieldValue": "{{total}} spelers ({{format}})",
+        "positionAware": "Positiebewuste wissels",
+        "positionAwareDescription": "Wissel bij voorkeur spelers binnen dezelfde positiegroep (aanval, verdediging, etc.)"
       },
       "players": {
         "title": "Spelers",
@@ -400,7 +449,32 @@
     "connecting": "Verbinden...",
     "connect": "Verbinden",
     "disconnect": "Verbreken",
-    "waitingForCoaches": "Wachten op coaches"
+    "waitingForCoaches": "Wachten op coaches",
+    "enableSync": "Synchronisatie inschakelen",
+    "enableSyncDescription": "Laat andere coaches automatisch synchroniseren met dit team wanneer beide apparaten online zijn.",
+    "syncEnabled": "Sync ingeschakeld",
+    "syncDisabled": "Sync uitgeschakeld",
+    "disableSync": "Synchronisatie uitschakelen",
+    "peerDisconnected": "Andere coach heeft verbinding verbroken"
+  },
+  "syncIndicator": {
+    "connectedPeers": "{{count}} gesync't",
+    "connectedPeers_one": "1 gesync't",
+    "connectedPeers_other": "{{count}} gesync't",
+    "waiting": "Wachten...",
+    "connecting": "Verbinden...",
+    "reconnecting": "Opnieuw verbinden...",
+    "retryingIn": "Opnieuw over {{seconds}}s",
+    "error": "Sync-fout",
+    "disconnected": "Niet gesync't",
+    "ariaConnected": "Sync actief met {{count}} coach",
+    "ariaConnected_one": "Sync actief met 1 andere coach",
+    "ariaConnected_other": "Sync actief met {{count}} andere coaches",
+    "ariaWaiting": "Sync ingeschakeld, wachten op andere coaches",
+    "ariaConnecting": "Verbinden met sync...",
+    "ariaReconnecting": "Opnieuw verbinden met sync...",
+    "ariaError": "Sync-fout opgetreden",
+    "ariaDisconnected": "Sync niet actief"
   },
   "teamShare": {
     "sectionTitle": "Team delen",

@@ -14,42 +14,54 @@ export const handballProfile: SportProfile = {
   players: {
     defaultPlayersOnField: 7,
     hasKeeper: true,
+    positionGroups: [
+      { id: "keeper", name: "sport.handball.group.keeper" },
+      { id: "defense", name: "sport.handball.group.defense" },
+      { id: "attack", name: "sport.handball.group.attack" },
+    ],
     positions: [
       {
         id: "keeper",
         name: "sport.handball.position.keeper",
         abbreviation: "sport.handball.position.keeperAbbr",
         isKeeper: true,
+        groupId: "keeper",
       },
       {
         id: "leftwing",
         name: "sport.handball.position.leftWing",
         abbreviation: "sport.handball.position.leftWingAbbr",
+        groupId: "attack",
       },
       {
         id: "leftback",
         name: "sport.handball.position.leftBack",
         abbreviation: "sport.handball.position.leftBackAbbr",
+        groupId: "defense",
       },
       {
         id: "center",
         name: "sport.handball.position.center",
         abbreviation: "sport.handball.position.centerAbbr",
+        groupId: "defense",
       },
       {
         id: "rightback",
         name: "sport.handball.position.rightBack",
         abbreviation: "sport.handball.position.rightBackAbbr",
+        groupId: "defense",
       },
       {
         id: "rightwing",
         name: "sport.handball.position.rightWing",
         abbreviation: "sport.handball.position.rightWingAbbr",
+        groupId: "attack",
       },
       {
         id: "pivot",
         name: "sport.handball.position.pivot",
         abbreviation: "sport.handball.position.pivotAbbr",
+        groupId: "attack",
       },
     ],
   },

@@ -23,45 +23,79 @@ export function normalizeRoomCode(code: string): string {
     .slice(0, 6);
 }
 
-interface P2PSyncState {
+export type SyncStatus =
+  | "disconnected"
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "error";
+
+export interface P2PSyncState {
   room: Room | null;
   roomCode: string | null;
   peerCount: number;
-  isConnecting: boolean;
-  isConnected: boolean;
+  status: SyncStatus;
   error: string | null;
+  // Auto-reconnect state
+  retryAttempt: number;
+  nextRetryIn: number | null; // seconds until next retry, null if not retrying
 }
 
-type P2PSyncListener = (state: P2PSyncState) => void;
+// Legacy compatibility getters
+export interface P2PSyncStateLegacy extends P2PSyncState {
+  isConnecting: boolean;
+  isConnected: boolean;
+}
+
+type P2PSyncListener = (state: P2PSyncStateLegacy) => void;
+type DisconnectListener = (reason: "manual" | "peer_left" | "error") => void;
+
+// Exponential backoff config
+const RETRY_BASE_DELAY = 2000; // 2 seconds
+const RETRY_MAX_DELAY = 30000; // 30 seconds
+const RETRY_MAX_ATTEMPTS = 5;
 
 // P2P Sync Manager - manages WebRTC connections for syncing Yjs docs
 class P2PSyncManager {
   private room: Room | null = null;
   private roomCode: string | null = null;
   private awareness: awarenessProtocol.Awareness | null = null;
-  // Store reference to doc for potential cleanup/reconnection
   private connectedDoc: Y.Doc | null = null;
   private peerCount = 0;
-  private isConnecting = false;
-  private isConnected = false;
+  private status: SyncStatus = "disconnected";
   private error: string | null = null;
   private listeners: Set<P2PSyncListener> = new Set();
+  private disconnectListeners: Set<DisconnectListener> = new Set();
   private sendSync: ((data: Uint8Array, peerId?: string) => void) | null = null;
   private sendAwareness: ((data: Uint8Array) => void) | null = null;
 
-  // Get current state
-  getState(): P2PSyncState {
+  // Auto-reconnect state
+  private retryAttempt = 0;
+  private retryTimeout: ReturnType<typeof setTimeout> | null = null;
+  private nextRetryIn: number | null = null;
+  private countdownInterval: ReturnType<typeof setInterval> | null = null;
+  private autoReconnectEnabled = false;
+  private lastRoomCode: string | null = null;
+  private lastDoc: Y.Doc | null = null;
+
+  // Get current state (with legacy compatibility)
+  getState(): P2PSyncStateLegacy {
     return {
       room: this.room,
       roomCode: this.roomCode,
       peerCount: this.peerCount,
-      isConnecting: this.isConnecting,
-      isConnected: this.isConnected,
+      status: this.status,
       error: this.error,
+      retryAttempt: this.retryAttempt,
+      nextRetryIn: this.nextRetryIn,
+      // Legacy compatibility
+      isConnecting:
+        this.status === "connecting" || this.status === "reconnecting",
+      isConnected: this.status === "connected",
     };
   }
 
-  // Get the currently connected doc (for debugging/status)
+  // Get the currently connected doc
   getConnectedDoc(): Y.Doc | null {
     return this.connectedDoc;
   }
@@ -73,24 +107,39 @@ class P2PSyncManager {
     return () => this.listeners.delete(listener);
   }
 
+  // Subscribe to disconnect events (for notifications)
+  onDisconnect(listener: DisconnectListener): () => void {
+    this.disconnectListeners.add(listener);
+    return () => this.disconnectListeners.delete(listener);
+  }
+
   private notifyListeners(): void {
     const state = this.getState();
     this.listeners.forEach((listener) => listener(state));
   }
 
+  private notifyDisconnect(reason: "manual" | "peer_left" | "error"): void {
+    this.disconnectListeners.forEach((listener) => listener(reason));
+  }
+
   // Start hosting a sync room
   async hostRoom(doc: Y.Doc): Promise<string> {
+    this.clearRetryState();
     if (this.room) {
       this.disconnect();
     }
 
     const roomCode = generateRoomCode();
+    this.autoReconnectEnabled = true;
+    this.lastRoomCode = roomCode;
+    this.lastDoc = doc;
     await this.joinRoomInternal(roomCode, doc);
     return roomCode;
   }
 
   // Join an existing sync room
   async joinRoom(roomCode: string, doc: Y.Doc): Promise<void> {
+    this.clearRetryState();
     if (this.room) {
       this.disconnect();
     }
@@ -100,11 +149,37 @@ class P2PSyncManager {
       throw new Error("Invalid room code");
     }
 
+    this.autoReconnectEnabled = true;
+    this.lastRoomCode = normalizedCode;
+    this.lastDoc = doc;
     await this.joinRoomInternal(normalizedCode, doc);
   }
 
+  // Auto-connect with a known room code (for reconnection on app start)
+  async autoConnect(roomCode: string, doc: Y.Doc): Promise<void> {
+    if (this.status === "connected" || this.status === "connecting") {
+      return; // Already connected or connecting
+    }
+
+    const normalizedCode = normalizeRoomCode(roomCode);
+    if (normalizedCode.length !== 6) {
+      throw new Error("Invalid room code");
+    }
+
+    this.autoReconnectEnabled = true;
+    this.lastRoomCode = normalizedCode;
+    this.lastDoc = doc;
+
+    try {
+      await this.joinRoomInternal(normalizedCode, doc);
+    } catch {
+      // Start retry cycle on failure
+      this.scheduleRetry();
+    }
+  }
+
   private async joinRoomInternal(roomCode: string, doc: Y.Doc): Promise<void> {
-    this.isConnecting = true;
+    this.status = this.retryAttempt > 0 ? "reconnecting" : "connecting";
     this.error = null;
     this.roomCode = roomCode;
     this.connectedDoc = doc;
@@ -112,7 +187,6 @@ class P2PSyncManager {
 
     try {
       // Join room using BitTorrent trackers (no server needed)
-      // The room ID includes "subcoach" prefix to avoid collisions
       this.room = joinRoom({ appId: "subcoach" }, `subcoach-${roomCode}`);
 
       // Setup awareness for cursor/presence
@@ -161,8 +235,8 @@ class P2PSyncManager {
       // Handle peer join
       this.room.onPeerJoin((peerId) => {
         this.peerCount++;
-        this.isConnected = true;
-        this.isConnecting = false;
+        this.status = "connected";
+        this.clearRetryState(); // Connection successful, reset retry state
         this.notifyListeners();
 
         // Send initial sync state to new peer
@@ -181,7 +255,10 @@ class P2PSyncManager {
       // Handle peer leave
       this.room.onPeerLeave(() => {
         this.peerCount = Math.max(0, this.peerCount - 1);
-        this.isConnected = this.peerCount > 0;
+        if (this.peerCount === 0) {
+          // All peers left - notify but stay "connected" (waiting for new peers)
+          this.notifyDisconnect("peer_left");
+        }
         this.notifyListeners();
       });
 
@@ -210,19 +287,93 @@ class P2PSyncManager {
         },
       );
 
-      this.isConnecting = false;
+      // Connection established (even if no peers yet)
+      // Note: Status will be "connecting" or "reconnecting" here, so we set it to "connected"
+      this.status = "connected";
       this.notifyListeners();
     } catch (e) {
       this.error = e instanceof Error ? e.message : "Connection failed";
-      this.isConnecting = false;
-      this.isConnected = false;
+      this.status = "error";
       this.notifyListeners();
+      this.notifyDisconnect("error");
+
+      // Schedule retry if auto-reconnect is enabled
+      if (this.autoReconnectEnabled) {
+        this.scheduleRetry();
+      }
+
       throw e;
+    }
+  }
+
+  private scheduleRetry(): void {
+    if (!this.autoReconnectEnabled || !this.lastRoomCode || !this.lastDoc) {
+      return;
+    }
+
+    if (this.retryAttempt >= RETRY_MAX_ATTEMPTS) {
+      this.status = "error";
+      this.error = "Max retry attempts reached";
+      this.notifyListeners();
+      return;
+    }
+
+    // Calculate delay with exponential backoff
+    const delay = Math.min(
+      RETRY_BASE_DELAY * Math.pow(2, this.retryAttempt),
+      RETRY_MAX_DELAY,
+    );
+
+    this.retryAttempt++;
+    this.status = "reconnecting";
+    this.nextRetryIn = Math.ceil(delay / 1000);
+    this.notifyListeners();
+
+    // Countdown timer for UI
+    this.countdownInterval = setInterval(() => {
+      if (this.nextRetryIn !== null && this.nextRetryIn > 0) {
+        this.nextRetryIn--;
+        this.notifyListeners();
+      }
+    }, 1000);
+
+    // Schedule the actual retry
+    this.retryTimeout = setTimeout(async () => {
+      this.clearCountdown();
+      try {
+        await this.joinRoomInternal(this.lastRoomCode!, this.lastDoc!);
+      } catch {
+        // joinRoomInternal will schedule next retry on failure
+      }
+    }, delay);
+  }
+
+  private clearRetryState(): void {
+    this.retryAttempt = 0;
+    this.nextRetryIn = null;
+    this.clearCountdown();
+    if (this.retryTimeout) {
+      clearTimeout(this.retryTimeout);
+      this.retryTimeout = null;
+    }
+  }
+
+  private clearCountdown(): void {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+      this.countdownInterval = null;
     }
   }
 
   // Disconnect from the room
   disconnect(): void {
+    const wasConnected = this.status === "connected";
+
+    this.clearRetryState();
+    this.autoReconnectEnabled = false;
+    this.lastRoomCode = null;
+    this.lastDoc = null;
+
     if (this.room) {
       this.room.leave();
       this.room = null;
@@ -234,11 +385,22 @@ class P2PSyncManager {
     this.connectedDoc = null;
     this.roomCode = null;
     this.peerCount = 0;
-    this.isConnecting = false;
-    this.isConnected = false;
+    this.status = "disconnected";
     this.error = null;
     this.sendSync = null;
     this.sendAwareness = null;
+    this.notifyListeners();
+
+    if (wasConnected) {
+      this.notifyDisconnect("manual");
+    }
+  }
+
+  // Cancel auto-reconnect without full disconnect
+  cancelReconnect(): void {
+    this.clearRetryState();
+    this.autoReconnectEnabled = false;
+    this.status = "disconnected";
     this.notifyListeners();
   }
 }

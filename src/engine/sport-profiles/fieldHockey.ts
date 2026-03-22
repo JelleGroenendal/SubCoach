@@ -19,27 +19,37 @@ export const fieldHockeyProfile: SportProfile = {
   players: {
     defaultPlayersOnField: 11,
     hasKeeper: true,
+    positionGroups: [
+      { id: "keeper", name: "sport.field-hockey.group.keeper" },
+      { id: "defense", name: "sport.field-hockey.group.defense" },
+      { id: "midfield", name: "sport.field-hockey.group.midfield" },
+      { id: "attack", name: "sport.field-hockey.group.attack" },
+    ],
     positions: [
       {
         id: "keeper",
         name: "sport.field-hockey.position.keeper",
         abbreviation: "sport.field-hockey.position.keeperAbbr",
         isKeeper: true,
+        groupId: "keeper",
       },
       {
         id: "defender",
         name: "sport.field-hockey.position.defender",
         abbreviation: "sport.field-hockey.position.defenderAbbr",
+        groupId: "defense",
       },
       {
         id: "midfielder",
         name: "sport.field-hockey.position.midfielder",
         abbreviation: "sport.field-hockey.position.midfielderAbbr",
+        groupId: "midfield",
       },
       {
         id: "forward",
         name: "sport.field-hockey.position.forward",
         abbreviation: "sport.field-hockey.position.forwardAbbr",
+        groupId: "attack",
       },
     ],
   },

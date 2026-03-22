@@ -52,6 +52,7 @@ export const MatchSchema = z.object({
   keeperPlayerId: z.string().optional(),
   substitutionsUsed: z.number().int().min(0).optional(),
   substitutionWindowsUsed: z.number().int().min(0).optional(),
+  usePositionAwareSubstitutions: z.boolean().optional(),
 
   createdAt: z.number(),
   finishedAt: z.number().optional(),

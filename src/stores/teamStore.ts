@@ -16,8 +16,11 @@ import {
   destroyTeamDoc,
   waitForAppSync,
   waitForTeamSync,
+  setSyncRoomCode,
+  clearSyncRoomCode,
 } from "@/data/yjs";
 import { getSportProfileOrThrow } from "@/engine/sport-profiles";
+import { generateRoomCode } from "@/data/sync";
 
 /**
  * Team store for managing multi-team state.
@@ -63,6 +66,9 @@ interface TeamState {
   // Refresh from Yjs
   refreshTeam: () => void;
   refreshPlayers: () => void;
+  // Sync management
+  enableSync: () => string | undefined;
+  disableSync: () => void;
 }
 
 export const useTeamStore = create<TeamState>((set, get) => ({
@@ -246,5 +252,42 @@ export const useTeamStore = create<TeamState>((set, get) => ({
     if (!activeTeamId) return;
     const players = getPlayers(activeTeamId);
     set({ players });
+  },
+
+  enableSync: () => {
+    const { activeTeamId, team } = get();
+    if (!activeTeamId || !team) return undefined;
+
+    // Generate a new room code
+    const roomCode = generateRoomCode();
+
+    // Save to Yjs (persists and syncs)
+    setSyncRoomCode(activeTeamId, roomCode);
+
+    // Update local state
+    const updatedTeam: Team = {
+      ...team,
+      syncRoomCode: roomCode,
+      updatedAt: Date.now(),
+    };
+    set({ team: updatedTeam });
+
+    return roomCode;
+  },
+
+  disableSync: () => {
+    const { activeTeamId, team } = get();
+    if (!activeTeamId || !team) return;
+
+    // Clear from Yjs
+    clearSyncRoomCode(activeTeamId);
+
+    // Update local state
+    const updatedTeam: Team = {
+      ...team,
+      syncRoomCode: undefined,
+      updatedAt: Date.now(),
+    };
+    set({ team: updatedTeam });
   },
 }));

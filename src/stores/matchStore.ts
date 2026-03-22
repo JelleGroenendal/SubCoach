@@ -9,6 +9,7 @@ import {
 } from "@/data/yjs";
 import { recalculateSchedule } from "@/engine/substitution/recalculate";
 import { getTotalMatchSeconds } from "@/engine/timer/matchTimer";
+import { getSportProfile } from "@/engine/sport-profiles";
 
 interface MatchState {
   // Current team context (must be set before using match operations)
@@ -28,6 +29,8 @@ interface MatchState {
     periodDurationMinutes: number;
     periodCount: number;
     playersOnField: number;
+    sportProfileId?: string;
+    usePositionAwareSubstitutions?: boolean;
   }) => void;
   startTimer: () => void;
   pauseTimer: () => void;
@@ -104,6 +107,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       awayScore: 0,
       roster: params.roster,
       events: [],
+      sportProfileId: params.sportProfileId,
+      usePositionAwareSubstitutions: params.usePositionAwareSubstitutions,
       createdAt: now,
     };
     saveCurrentMatch(params.teamId, match);
@@ -760,12 +765,31 @@ function recalcSchedule(match: Match): SubstitutionPlan {
     (match.currentPeriod - 1) * match.periodDurationMinutes * 60 +
     match.elapsedSeconds;
 
+  // Build position group map from sport profile (if position-aware is enabled)
+  let positionGroupMap: Record<string, string> = {};
+  if (match.usePositionAwareSubstitutions && match.sportProfileId) {
+    const sportProfile = getSportProfile(match.sportProfileId);
+    if (sportProfile?.players.positions) {
+      positionGroupMap = sportProfile.players.positions.reduce(
+        (map, pos) => {
+          if (pos.groupId) {
+            map[pos.id] = pos.groupId;
+          }
+          return map;
+        },
+        {} as Record<string, string>,
+      );
+    }
+  }
+
   return recalculateSchedule({
     roster: match.roster,
     totalMatchSeconds: totalSeconds,
     currentTimeSeconds: currentSeconds,
     playersOnField: match.playersOnField,
     hasKeeper: true,
-    keeperPlayerId: undefined, // MVP: no keeper tracking
+    keeperPlayerId: match.keeperPlayerId,
+    usePositionAwareSubstitutions: match.usePositionAwareSubstitutions,
+    positionGroupMap,
   });
 }

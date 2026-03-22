@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { TeamSelector } from "./TeamSelector";
 import { CrashRecovery } from "./CrashRecovery";
 import { InstallPrompt } from "./InstallPrompt";
+import { SyncIndicator } from "./SyncIndicator";
 
 const NAV_ITEMS = [
   {
@@ -129,6 +130,7 @@ export function Layout(): React.ReactNode {
                 SubCoach
               </Link>
               <TeamSelector />
+              <SyncIndicator />
             </div>
             <nav className="flex gap-1">
               {NAV_ITEMS.map((item) => (
@@ -164,7 +166,10 @@ export function Layout(): React.ReactNode {
           >
             SubCoach
           </Link>
-          <TeamSelector />
+          <div className="flex items-center gap-2">
+            <SyncIndicator />
+            <TeamSelector />
+          </div>
         </header>
       )}
 

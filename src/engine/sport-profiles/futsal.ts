@@ -20,27 +20,36 @@ export const futsalProfile: SportProfile = {
   players: {
     defaultPlayersOnField: 5,
     hasKeeper: true,
+    positionGroups: [
+      { id: "keeper", name: "sport.futsal.group.keeper" },
+      { id: "defense", name: "sport.futsal.group.defense" },
+      { id: "attack", name: "sport.futsal.group.attack" },
+    ],
     positions: [
       {
         id: "keeper",
         name: "sport.futsal.position.keeper",
         abbreviation: "sport.futsal.position.keeperAbbr",
         isKeeper: true,
+        groupId: "keeper",
       },
       {
         id: "defender",
         name: "sport.futsal.position.defender",
         abbreviation: "sport.futsal.position.defenderAbbr",
+        groupId: "defense",
       },
       {
         id: "winger",
         name: "sport.futsal.position.winger",
         abbreviation: "sport.futsal.position.wingerAbbr",
+        groupId: "attack",
       },
       {
         id: "pivot",
         name: "sport.futsal.position.pivot",
         abbreviation: "sport.futsal.position.pivotAbbr",
+        groupId: "attack",
       },
     ],
   },

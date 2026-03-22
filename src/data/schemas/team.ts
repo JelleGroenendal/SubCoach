@@ -4,6 +4,7 @@ export const TeamSettingsSchema = z.object({
   periodDurationMinutes: z.number().int().min(5).max(45),
   periodCount: z.number().int().min(1).max(4),
   playersOnField: z.number().int().min(4).max(11),
+  usePositionAwareSubstitutions: z.boolean().optional(), // default: false
 });
 
 export const TeamSchema = z.object({
@@ -12,6 +13,7 @@ export const TeamSchema = z.object({
   clubName: z.string().max(100).optional(),
   sportProfileId: z.string().min(1),
   settings: TeamSettingsSchema,
+  syncRoomCode: z.string().length(6).optional(),
   createdAt: z.number(),
   updatedAt: z.number(),
 });

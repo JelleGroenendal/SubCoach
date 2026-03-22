@@ -21,27 +21,37 @@ export const footballProfile: SportProfile = {
   players: {
     defaultPlayersOnField: 9, // D-jeugd (senior = 11)
     hasKeeper: true,
+    positionGroups: [
+      { id: "keeper", name: "sport.football.group.keeper" },
+      { id: "defense", name: "sport.football.group.defense" },
+      { id: "midfield", name: "sport.football.group.midfield" },
+      { id: "attack", name: "sport.football.group.attack" },
+    ],
     positions: [
       {
         id: "keeper",
         name: "sport.football.position.keeper",
         abbreviation: "sport.football.position.keeperAbbr",
         isKeeper: true,
+        groupId: "keeper",
       },
       {
         id: "defender",
         name: "sport.football.position.defender",
         abbreviation: "sport.football.position.defenderAbbr",
+        groupId: "defense",
       },
       {
         id: "midfielder",
         name: "sport.football.position.midfielder",
         abbreviation: "sport.football.position.midfielderAbbr",
+        groupId: "midfield",
       },
       {
         id: "forward",
         name: "sport.football.position.forward",
         abbreviation: "sport.football.position.forwardAbbr",
+        groupId: "attack",
       },
     ],
   },
