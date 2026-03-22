@@ -790,7 +790,12 @@ export function MatchLivePage(): React.ReactNode {
                             #{player.number}
                           </span>
                         )}
-                        {playerPosition && (
+                        {player.isKeeper && (
+                          <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
+                            GK
+                          </span>
+                        )}
+                        {playerPosition && !player.isKeeper && (
                           <span className="rounded bg-white/20 px-1 text-[10px] font-medium">
                             {t(playerPosition.abbreviation)}
                           </span>
@@ -1009,7 +1014,12 @@ export function MatchLivePage(): React.ReactNode {
                                 <span className="text-base font-medium leading-tight">
                                   {player.name}
                                 </span>
-                                {playerPosition && (
+                                {player.isKeeper && (
+                                  <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
+                                    GK
+                                  </span>
+                                )}
+                                {playerPosition && !player.isKeeper && (
                                   <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
                                     {t(playerPosition.abbreviation)}
                                   </span>
@@ -1071,7 +1081,12 @@ export function MatchLivePage(): React.ReactNode {
                             <span className="text-base font-medium leading-tight">
                               {player.name}
                             </span>
-                            {playerPosition && (
+                            {player.isKeeper && (
+                              <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
+                                GK
+                              </span>
+                            )}
+                            {playerPosition && !player.isKeeper && (
                               <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
                                 {t(playerPosition.abbreviation)}
                               </span>

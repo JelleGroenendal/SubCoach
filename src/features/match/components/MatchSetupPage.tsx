@@ -244,16 +244,25 @@ function MatchSetupForm({
 
     const roster: MatchPlayer[] = selections
       .filter((s) => s.assignment !== "unavailable")
-      .map((s) => ({
-        playerId: s.playerId,
-        name: s.name,
-        number: s.number,
-        positionId: s.positionId,
-        status: s.assignment as "field" | "bench",
-        totalPlayTimeSeconds: 0,
-        goals: 0,
-        periods: [],
-      }));
+      .map((s) => {
+        // Check if player's position is marked as keeper in sport profile
+        const playerPosition = s.positionId
+          ? positions.find((p) => p.id === s.positionId)
+          : undefined;
+        const isKeeper = playerPosition?.isKeeper ?? false;
+
+        return {
+          playerId: s.playerId,
+          name: s.name,
+          number: s.number,
+          positionId: s.positionId,
+          status: s.assignment as "field" | "bench",
+          totalPlayTimeSeconds: 0,
+          goals: 0,
+          periods: [],
+          isKeeper,
+        };
+      });
 
     createMatch({
       teamId,
@@ -270,6 +279,7 @@ function MatchSetupForm({
   }, [
     canStart,
     selections,
+    positions,
     opponentName,
     periodDuration,
     periodCount,
@@ -461,7 +471,12 @@ function MatchSetupForm({
                       #{selection.number}
                     </span>
                   )}
-                  {playerPosition && (
+                  {playerPosition?.isKeeper && (
+                    <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
+                      GK
+                    </span>
+                  )}
+                  {playerPosition && !playerPosition.isKeeper && (
                     <span
                       className={cn(
                         "rounded px-1 text-[10px] font-medium",
