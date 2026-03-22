@@ -20,7 +20,7 @@ export function MatchLivePage(): React.ReactNode {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { team } = useTeamStore();
+  const { team, loading: teamLoading, initialize } = useTeamStore();
   const sportProfile = useMemo(
     () => (team ? getSportProfile(team.sportProfileId) : undefined),
     [team],
@@ -84,19 +84,18 @@ export function MatchLivePage(): React.ReactNode {
   );
   const lastTickTimeRef = useRef<number>(0);
 
-  // Set team ID and load match
+  // Initialize team store on mount (loads from Yjs/IndexedDB)
   useEffect(() => {
-    if (team) {
-      setTeamId(team.id);
-    }
-  }, [team, setTeamId]);
+    initialize();
+  }, [initialize]);
 
-  // Load match if not present
+  // Set team ID and load match once team is loaded
   useEffect(() => {
-    if (team) {
+    if (team && !teamLoading) {
+      setTeamId(team.id);
       loadMatch();
     }
-  }, [team, loadMatch]);
+  }, [team, teamLoading, setTeamId, loadMatch]);
 
   // Wake lock
   useEffect(() => {
@@ -450,8 +449,8 @@ export function MatchLivePage(): React.ReactNode {
     [handleBenchPlayerTap, selectedPlayerIds, hasFieldSelection],
   );
 
-  // No match loaded
-  if (!match) {
+  // Loading or no match loaded
+  if (teamLoading || !match) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
