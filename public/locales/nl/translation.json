@@ -299,6 +299,26 @@
     "disconnect": "Verbreken",
     "waitingForCoaches": "Wachten op coaches"
   },
+  "teamShare": {
+    "sectionTitle": "Team delen",
+    "sectionDescription": "Deel dit team met een andere coach. Zij ontvangen het team, alle spelers en de wedstrijdgeschiedenis.",
+    "openPanel": "Delen met coach",
+    "title": "Team delen",
+    "description": "Deel je team met een andere coach via een beveiligde verbinding. De andere coach ontvangt alle teamdata inclusief spelers en wedstrijdgeschiedenis.",
+    "shareTeam": "Dit team delen",
+    "receiveTeam": "Team ontvangen",
+    "enterCodeFromCoach": "Voer de 6-letterige code van de andere coach in",
+    "connect": "Verbinden",
+    "sharing": "Team delen...",
+    "receiving": "Team ontvangen...",
+    "connectedCoaches": "Verbonden",
+    "shareCodeWithCoach": "Geef deze code aan de andere coach",
+    "waitingForCoach": "Wachten op andere coach",
+    "waitingForData": "Teamdata ontvangen...",
+    "imported": "Team geïmporteerd!",
+    "importedDescription": "Het team is toegevoegd aan je app. Je kunt het nu gebruiken.",
+    "goToTeam": "Naar team"
+  },
   "settings": {
     "title": "Instellingen",
     "language": "Taal",

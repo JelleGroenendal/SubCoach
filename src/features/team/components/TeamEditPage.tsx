@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
 import { Button } from "@/components/ui/button";
 import { getAllSportProfiles, getSportProfile } from "@/engine/sport-profiles";
+import { TeamSharePanel } from "./TeamSharePanel";
 import type { Player } from "@/data/schemas";
 
 const PERIOD_DURATION_OPTIONS = [
@@ -40,6 +41,7 @@ export function TeamEditPage(): React.ReactNode {
   const [newPlayerName, setNewPlayerName] = useState("");
   const [newPlayerNumber, setNewPlayerNumber] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showSharePanel, setShowSharePanel] = useState(false);
   const [editingPlayerId, setEditingPlayerId] = useState<string | undefined>(
     undefined,
   );
@@ -583,6 +585,30 @@ export function TeamEditPage(): React.ReactNode {
             {t("team.edit.players.add")}
           </Button>
         </div>
+      </section>
+
+      {/* Share Team */}
+      <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+        <h2 className="text-lg font-semibold">{t("teamShare.sectionTitle")}</h2>
+        <p className="text-sm text-muted-foreground">
+          {t("teamShare.sectionDescription")}
+        </p>
+
+        {showSharePanel ? (
+          <TeamSharePanel
+            teamId={team.id}
+            onClose={() => setShowSharePanel(false)}
+          />
+        ) : (
+          <Button
+            size="xl"
+            variant="secondary"
+            className="touch-manipulation self-start"
+            onClick={() => setShowSharePanel(true)}
+          >
+            {t("teamShare.openPanel")}
+          </Button>
+        )}
       </section>
 
       {/* Danger Zone */}

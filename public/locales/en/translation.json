@@ -299,6 +299,26 @@
     "disconnect": "Disconnect",
     "waitingForCoaches": "Waiting for coaches"
   },
+  "teamShare": {
+    "sectionTitle": "Share team",
+    "sectionDescription": "Share this team with another coach. They will receive the team, all players, and match history.",
+    "openPanel": "Share with coach",
+    "title": "Share team",
+    "description": "Share your team with another coach via a secure connection. The other coach will receive all team data including players and match history.",
+    "shareTeam": "Share this team",
+    "receiveTeam": "Receive a team",
+    "enterCodeFromCoach": "Enter the 6-letter code from the other coach",
+    "connect": "Connect",
+    "sharing": "Sharing team...",
+    "receiving": "Receiving team...",
+    "connectedCoaches": "Connected",
+    "shareCodeWithCoach": "Give this code to the other coach",
+    "waitingForCoach": "Waiting for other coach",
+    "waitingForData": "Receiving team data...",
+    "imported": "Team imported!",
+    "importedDescription": "The team has been added to your app. You can now use it.",
+    "goToTeam": "Go to team"
+  },
   "settings": {
     "title": "Settings",
     "language": "Language",
