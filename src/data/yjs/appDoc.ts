@@ -60,6 +60,14 @@ export function setActiveTeamId(teamId: string): void {
   });
 }
 
+export function clearActiveTeamId(): void {
+  const doc = getAppDoc();
+  const meta = doc.getMap("meta");
+  doc.transact(() => {
+    meta.delete("activeTeamId");
+  });
+}
+
 export function getAppSetting(key: string): unknown {
   const doc = getAppDoc();
   const meta = doc.getMap("meta");

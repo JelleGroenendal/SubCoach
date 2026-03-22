@@ -12,7 +12,10 @@ import {
   removeTeamRef,
   getActiveTeamId,
   setActiveTeamId,
+  clearActiveTeamId,
   destroyTeamDoc,
+  waitForAppSync,
+  waitForTeamSync,
 } from "@/data/yjs";
 import { getSportProfileOrThrow } from "@/engine/sport-profiles";
 
@@ -37,10 +40,10 @@ interface TeamState {
   players: Player[];
   // Loading state
   loading: boolean;
-  // Initialization
-  initialize: () => void;
-  // Team selection
-  selectTeam: (teamId: string) => void;
+  // Initialization (async - waits for Yjs sync)
+  initialize: () => Promise<void>;
+  // Team selection (async - waits for team doc sync)
+  selectTeam: (teamId: string) => Promise<void>;
   // Team CRUD
   createTeam: (name: string, sportProfileId: string) => Team;
   updateTeam: (
@@ -68,9 +71,14 @@ export const useTeamStore = create<TeamState>((set, get) => ({
   players: [],
   loading: true,
 
-  initialize: () => {
+  initialize: async () => {
+    // Wait for app doc to sync from IndexedDB
+    await waitForAppSync();
+
     const activeId = getActiveTeamId();
     if (activeId) {
+      // Wait for team doc to sync from IndexedDB
+      await waitForTeamSync(activeId);
       const team = getTeamInfo(activeId);
       const players = getPlayers(activeId);
       set({ activeTeamId: activeId, team, players, loading: false });
@@ -79,8 +87,10 @@ export const useTeamStore = create<TeamState>((set, get) => ({
     }
   },
 
-  selectTeam: (teamId) => {
+  selectTeam: async (teamId) => {
     setActiveTeamId(teamId);
+    // Wait for team doc to sync from IndexedDB
+    await waitForTeamSync(teamId);
     const team = getTeamInfo(teamId);
     const players = getPlayers(teamId);
     set({ activeTeamId: teamId, team, players });
@@ -161,8 +171,9 @@ export const useTeamStore = create<TeamState>((set, get) => ({
     // Destroy the team's Yjs doc and IndexedDB
     destroyTeamDoc(teamId);
 
-    // If this was the active team, clear selection
+    // If this was the active team, clear selection in both Zustand AND Yjs
     if (activeTeamId === teamId) {
+      clearActiveTeamId(); // Clear from Yjs persistence
       set({ activeTeamId: undefined, team: undefined, players: [] });
     }
   },

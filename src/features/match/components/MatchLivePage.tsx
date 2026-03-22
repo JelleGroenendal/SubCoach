@@ -509,7 +509,7 @@ export function MatchLivePage(): React.ReactNode {
             type="button"
             onClick={handleHomeGoal}
             className={cn(
-              "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
+              "min-h-12 min-w-12 touch-manipulation rounded-lg px-2",
               "text-xs font-medium text-green-400",
               "transition-colors hover:bg-green-900/30",
               goalScorerMode && "bg-green-900/50 ring-2 ring-green-400",
@@ -541,7 +541,7 @@ export function MatchLivePage(): React.ReactNode {
             type="button"
             onClick={() => registerOpponentGoal()}
             className={cn(
-              "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
+              "min-h-12 min-w-12 touch-manipulation rounded-lg px-2",
               "text-xs font-medium text-red-400",
               "transition-colors hover:bg-red-900/30",
             )}
@@ -584,7 +584,7 @@ export function MatchLivePage(): React.ReactNode {
               type="button"
               onClick={() => setShowMenu((v) => !v)}
               className={cn(
-                "min-h-10 min-w-10 touch-manipulation rounded-lg px-1.5 sm:min-h-12 sm:min-w-12 sm:px-2",
+                "min-h-12 min-w-12 touch-manipulation rounded-lg px-2",
                 "text-lg text-muted-foreground",
                 "transition-colors hover:bg-accent",
               )}
@@ -641,7 +641,7 @@ export function MatchLivePage(): React.ReactNode {
             type="button"
             onClick={() => setGoalScorerMode(false)}
             className={cn(
-              "min-h-10 touch-manipulation rounded-md px-4 py-2",
+              "min-h-12 touch-manipulation rounded-md px-4 py-2",
               "text-sm text-amber-300",
               "transition-colors hover:bg-amber-900/50",
             )}
@@ -663,7 +663,7 @@ export function MatchLivePage(): React.ReactNode {
             type="button"
             onClick={clearSelection}
             className={cn(
-              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
+              "min-h-12 touch-manipulation rounded-md px-3 py-2",
               "text-sm text-green-300",
               "transition-colors hover:bg-green-900/50",
             )}
@@ -685,7 +685,7 @@ export function MatchLivePage(): React.ReactNode {
             type="button"
             onClick={clearSelection}
             className={cn(
-              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
+              "min-h-12 touch-manipulation rounded-md px-3 py-2",
               "text-sm text-primary",
               "transition-colors hover:bg-primary/20",
             )}

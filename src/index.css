@@ -2,7 +2,41 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Light mode (default) */
 @theme {
+  /* Base colors - light */
+  --color-background: #ffffff;
+  --color-foreground: #09090b;
+  --color-card: #ffffff;
+  --color-card-foreground: #09090b;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #09090b;
+  --color-primary: #18181b;
+  --color-primary-foreground: #fafafa;
+  --color-secondary: #f4f4f5;
+  --color-secondary-foreground: #18181b;
+  --color-muted: #f4f4f5;
+  --color-muted-foreground: #71717a;
+  --color-accent: #f4f4f5;
+  --color-accent-foreground: #18181b;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #fafafa;
+  --color-border: #e4e4e7;
+  --color-input: #e4e4e7;
+  --color-ring: #a1a1aa;
+  --radius: 0.5rem;
+
+  /* SubCoach specific colors - light */
+  --color-field: #22c55e;
+  --color-bench: #d4d4d8;
+  --color-penalty: #ef4444;
+  --color-injured: #f97316;
+  --color-suggested: #f59e0b;
+  --color-red-card: #dc2626;
+}
+
+/* Dark mode overrides */
+.dark {
   --color-background: #09090b;
   --color-foreground: #fafafa;
   --color-card: #0a0a0a;
@@ -22,9 +56,8 @@
   --color-border: #27272a;
   --color-input: #27272a;
   --color-ring: #d4d4d8;
-  --radius: 0.5rem;
 
-  /* SubCoach specific colors */
+  /* SubCoach specific colors - dark */
   --color-field: #166534;
   --color-bench: #3f3f46;
   --color-penalty: #991b1b;

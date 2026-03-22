@@ -19,6 +19,7 @@ export {
   removeTeamRef,
   getActiveTeamId,
   setActiveTeamId,
+  clearActiveTeamId,
   getAppSetting,
   setAppSetting,
 } from "./appDoc";

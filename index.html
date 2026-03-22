@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="nl" class="dark">
+<html lang="nl">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -15,6 +15,18 @@
       content="black-translucent"
     />
     <title>SubCoach</title>
+    <!-- Apply theme immediately to prevent flash of wrong theme -->
+    <script>
+      (function () {
+        var theme = localStorage.getItem("subcoach-theme");
+        if (theme === "light") {
+          // Light mode - do nothing, CSS default is light
+        } else {
+          // Dark mode (default)
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

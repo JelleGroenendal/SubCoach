@@ -1,37 +1,22 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { destroyAll } from "@/data/yjs";
+import {
+  getStoredTheme,
+  toggleTheme as toggleThemeUtil,
+  type Theme,
+} from "@/lib/theme";
 import { Button } from "@/components/ui/button";
 import { KofiButton } from "@/components/common/KofiButton";
 
-const THEME_KEY = "subcoach-theme";
-
-function getStoredTheme(): "dark" | "light" {
-  const stored = localStorage.getItem(THEME_KEY);
-  if (stored === "light" || stored === "dark") return stored;
-  return "dark";
-}
-
-function applyTheme(theme: "dark" | "light"): void {
-  if (theme === "dark") {
-    document.documentElement.classList.add("dark");
-  } else {
-    document.documentElement.classList.remove("dark");
-  }
-  localStorage.setItem(THEME_KEY, theme);
-}
-
 export function SettingsPage(): React.ReactNode {
   const { t, i18n } = useTranslation();
-  const [theme, setTheme] = useState<"dark" | "light">(getStoredTheme);
+  const [theme, setTheme] = useState<Theme>(getStoredTheme);
 
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  const handleToggleTheme = useCallback(() => {
+    const newTheme = toggleThemeUtil();
+    setTheme(newTheme);
   }, []);
 
   const handleLanguageChange = useCallback(
@@ -103,7 +88,7 @@ export function SettingsPage(): React.ReactNode {
           </div>
           <button
             type="button"
-            onClick={toggleTheme}
+            onClick={handleToggleTheme}
             className="min-h-12 min-w-12 touch-manipulation rounded-lg border border-border bg-card p-2 transition-colors hover:bg-accent"
             aria-label={t("settings.toggleTheme")}
           >
