@@ -20,6 +20,34 @@ export const waterPoloProfile: SportProfile = {
   players: {
     defaultPlayersOnField: 7,
     hasKeeper: true,
+    positions: [
+      {
+        id: "goalie",
+        name: "sport.water-polo.position.goalie",
+        abbreviation: "sport.water-polo.position.goalieAbbr",
+        isKeeper: true,
+      },
+      {
+        id: "defender",
+        name: "sport.water-polo.position.defender",
+        abbreviation: "sport.water-polo.position.defenderAbbr",
+      },
+      {
+        id: "wing",
+        name: "sport.water-polo.position.wing",
+        abbreviation: "sport.water-polo.position.wingAbbr",
+      },
+      {
+        id: "center",
+        name: "sport.water-polo.position.center",
+        abbreviation: "sport.water-polo.position.centerAbbr",
+      },
+      {
+        id: "point",
+        name: "sport.water-polo.position.point",
+        abbreviation: "sport.water-polo.position.pointAbbr",
+      },
+    ],
   },
 
   substitutions: {

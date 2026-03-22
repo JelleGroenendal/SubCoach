@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getAllSportProfiles, getSportProfile } from "@/engine/sport-profiles";
 import { TeamSharePanel } from "./TeamSharePanel";
 import type { Player } from "@/data/schemas";
+import type { Position } from "@/data/schemas/sportProfile";
 
 const PERIOD_DURATION_OPTIONS = [
   5, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45,
@@ -40,6 +41,9 @@ export function TeamEditPage(): React.ReactNode {
 
   const [newPlayerName, setNewPlayerName] = useState("");
   const [newPlayerNumber, setNewPlayerNumber] = useState("");
+  const [newPlayerPositionId, setNewPlayerPositionId] = useState<
+    string | undefined
+  >(undefined);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSharePanel, setShowSharePanel] = useState(false);
   const [editingPlayerId, setEditingPlayerId] = useState<string | undefined>(
@@ -47,6 +51,9 @@ export function TeamEditPage(): React.ReactNode {
   );
   const [editName, setEditName] = useState("");
   const [editNumber, setEditNumber] = useState("");
+  const [editPositionId, setEditPositionId] = useState<string | undefined>(
+    undefined,
+  );
   const nameInputRef = useRef<HTMLInputElement>(null);
   const teamNameDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
@@ -106,17 +113,24 @@ export function TeamEditPage(): React.ReactNode {
         ? parsedNumber
         : undefined;
 
-    addPlayer(name, validNumber);
+    addPlayer(name, validNumber, newPlayerPositionId);
     setNewPlayerName("");
     setNewPlayerNumber("");
+    setNewPlayerPositionId(undefined);
     nameInputRef.current?.focus();
-  }, [newPlayerName, newPlayerNumber, addPlayer]);
+  }, [newPlayerName, newPlayerNumber, newPlayerPositionId, addPlayer]);
 
   const handleStartEdit = useCallback(
-    (playerId: string, name: string, number: number | undefined) => {
+    (
+      playerId: string,
+      name: string,
+      number: number | undefined,
+      positionId: string | undefined,
+    ) => {
       setEditingPlayerId(playerId);
       setEditName(name);
       setEditNumber(number !== undefined ? String(number) : "");
+      setEditPositionId(positionId);
     },
     [],
   );
@@ -136,16 +150,22 @@ export function TeamEditPage(): React.ReactNode {
         ? parsedNumber
         : undefined;
 
-    updatePlayer(editingPlayerId, { name, number: validNumber });
+    updatePlayer(editingPlayerId, {
+      name,
+      number: validNumber,
+      positionId: editPositionId,
+    });
     setEditingPlayerId(undefined);
     setEditName("");
     setEditNumber("");
-  }, [editingPlayerId, editName, editNumber, updatePlayer]);
+    setEditPositionId(undefined);
+  }, [editingPlayerId, editName, editNumber, editPositionId, updatePlayer]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingPlayerId(undefined);
     setEditName("");
     setEditNumber("");
+    setEditPositionId(undefined);
   }, []);
 
   const handleRemovePlayer = useCallback(
@@ -159,6 +179,13 @@ export function TeamEditPage(): React.ReactNode {
   );
 
   const allSportProfiles = useMemo(() => getAllSportProfiles(), []);
+
+  // Get positions for current sport profile
+  const currentSportProfile = useMemo(
+    () => (team ? getSportProfile(team.sportProfileId) : undefined),
+    [team],
+  );
+  const positions: Position[] = currentSportProfile?.players.positions ?? [];
 
   const handleSportChange = useCallback(
     (newSportProfileId: string) => {
@@ -402,7 +429,7 @@ export function TeamEditPage(): React.ReactNode {
               return (
                 <div
                   key={player.id}
-                  className="flex items-center gap-2 rounded-lg border border-ring bg-background p-3"
+                  className="flex flex-wrap items-center gap-2 rounded-lg border border-ring bg-background p-3"
                 >
                   <input
                     type="text"
@@ -413,7 +440,7 @@ export function TeamEditPage(): React.ReactNode {
                       if (e.key === "Escape") handleCancelEdit();
                     }}
                     className={cn(
-                      "min-h-10 flex-1 touch-manipulation rounded-md border border-input bg-background px-2 py-1",
+                      "min-h-10 min-w-[100px] flex-1 touch-manipulation rounded-md border border-input bg-background px-2 py-1",
                       "text-base text-foreground",
                       "focus:outline-none focus:ring-2 focus:ring-ring",
                     )}
@@ -430,7 +457,7 @@ export function TeamEditPage(): React.ReactNode {
                       if (e.key === "Escape") handleCancelEdit();
                     }}
                     className={cn(
-                      "min-h-10 w-16 touch-manipulation rounded-md border border-input bg-background px-2 py-1",
+                      "min-h-10 w-14 touch-manipulation rounded-md border border-input bg-background px-2 py-1",
                       "text-center text-base text-foreground",
                       "focus:outline-none focus:ring-2 focus:ring-ring",
                     )}
@@ -438,6 +465,29 @@ export function TeamEditPage(): React.ReactNode {
                     min={1}
                     max={99}
                   />
+                  {positions.length > 0 && (
+                    <select
+                      value={editPositionId ?? ""}
+                      onChange={(e) =>
+                        setEditPositionId(e.target.value || undefined)
+                      }
+                      className={cn(
+                        "min-h-10 w-24 touch-manipulation rounded-md border border-input bg-background px-2 py-1",
+                        "text-sm text-foreground",
+                        "focus:outline-none focus:ring-2 focus:ring-ring",
+                      )}
+                      aria-label={t("team.edit.players.position")}
+                    >
+                      <option value="">
+                        {t("team.edit.players.noPosition")}
+                      </option>
+                      {positions.map((pos) => (
+                        <option key={pos.id} value={pos.id}>
+                          {t(pos.abbreviation)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <Button
                     size="xl"
                     variant="default"
@@ -459,6 +509,11 @@ export function TeamEditPage(): React.ReactNode {
                 </div>
               );
             }
+
+            // Get position for this player
+            const playerPosition = player.positionId
+              ? positions.find((p) => p.id === player.positionId)
+              : undefined;
 
             return (
               <div
@@ -483,6 +538,11 @@ export function TeamEditPage(): React.ReactNode {
                 >
                   {player.name}
                 </span>
+                {playerPosition && (
+                  <span className="rounded bg-primary/20 px-1.5 py-0.5 text-xs font-medium text-primary">
+                    {t(playerPosition.abbreviation)}
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() =>
@@ -509,7 +569,12 @@ export function TeamEditPage(): React.ReactNode {
                 <button
                   type="button"
                   onClick={() =>
-                    handleStartEdit(player.id, player.name, player.number)
+                    handleStartEdit(
+                      player.id,
+                      player.name,
+                      player.number,
+                      player.positionId,
+                    )
                   }
                   className={cn(
                     "min-h-10 min-w-10 touch-manipulation rounded-md px-2 py-1",
@@ -542,7 +607,7 @@ export function TeamEditPage(): React.ReactNode {
         </div>
 
         {/* Add Player Form */}
-        <div className="flex items-center gap-2 border-t border-border pt-4">
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
           <input
             ref={nameInputRef}
             type="text"
@@ -552,7 +617,7 @@ export function TeamEditPage(): React.ReactNode {
               if (e.key === "Enter") handleAddPlayer();
             }}
             className={cn(
-              "min-h-12 flex-1 touch-manipulation rounded-lg border border-input bg-background px-3 py-2",
+              "min-h-12 min-w-[120px] flex-1 touch-manipulation rounded-lg border border-input bg-background px-3 py-2",
               "text-base text-foreground placeholder:text-muted-foreground",
               "focus:outline-none focus:ring-2 focus:ring-ring",
             )}
@@ -567,7 +632,7 @@ export function TeamEditPage(): React.ReactNode {
               if (e.key === "Enter") handleAddPlayer();
             }}
             className={cn(
-              "min-h-12 w-20 touch-manipulation rounded-lg border border-input bg-background px-3 py-2",
+              "min-h-12 w-16 touch-manipulation rounded-lg border border-input bg-background px-3 py-2",
               "text-center text-base text-foreground placeholder:text-muted-foreground",
               "focus:outline-none focus:ring-2 focus:ring-ring",
             )}
@@ -575,6 +640,27 @@ export function TeamEditPage(): React.ReactNode {
             min={1}
             max={99}
           />
+          {positions.length > 0 && (
+            <select
+              value={newPlayerPositionId ?? ""}
+              onChange={(e) =>
+                setNewPlayerPositionId(e.target.value || undefined)
+              }
+              className={cn(
+                "min-h-12 w-28 touch-manipulation rounded-lg border border-input bg-background px-2 py-2",
+                "text-sm text-foreground",
+                "focus:outline-none focus:ring-2 focus:ring-ring",
+              )}
+              aria-label={t("team.edit.players.position")}
+            >
+              <option value="">{t("team.edit.players.noPosition")}</option>
+              {positions.map((pos) => (
+                <option key={pos.id} value={pos.id}>
+                  {t(pos.abbreviation)}
+                </option>
+              ))}
+            </select>
+          )}
           <Button
             size="match"
             variant="default"

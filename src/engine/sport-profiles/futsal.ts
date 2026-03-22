@@ -20,6 +20,29 @@ export const futsalProfile: SportProfile = {
   players: {
     defaultPlayersOnField: 5,
     hasKeeper: true,
+    positions: [
+      {
+        id: "keeper",
+        name: "sport.futsal.position.keeper",
+        abbreviation: "sport.futsal.position.keeperAbbr",
+        isKeeper: true,
+      },
+      {
+        id: "defender",
+        name: "sport.futsal.position.defender",
+        abbreviation: "sport.futsal.position.defenderAbbr",
+      },
+      {
+        id: "winger",
+        name: "sport.futsal.position.winger",
+        abbreviation: "sport.futsal.position.wingerAbbr",
+      },
+      {
+        id: "pivot",
+        name: "sport.futsal.position.pivot",
+        abbreviation: "sport.futsal.position.pivotAbbr",
+      },
+    ],
   },
 
   substitutions: {

@@ -15,31 +15,125 @@
   },
   "sport": {
     "handball": {
-      "name": "Handbal"
+      "name": "Handbal",
+      "position": {
+        "keeper": "Keeper",
+        "keeperAbbr": "K",
+        "leftWing": "Linksbuiten",
+        "leftWingAbbr": "LB",
+        "leftBack": "Links opbouw",
+        "leftBackAbbr": "LO",
+        "center": "Midden opbouw",
+        "centerAbbr": "MO",
+        "rightBack": "Rechts opbouw",
+        "rightBackAbbr": "RO",
+        "rightWing": "Rechtsbuiten",
+        "rightWingAbbr": "RB",
+        "pivot": "Cirkel",
+        "pivotAbbr": "CI"
+      }
     },
     "football": {
-      "name": "Voetbal"
+      "name": "Voetbal",
+      "position": {
+        "keeper": "Keeper",
+        "keeperAbbr": "K",
+        "defender": "Verdediger",
+        "defenderAbbr": "VER",
+        "midfielder": "Middenvelder",
+        "midfielderAbbr": "MID",
+        "forward": "Aanvaller",
+        "forwardAbbr": "AAN"
+      }
     },
     "futsal": {
-      "name": "Zaalvoetbal"
+      "name": "Zaalvoetbal",
+      "position": {
+        "keeper": "Keeper",
+        "keeperAbbr": "K",
+        "defender": "Verdediger",
+        "defenderAbbr": "VER",
+        "winger": "Vleugelspeler",
+        "wingerAbbr": "VL",
+        "pivot": "Pivot",
+        "pivotAbbr": "PV"
+      }
     },
     "basketball": {
-      "name": "Basketbal"
+      "name": "Basketbal",
+      "position": {
+        "pointGuard": "Point Guard",
+        "pointGuardAbbr": "PG",
+        "shootingGuard": "Shooting Guard",
+        "shootingGuardAbbr": "SG",
+        "smallForward": "Small Forward",
+        "smallForwardAbbr": "SF",
+        "powerForward": "Power Forward",
+        "powerForwardAbbr": "PF",
+        "center": "Center",
+        "centerAbbr": "C"
+      }
     },
     "floorball": {
-      "name": "Floorball"
+      "name": "Floorball",
+      "position": {
+        "keeper": "Keeper",
+        "keeperAbbr": "K",
+        "defender": "Verdediger",
+        "defenderAbbr": "VER",
+        "forward": "Aanvaller",
+        "forwardAbbr": "AAN"
+      }
     },
-    "iceHockey": {
-      "name": "IJshockey"
+    "ice-hockey": {
+      "name": "IJshockey",
+      "position": {
+        "goalie": "Doelman",
+        "goalieAbbr": "D",
+        "defender": "Verdediger",
+        "defenderAbbr": "VER",
+        "center": "Center",
+        "centerAbbr": "C",
+        "winger": "Vleugelspeler",
+        "wingerAbbr": "VL"
+      }
     },
-    "fieldHockey": {
-      "name": "Hockey"
+    "field-hockey": {
+      "name": "Hockey",
+      "position": {
+        "keeper": "Keeper",
+        "keeperAbbr": "K",
+        "defender": "Verdediger",
+        "defenderAbbr": "VER",
+        "midfielder": "Middenvelder",
+        "midfielderAbbr": "MID",
+        "forward": "Aanvaller",
+        "forwardAbbr": "AAN"
+      }
     },
     "korfball": {
-      "name": "Korfbal"
+      "name": "Korfbal",
+      "position": {
+        "attack": "Aanval",
+        "attackAbbr": "AAN",
+        "defense": "Verdediging",
+        "defenseAbbr": "VER"
+      }
     },
-    "waterPolo": {
-      "name": "Waterpolo"
+    "water-polo": {
+      "name": "Waterpolo",
+      "position": {
+        "goalie": "Doelman",
+        "goalieAbbr": "D",
+        "defender": "Verdediger",
+        "defenderAbbr": "VER",
+        "wing": "Vleugelspeler",
+        "wingAbbr": "VL",
+        "center": "Center",
+        "centerAbbr": "C",
+        "point": "Punt",
+        "pointAbbr": "PT"
+      }
     }
   },
   "home": {
@@ -86,7 +180,9 @@
         "edit": "Bewerk {{name}}",
         "remove": "Verwijder {{name}}",
         "activate": "Activeer {{name}}",
-        "deactivate": "Deactiveer {{name}}"
+        "deactivate": "Deactiveer {{name}}",
+        "position": "Positie",
+        "noPosition": "Geen positie"
       },
       "dangerZone": {
         "title": "Gevarenzone",
@@ -259,7 +355,10 @@
   "teamSelector": {
     "selectTeam": "Selecteer team",
     "noTeam": "Geen team geselecteerd",
-    "teamList": "Beschikbare teams"
+    "teamList": "Beschikbare teams",
+    "newTeam": "Nieuw team",
+    "teamNamePlaceholder": "Teamnaam",
+    "create": "Aanmaken"
   },
   "crashRecovery": {
     "title": "Wedstrijd hervatten?",

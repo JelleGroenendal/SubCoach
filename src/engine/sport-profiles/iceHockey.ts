@@ -19,6 +19,29 @@ export const iceHockeyProfile: SportProfile = {
   players: {
     defaultPlayersOnField: 6,
     hasKeeper: true,
+    positions: [
+      {
+        id: "goalie",
+        name: "sport.ice-hockey.position.goalie",
+        abbreviation: "sport.ice-hockey.position.goalieAbbr",
+        isKeeper: true,
+      },
+      {
+        id: "defender",
+        name: "sport.ice-hockey.position.defender",
+        abbreviation: "sport.ice-hockey.position.defenderAbbr",
+      },
+      {
+        id: "center",
+        name: "sport.ice-hockey.position.center",
+        abbreviation: "sport.ice-hockey.position.centerAbbr",
+      },
+      {
+        id: "winger",
+        name: "sport.ice-hockey.position.winger",
+        abbreviation: "sport.ice-hockey.position.wingerAbbr",
+      },
+    ],
   },
 
   substitutions: {

@@ -19,6 +19,18 @@ export const korfballProfile: SportProfile = {
   players: {
     defaultPlayersOnField: 8,
     hasKeeper: false,
+    positions: [
+      {
+        id: "attack",
+        name: "sport.korfball.position.attack",
+        abbreviation: "sport.korfball.position.attackAbbr",
+      },
+      {
+        id: "defense",
+        name: "sport.korfball.position.defense",
+        abbreviation: "sport.korfball.position.defenseAbbr",
+      },
+    ],
   },
 
   substitutions: {

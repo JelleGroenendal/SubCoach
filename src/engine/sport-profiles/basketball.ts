@@ -20,6 +20,33 @@ export const basketballProfile: SportProfile = {
   players: {
     defaultPlayersOnField: 5,
     hasKeeper: false,
+    positions: [
+      {
+        id: "pointguard",
+        name: "sport.basketball.position.pointGuard",
+        abbreviation: "sport.basketball.position.pointGuardAbbr",
+      },
+      {
+        id: "shootingguard",
+        name: "sport.basketball.position.shootingGuard",
+        abbreviation: "sport.basketball.position.shootingGuardAbbr",
+      },
+      {
+        id: "smallforward",
+        name: "sport.basketball.position.smallForward",
+        abbreviation: "sport.basketball.position.smallForwardAbbr",
+      },
+      {
+        id: "powerforward",
+        name: "sport.basketball.position.powerForward",
+        abbreviation: "sport.basketball.position.powerForwardAbbr",
+      },
+      {
+        id: "center",
+        name: "sport.basketball.position.center",
+        abbreviation: "sport.basketball.position.centerAbbr",
+      },
+    ],
   },
 
   substitutions: {

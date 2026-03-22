@@ -752,6 +752,11 @@ export function MatchLivePage(): React.ReactNode {
                 const isSuggestedOut =
                   nextSuggestion?.playerOutId === player.playerId;
                 const playTimeSeconds = getPlayerPlayTime(player);
+                const playerPosition = player.positionId
+                  ? sportProfile?.players.positions?.find(
+                      (p) => p.id === player.positionId,
+                    )
+                  : undefined;
 
                 return (
                   <div
@@ -783,6 +788,11 @@ export function MatchLivePage(): React.ReactNode {
                         {player.number !== undefined && (
                           <span className="text-xs font-bold opacity-70">
                             #{player.number}
+                          </span>
+                        )}
+                        {playerPosition && (
+                          <span className="rounded bg-white/20 px-1 text-[10px] font-medium">
+                            {t(playerPosition.abbreviation)}
                           </span>
                         )}
                         {(player.yellowCards ?? 0) > 0 && (
@@ -935,6 +945,11 @@ export function MatchLivePage(): React.ReactNode {
                 const isSuggestedIn =
                   nextSuggestion?.playerInId === player.playerId;
                 const playTimeSeconds = getPlayerPlayTime(player);
+                const playerPosition = player.positionId
+                  ? sportProfile?.players.positions?.find(
+                      (p) => p.id === player.positionId,
+                    )
+                  : undefined;
 
                 return (
                   <button
@@ -960,9 +975,16 @@ export function MatchLivePage(): React.ReactNode {
                       </span>
                     )}
                     <div className="flex flex-1 flex-col">
-                      <span className="text-base font-medium leading-tight">
-                        {player.name}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base font-medium leading-tight">
+                          {player.name}
+                        </span>
+                        {playerPosition && (
+                          <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
+                            {t(playerPosition.abbreviation)}
+                          </span>
+                        )}
+                      </div>
                       <span className="text-xs tabular-nums text-muted-foreground">
                         {formatTime(Math.floor(playTimeSeconds))}
                       </span>

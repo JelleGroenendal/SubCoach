@@ -14,6 +14,44 @@ export const handballProfile: SportProfile = {
   players: {
     defaultPlayersOnField: 7,
     hasKeeper: true,
+    positions: [
+      {
+        id: "keeper",
+        name: "sport.handball.position.keeper",
+        abbreviation: "sport.handball.position.keeperAbbr",
+        isKeeper: true,
+      },
+      {
+        id: "leftwing",
+        name: "sport.handball.position.leftWing",
+        abbreviation: "sport.handball.position.leftWingAbbr",
+      },
+      {
+        id: "leftback",
+        name: "sport.handball.position.leftBack",
+        abbreviation: "sport.handball.position.leftBackAbbr",
+      },
+      {
+        id: "center",
+        name: "sport.handball.position.center",
+        abbreviation: "sport.handball.position.centerAbbr",
+      },
+      {
+        id: "rightback",
+        name: "sport.handball.position.rightBack",
+        abbreviation: "sport.handball.position.rightBackAbbr",
+      },
+      {
+        id: "rightwing",
+        name: "sport.handball.position.rightWing",
+        abbreviation: "sport.handball.position.rightWingAbbr",
+      },
+      {
+        id: "pivot",
+        name: "sport.handball.position.pivot",
+        abbreviation: "sport.handball.position.pivotAbbr",
+      },
+    ],
   },
 
   substitutions: {

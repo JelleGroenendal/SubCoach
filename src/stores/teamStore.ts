@@ -53,10 +53,10 @@ interface TeamState {
   ) => void;
   deleteTeam: (teamId: string) => void;
   // Player CRUD
-  addPlayer: (name: string, number?: number) => void;
+  addPlayer: (name: string, number?: number, positionId?: string) => void;
   updatePlayer: (
     playerId: string,
-    updates: Partial<Pick<Player, "name" | "number" | "active">>,
+    updates: Partial<Pick<Player, "name" | "number" | "positionId" | "active">>,
   ) => void;
   removePlayer: (playerId: string) => void;
   reorderPlayers: (fromIndex: number, toIndex: number) => void;
@@ -178,7 +178,7 @@ export const useTeamStore = create<TeamState>((set, get) => ({
     }
   },
 
-  addPlayer: (name, number) => {
+  addPlayer: (name, number, positionId) => {
     const { activeTeamId } = get();
     if (!activeTeamId) return;
 
@@ -186,6 +186,7 @@ export const useTeamStore = create<TeamState>((set, get) => ({
       id: crypto.randomUUID(),
       name,
       number,
+      positionId,
       active: true,
     };
 

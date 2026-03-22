@@ -15,31 +15,125 @@
   },
   "sport": {
     "handball": {
-      "name": "Handball"
+      "name": "Handball",
+      "position": {
+        "keeper": "Goalkeeper",
+        "keeperAbbr": "GK",
+        "leftWing": "Left Wing",
+        "leftWingAbbr": "LW",
+        "leftBack": "Left Back",
+        "leftBackAbbr": "LB",
+        "center": "Center Back",
+        "centerAbbr": "CB",
+        "rightBack": "Right Back",
+        "rightBackAbbr": "RB",
+        "rightWing": "Right Wing",
+        "rightWingAbbr": "RW",
+        "pivot": "Pivot",
+        "pivotAbbr": "PV"
+      }
     },
     "football": {
-      "name": "Football"
+      "name": "Football",
+      "position": {
+        "keeper": "Goalkeeper",
+        "keeperAbbr": "GK",
+        "defender": "Defender",
+        "defenderAbbr": "DEF",
+        "midfielder": "Midfielder",
+        "midfielderAbbr": "MID",
+        "forward": "Forward",
+        "forwardAbbr": "FWD"
+      }
     },
     "futsal": {
-      "name": "Futsal"
+      "name": "Futsal",
+      "position": {
+        "keeper": "Goalkeeper",
+        "keeperAbbr": "GK",
+        "defender": "Defender",
+        "defenderAbbr": "DEF",
+        "winger": "Winger",
+        "wingerAbbr": "WG",
+        "pivot": "Pivot",
+        "pivotAbbr": "PV"
+      }
     },
     "basketball": {
-      "name": "Basketball"
+      "name": "Basketball",
+      "position": {
+        "pointGuard": "Point Guard",
+        "pointGuardAbbr": "PG",
+        "shootingGuard": "Shooting Guard",
+        "shootingGuardAbbr": "SG",
+        "smallForward": "Small Forward",
+        "smallForwardAbbr": "SF",
+        "powerForward": "Power Forward",
+        "powerForwardAbbr": "PF",
+        "center": "Center",
+        "centerAbbr": "C"
+      }
     },
     "floorball": {
-      "name": "Floorball"
+      "name": "Floorball",
+      "position": {
+        "keeper": "Goalkeeper",
+        "keeperAbbr": "GK",
+        "defender": "Defender",
+        "defenderAbbr": "DEF",
+        "forward": "Forward",
+        "forwardAbbr": "FWD"
+      }
     },
-    "iceHockey": {
-      "name": "Ice Hockey"
+    "ice-hockey": {
+      "name": "Ice Hockey",
+      "position": {
+        "goalie": "Goalie",
+        "goalieAbbr": "G",
+        "defender": "Defender",
+        "defenderAbbr": "D",
+        "center": "Center",
+        "centerAbbr": "C",
+        "winger": "Winger",
+        "wingerAbbr": "W"
+      }
     },
-    "fieldHockey": {
-      "name": "Field Hockey"
+    "field-hockey": {
+      "name": "Field Hockey",
+      "position": {
+        "keeper": "Goalkeeper",
+        "keeperAbbr": "GK",
+        "defender": "Defender",
+        "defenderAbbr": "DEF",
+        "midfielder": "Midfielder",
+        "midfielderAbbr": "MID",
+        "forward": "Forward",
+        "forwardAbbr": "FWD"
+      }
     },
     "korfball": {
-      "name": "Korfball"
+      "name": "Korfball",
+      "position": {
+        "attack": "Attack",
+        "attackAbbr": "ATT",
+        "defense": "Defense",
+        "defenseAbbr": "DEF"
+      }
     },
-    "waterPolo": {
-      "name": "Water Polo"
+    "water-polo": {
+      "name": "Water Polo",
+      "position": {
+        "goalie": "Goalie",
+        "goalieAbbr": "G",
+        "defender": "Defender",
+        "defenderAbbr": "DEF",
+        "wing": "Wing",
+        "wingAbbr": "W",
+        "center": "Center",
+        "centerAbbr": "C",
+        "point": "Point",
+        "pointAbbr": "PT"
+      }
     }
   },
   "home": {
@@ -86,7 +180,9 @@
         "edit": "Edit {{name}}",
         "remove": "Remove {{name}}",
         "activate": "Activate {{name}}",
-        "deactivate": "Deactivate {{name}}"
+        "deactivate": "Deactivate {{name}}",
+        "position": "Position",
+        "noPosition": "No position"
       },
       "dangerZone": {
         "title": "Danger zone",
@@ -259,7 +355,10 @@
   "teamSelector": {
     "selectTeam": "Select team",
     "noTeam": "No team selected",
-    "teamList": "Available teams"
+    "teamList": "Available teams",
+    "newTeam": "New team",
+    "teamNamePlaceholder": "Team name",
+    "create": "Create"
   },
   "crashRecovery": {
     "title": "Resume match?",

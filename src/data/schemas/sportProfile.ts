@@ -12,6 +12,13 @@ export const ScoringValueSchema = z.object({
   value: z.number().int().min(1),
 });
 
+export const PositionSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1), // i18n key
+  abbreviation: z.string().min(1), // i18n key for short form (not the actual abbreviation)
+  isKeeper: z.boolean().optional(),
+});
+
 export const SportProfileSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
@@ -26,6 +33,7 @@ export const SportProfileSchema = z.object({
   players: z.object({
     defaultPlayersOnField: z.number().int().min(4).max(11),
     hasKeeper: z.boolean(),
+    positions: z.array(PositionSchema).optional(),
   }),
 
   substitutions: z.object({
@@ -53,4 +61,5 @@ export const SportProfileSchema = z.object({
 
 export type TimePenaltyConfig = z.infer<typeof TimePenaltyConfigSchema>;
 export type ScoringValue = z.infer<typeof ScoringValueSchema>;
+export type Position = z.infer<typeof PositionSchema>;
 export type SportProfile = z.infer<typeof SportProfileSchema>;

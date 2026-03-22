@@ -5,7 +5,9 @@ import { cn } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
 import { useMatchStore } from "@/stores/matchStore";
 import { Button } from "@/components/ui/button";
+import { getSportProfile } from "@/engine/sport-profiles";
 import type { MatchPlayer, Player } from "@/data/schemas";
+import type { Position } from "@/data/schemas/sportProfile";
 
 const PERIOD_DURATION_OPTIONS = [
   5, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45,
@@ -27,6 +29,7 @@ type PlayerSelection = {
   playerId: string;
   name: string;
   number: number | undefined;
+  positionId: string | undefined;
   assignment: "field" | "bench" | "unavailable";
 };
 
@@ -39,6 +42,7 @@ function buildInitialSelections(
     playerId: p.id,
     name: p.name,
     number: p.number,
+    positionId: p.positionId,
     assignment:
       index < playersOnField ? ("field" as const) : ("bench" as const),
   }));
@@ -88,6 +92,7 @@ export function MatchSetupPage(): React.ReactNode {
   return (
     <MatchSetupForm
       teamId={team.id}
+      sportProfileId={team.sportProfileId}
       players={players}
       settings={team.settings}
       createMatch={createMatch}
@@ -98,12 +103,14 @@ export function MatchSetupPage(): React.ReactNode {
 
 function MatchSetupForm({
   teamId,
+  sportProfileId,
   players,
   settings,
   createMatch,
   navigate,
 }: {
   teamId: string;
+  sportProfileId: string;
   players: Player[];
   settings: {
     periodDurationMinutes: number;
@@ -121,6 +128,13 @@ function MatchSetupForm({
   navigate: (path: string) => void;
 }): React.ReactNode {
   const { t } = useTranslation();
+
+  // Get positions for this sport
+  const sportProfile = useMemo(
+    () => getSportProfile(sportProfileId),
+    [sportProfileId],
+  );
+  const positions: Position[] = sportProfile?.players.positions ?? [];
 
   // State initialized directly from team (no effects needed)
   const [opponentName, setOpponentName] = useState("");
@@ -227,6 +241,7 @@ function MatchSetupForm({
         playerId: s.playerId,
         name: s.name,
         number: s.number,
+        positionId: s.positionId,
         status: s.assignment as "field" | "bench",
         totalPlayTimeSeconds: 0,
         goals: 0,
@@ -399,49 +414,69 @@ function MatchSetupForm({
         </p>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {selections.map((selection) => (
-            <button
-              key={selection.playerId}
-              type="button"
-              onPointerDown={() => handlePointerDown(selection.playerId)}
-              onPointerUp={() => handlePointerUp(selection.playerId)}
-              onPointerLeave={handlePointerLeave}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                handleToggleUnavailable(selection.playerId);
-              }}
-              className={cn(
-                "flex min-h-16 touch-manipulation flex-col items-center justify-center gap-1 rounded-lg border-2 p-3",
-                "text-center transition-colors select-none",
-                selection.assignment === "field" &&
-                  "border-green-500 bg-field text-white",
-                selection.assignment === "bench" &&
-                  "border-border bg-bench text-foreground",
-                selection.assignment === "unavailable" &&
-                  "border-border bg-background text-muted-foreground opacity-40 line-through",
-              )}
-              aria-label={t("match.setup.players.togglePlayer", {
-                name: selection.name,
-              })}
-            >
-              {selection.number !== undefined && (
-                <span className="text-xs font-bold opacity-70">
-                  #{selection.number}
+          {selections.map((selection) => {
+            const playerPosition = selection.positionId
+              ? positions.find((p) => p.id === selection.positionId)
+              : undefined;
+
+            return (
+              <button
+                key={selection.playerId}
+                type="button"
+                onPointerDown={() => handlePointerDown(selection.playerId)}
+                onPointerUp={() => handlePointerUp(selection.playerId)}
+                onPointerLeave={handlePointerLeave}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  handleToggleUnavailable(selection.playerId);
+                }}
+                className={cn(
+                  "flex min-h-16 touch-manipulation flex-col items-center justify-center gap-1 rounded-lg border-2 p-3",
+                  "text-center transition-colors select-none",
+                  selection.assignment === "field" &&
+                    "border-green-500 bg-field text-white",
+                  selection.assignment === "bench" &&
+                    "border-border bg-bench text-foreground",
+                  selection.assignment === "unavailable" &&
+                    "border-border bg-background text-muted-foreground opacity-40 line-through",
+                )}
+                aria-label={t("match.setup.players.togglePlayer", {
+                  name: selection.name,
+                })}
+              >
+                <div className="flex items-center gap-1">
+                  {selection.number !== undefined && (
+                    <span className="text-xs font-bold opacity-70">
+                      #{selection.number}
+                    </span>
+                  )}
+                  {playerPosition && (
+                    <span
+                      className={cn(
+                        "rounded px-1 text-[10px] font-medium",
+                        selection.assignment === "field"
+                          ? "bg-white/20"
+                          : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {t(playerPosition.abbreviation)}
+                    </span>
+                  )}
+                </div>
+                <span className="text-sm font-medium leading-tight">
+                  {selection.name}
                 </span>
-              )}
-              <span className="text-sm font-medium leading-tight">
-                {selection.name}
-              </span>
-              <span className="text-xs opacity-70">
-                {selection.assignment === "field" &&
-                  t("match.setup.players.statusField")}
-                {selection.assignment === "bench" &&
-                  t("match.setup.players.statusBench")}
-                {selection.assignment === "unavailable" &&
-                  t("match.setup.players.statusUnavailable")}
-              </span>
-            </button>
-          ))}
+                <span className="text-xs opacity-70">
+                  {selection.assignment === "field" &&
+                    t("match.setup.players.statusField")}
+                  {selection.assignment === "bench" &&
+                    t("match.setup.players.statusBench")}
+                  {selection.assignment === "unavailable" &&
+                    t("match.setup.players.statusUnavailable")}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
