@@ -276,7 +276,9 @@
         "title": "Penalties:"
       },
       "suggestion": {
-        "next": "{{playerIn}} ↔ {{playerOut}} ({{time}})",
+        "title": "Suggested substitution",
+        "swap": "{{playerOut}} → {{playerIn}}",
+        "reason": "{{playerOut}} {{outTime}} min, {{playerIn}} {{inTime}} min",
         "execute": "Substitute"
       },
       "selection": {

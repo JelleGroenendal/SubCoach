@@ -1079,33 +1079,53 @@ export function MatchLivePage(): React.ReactNode {
         )}
 
         {/* Quick substitute button */}
-        {nextSuggestion && selectedPlayerIds.length === 0 && (
-          <button
-            type="button"
-            onClick={handleQuickSubstitute}
-            className={cn(
-              "flex min-h-12 w-full touch-manipulation items-center justify-between gap-2 border-b border-border bg-amber-900/20 px-3 py-2",
-              "transition-colors hover:bg-amber-900/30",
-            )}
-          >
-            <span className="text-sm text-amber-400">
-              {t("match.live.suggestion.next", {
-                playerIn:
-                  match.roster.find(
-                    (p) => p.playerId === nextSuggestion.playerInId,
-                  )?.name ?? "?",
-                playerOut:
-                  match.roster.find(
-                    (p) => p.playerId === nextSuggestion.playerOutId,
-                  )?.name ?? "?",
-                time: formatTime(nextSuggestion.timestamp),
-              })}
-            </span>
-            <span className="rounded-md bg-amber-600 px-3 py-1 text-xs font-semibold text-white">
-              {t("match.live.suggestion.execute")}
-            </span>
-          </button>
-        )}
+        {nextSuggestion &&
+          selectedPlayerIds.length === 0 &&
+          (() => {
+            const playerIn = match.roster.find(
+              (p) => p.playerId === nextSuggestion.playerInId,
+            );
+            const playerOut = match.roster.find(
+              (p) => p.playerId === nextSuggestion.playerOutId,
+            );
+            const playerInTime = playerIn
+              ? Math.round(getPlayerPlayTime(playerIn) / 60)
+              : 0;
+            const playerOutTime = playerOut
+              ? Math.round(getPlayerPlayTime(playerOut) / 60)
+              : 0;
+
+            return (
+              <button
+                type="button"
+                onClick={handleQuickSubstitute}
+                className={cn(
+                  "flex min-h-14 w-full touch-manipulation items-center justify-between gap-2 border-b border-border bg-amber-900/20 px-3 py-2",
+                  "transition-colors hover:bg-amber-900/30",
+                )}
+              >
+                <div className="flex flex-col items-start gap-0.5">
+                  <span className="text-sm font-medium text-amber-300">
+                    {t("match.live.suggestion.swap", {
+                      playerIn: playerIn?.name ?? "?",
+                      playerOut: playerOut?.name ?? "?",
+                    })}
+                  </span>
+                  <span className="text-xs text-amber-400/70">
+                    {t("match.live.suggestion.reason", {
+                      playerIn: playerIn?.name ?? "?",
+                      playerOut: playerOut?.name ?? "?",
+                      inTime: playerInTime,
+                      outTime: playerOutTime,
+                    })}
+                  </span>
+                </div>
+                <span className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white">
+                  {t("match.live.suggestion.execute")}
+                </span>
+              </button>
+            );
+          })()}
 
         {/* Warnings */}
         {substitutionPlan.warnings.length > 0 && (

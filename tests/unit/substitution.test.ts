@@ -39,33 +39,61 @@ describe("calculateSchedule", () => {
     expect(result.suggestions).toHaveLength(0);
   });
 
-  it("generates substitutions when bench players exist", () => {
+  it("generates substitutions when there is a play time imbalance", () => {
+    // Field players have 600s each, bench players have 0s
+    // This creates an imbalance that should trigger a suggestion
     const input: ScheduleInput = {
       roster: [
         makeRosterItem("k", "field", true),
-        makeRosterItem("p1", "field"),
-        makeRosterItem("p2", "field"),
-        makeRosterItem("p3", "field"),
-        makeRosterItem("p4", "field"),
-        makeRosterItem("p5", "field"),
-        makeRosterItem("p6", "field"),
-        makeRosterItem("p7", "bench"),
-        makeRosterItem("p8", "bench"),
-        makeRosterItem("p9", "bench"),
+        makeRosterItem("p1", "field", false, 600),
+        makeRosterItem("p2", "field", false, 600),
+        makeRosterItem("p3", "field", false, 600),
+        makeRosterItem("p4", "field", false, 600),
+        makeRosterItem("p5", "field", false, 600),
+        makeRosterItem("p6", "field", false, 600),
+        makeRosterItem("p7", "bench", false, 0),
+        makeRosterItem("p8", "bench", false, 0),
+        makeRosterItem("p9", "bench", false, 0),
       ],
       totalMatchSeconds: 3000,
-      currentTimeSeconds: 0,
+      currentTimeSeconds: 600,
       playersOnField: 7,
       hasKeeper: true,
     };
     const result = calculateSchedule(input);
     expect(result.suggestions.length).toBeGreaterThan(0);
-    // All suggestions should be in the future
-    for (const s of result.suggestions) {
-      expect(s.timestamp).toBeGreaterThan(0);
-      expect(s.timestamp).toBeLessThan(3000);
-      expect(s.reason).toBe("scheduled");
-    }
+    // The first suggestion should be for NOW (fairness-based)
+    const first = result.suggestions[0];
+    expect(first).toBeDefined();
+    expect(first!.reason).toBe("fairness");
+    // Player coming in should be one with least play time (0s)
+    expect(["p7", "p8", "p9"]).toContain(first!.playerInId);
+    // Player going out should be one with most play time (600s)
+    expect(["p1", "p2", "p3", "p4", "p5", "p6"]).toContain(first!.playerOutId);
+  });
+
+  it("returns empty when play times are equal (no imbalance)", () => {
+    // All players have equal play time - no substitution needed yet
+    const input: ScheduleInput = {
+      roster: [
+        makeRosterItem("k", "field", true),
+        makeRosterItem("p1", "field", false, 300),
+        makeRosterItem("p2", "field", false, 300),
+        makeRosterItem("p3", "field", false, 300),
+        makeRosterItem("p4", "field", false, 300),
+        makeRosterItem("p5", "field", false, 300),
+        makeRosterItem("p6", "field", false, 300),
+        makeRosterItem("p7", "bench", false, 300),
+        makeRosterItem("p8", "bench", false, 300),
+      ],
+      totalMatchSeconds: 3000,
+      currentTimeSeconds: 300,
+      playersOnField: 7,
+      hasKeeper: true,
+    };
+    const result = calculateSchedule(input);
+    // No suggestions when everyone has equal play time
+    expect(result.suggestions).toHaveLength(0);
   });
 
   it("returns empty when no time remaining", () => {
@@ -84,7 +112,7 @@ describe("calculateSchedule", () => {
     expect(result.suggestions).toHaveLength(0);
   });
 
-  it("handles mid-match recalculation", () => {
+  it("suggests immediate substitution when imbalance exists mid-match", () => {
     const input: ScheduleInput = {
       roster: [
         makeRosterItem("k", "field", true),
@@ -103,9 +131,10 @@ describe("calculateSchedule", () => {
       hasKeeper: true,
     };
     const result = calculateSchedule(input);
-    for (const s of result.suggestions) {
-      expect(s.timestamp).toBeGreaterThan(1500);
-    }
+    expect(result.suggestions.length).toBeGreaterThan(0);
+    // First suggestion should be for current time (immediate)
+    expect(result.suggestions[0]!.timestamp).toBe(1500);
+    expect(result.suggestions[0]!.reason).toBe("fairness");
   });
 
   it("warns when too many players for remaining time", () => {

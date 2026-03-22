@@ -276,7 +276,9 @@
         "title": "Straffen:"
       },
       "suggestion": {
-        "next": "{{playerIn}} ↔ {{playerOut}} ({{time}})",
+        "title": "Voorgestelde wissel",
+        "swap": "{{playerOut}} → {{playerIn}}",
+        "reason": "{{playerOut}} {{outTime}} min, {{playerIn}} {{inTime}} min",
         "execute": "Wisselen"
       },
       "selection": {
