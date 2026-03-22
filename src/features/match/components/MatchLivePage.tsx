@@ -36,7 +36,7 @@ export function MatchLivePage(): React.ReactNode {
 
   const {
     match,
-    selectedPlayerId,
+    selectedPlayerIds,
     substitutionPlan,
     showUndo,
     lastAction,
@@ -46,11 +46,13 @@ export function MatchLivePage(): React.ReactNode {
     pauseTimer,
     updateElapsed,
     startNextPeriod,
-    selectPlayer,
+    togglePlayerSelection,
+    clearSelection,
     executeSubstitution,
     registerGoal,
     registerOpponentGoal,
     registerPenalty,
+    registerYellowCard,
     registerRedCard,
     registerInjury,
     endPenalty,
@@ -58,12 +60,16 @@ export function MatchLivePage(): React.ReactNode {
     dismissUndo,
     endMatch,
     autoSave,
+    adjustScore,
   } = useMatchStore();
 
   const [goalScorerMode, setGoalScorerMode] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showSyncPanel, setShowSyncPanel] = useState(false);
+  const [showScoreEdit, setShowScoreEdit] = useState<"home" | "away" | null>(
+    null,
+  );
   const [mobileTab, setMobileTab] = useState<MobileTab>("field");
 
   // P2P sync
@@ -186,10 +192,23 @@ export function MatchLivePage(): React.ReactNode {
     [match],
   );
 
-  const benchPlayers = useMemo(
-    () => (match ? match.roster.filter((p) => p.status === "bench") : []),
-    [match],
-  );
+  const benchPlayers = useMemo(() => {
+    if (!match) return [];
+    const bench = match.roster.filter((p) => p.status === "bench");
+    // Sort by last substitution time (most recent first)
+    // Players who just came off the field should be at the top for easy re-substitution
+    return bench.sort((a, b) => {
+      const aLastOut =
+        a.periods.length > 0
+          ? (a.periods[a.periods.length - 1]?.outAt ?? 0)
+          : 0;
+      const bLastOut =
+        b.periods.length > 0
+          ? (b.periods[b.periods.length - 1]?.outAt ?? 0)
+          : 0;
+      return bLastOut - aLastOut; // Descending (most recent first)
+    });
+  }, [match]);
 
   const penaltyPlayers = useMemo(
     () => (match ? match.roster.filter((p) => p.status === "penalty") : []),
@@ -223,14 +242,25 @@ export function MatchLivePage(): React.ReactNode {
     [match],
   );
 
-  // Get selected player info
-  const selectedPlayer = useMemo(() => {
-    if (!selectedPlayerId || !match) return undefined;
-    return match.roster.find((p) => p.playerId === selectedPlayerId);
-  }, [selectedPlayerId, match]);
+  // Get selected players info
+  const selectedFieldPlayerIds = useMemo(() => {
+    if (!match) return [];
+    return selectedPlayerIds.filter((id) => {
+      const player = match.roster.find((p) => p.playerId === id);
+      return player?.status === "field";
+    });
+  }, [selectedPlayerIds, match]);
 
-  const isSelectedOnField = selectedPlayer?.status === "field";
-  const isSelectedOnBench = selectedPlayer?.status === "bench";
+  const selectedBenchPlayerIds = useMemo(() => {
+    if (!match) return [];
+    return selectedPlayerIds.filter((id) => {
+      const player = match.roster.find((p) => p.playerId === id);
+      return player?.status === "bench";
+    });
+  }, [selectedPlayerIds, match]);
+
+  const hasFieldSelection = selectedFieldPlayerIds.length > 0;
+  const hasBenchSelection = selectedBenchPlayerIds.length > 0;
 
   // Handle field player tap - select for substitution or goal
   const handleFieldPlayerTap = useCallback(
@@ -241,26 +271,42 @@ export function MatchLivePage(): React.ReactNode {
         return;
       }
 
-      // If a bench player is selected, execute substitution
-      if (isSelectedOnBench && selectedPlayerId) {
-        executeSubstitution(selectedPlayerId, playerId);
+      // If bench players are selected, execute substitution with first selected bench player
+      if (hasBenchSelection) {
+        const benchPlayerId = selectedBenchPlayerIds[0];
+        if (benchPlayerId) {
+          executeSubstitution(benchPlayerId, playerId);
+        }
+        return;
+      }
+
+      // Check max selection limit (can't select more field players than bench players available)
+      const isAlreadySelected = selectedPlayerIds.includes(playerId);
+      if (
+        !isAlreadySelected &&
+        selectedFieldPlayerIds.length >= benchPlayers.length
+      ) {
+        // Max reached, don't add more
         return;
       }
 
       // Toggle selection
-      selectPlayer(selectedPlayerId === playerId ? undefined : playerId);
+      togglePlayerSelection(playerId);
     },
     [
-      selectedPlayerId,
+      selectedPlayerIds,
+      selectedFieldPlayerIds,
+      selectedBenchPlayerIds,
+      hasBenchSelection,
+      benchPlayers.length,
       goalScorerMode,
-      isSelectedOnBench,
-      selectPlayer,
+      togglePlayerSelection,
       executeSubstitution,
       registerGoal,
     ],
   );
 
-  // Handle bench player tap - select for substitution
+  // Handle bench player tap - execute substitution with selected field player
   const handleBenchPlayerTap = useCallback(
     (playerId: string) => {
       if (goalScorerMode) {
@@ -268,19 +314,22 @@ export function MatchLivePage(): React.ReactNode {
         return;
       }
 
-      // If a field player is selected, execute substitution
-      if (isSelectedOnField && selectedPlayerId) {
-        executeSubstitution(playerId, selectedPlayerId);
+      // If field players are selected, execute substitution with first selected field player
+      if (hasFieldSelection) {
+        const fieldPlayerId = selectedFieldPlayerIds[0];
+        if (fieldPlayerId) {
+          executeSubstitution(playerId, fieldPlayerId);
+        }
         return;
       }
 
-      // Toggle selection
-      selectPlayer(selectedPlayerId === playerId ? undefined : playerId);
+      // Bench players can also be selected for "reverse" substitution flow
+      togglePlayerSelection(playerId);
     },
     [
-      selectedPlayerId,
-      isSelectedOnField,
-      selectPlayer,
+      selectedFieldPlayerIds,
+      hasFieldSelection,
+      togglePlayerSelection,
       executeSubstitution,
       goalScorerMode,
     ],
@@ -288,8 +337,8 @@ export function MatchLivePage(): React.ReactNode {
 
   const handleHomeGoal = useCallback(() => {
     setGoalScorerMode(true);
-    selectPlayer(undefined);
-  }, [selectPlayer]);
+    clearSelection();
+  }, [clearSelection]);
 
   const handleTimerTap = useCallback(() => {
     if (!match) return;
@@ -344,9 +393,15 @@ export function MatchLivePage(): React.ReactNode {
         );
         return t("match.live.undo.penalty", { player: penalized?.name ?? "?" });
       }
-      case "redCard": {
+      case "yellowCard": {
         const carded = match?.roster.find((p) => p.playerId === event.playerId);
-        return t("match.live.undo.redCard", { player: carded?.name ?? "?" });
+        return t("match.live.undo.yellowCard", { player: carded?.name ?? "?" });
+      }
+      case "redCard": {
+        const cardedRed = match?.roster.find(
+          (p) => p.playerId === event.playerId,
+        );
+        return t("match.live.undo.redCard", { player: cardedRed?.name ?? "?" });
       }
       case "injury": {
         const injured = match?.roster.find(
@@ -368,24 +423,31 @@ export function MatchLivePage(): React.ReactNode {
   // Switch to the other tab after selecting a player (for easier substitution flow)
   const handleFieldPlayerTapWithTabSwitch = useCallback(
     (playerId: string) => {
+      const wasSelected = selectedPlayerIds.includes(playerId);
       handleFieldPlayerTap(playerId);
-      // If we just selected (not deselected), switch to bench tab on mobile
-      if (selectedPlayerId !== playerId && !goalScorerMode) {
+      // If we just selected (not deselected) and no bench selection, switch to bench tab
+      if (!wasSelected && !goalScorerMode && !hasBenchSelection) {
         setMobileTab("bench");
       }
     },
-    [handleFieldPlayerTap, selectedPlayerId, goalScorerMode],
+    [
+      handleFieldPlayerTap,
+      selectedPlayerIds,
+      goalScorerMode,
+      hasBenchSelection,
+    ],
   );
 
   const handleBenchPlayerTapWithTabSwitch = useCallback(
     (playerId: string) => {
+      const wasSelected = selectedPlayerIds.includes(playerId);
       handleBenchPlayerTap(playerId);
-      // If we just selected (not deselected), switch to field tab on mobile
-      if (selectedPlayerId !== playerId) {
+      // If we just selected (not deselected) and no field selection, switch to field tab
+      if (!wasSelected && !hasFieldSelection) {
         setMobileTab("field");
       }
     },
-    [handleBenchPlayerTap, selectedPlayerId],
+    [handleBenchPlayerTap, selectedPlayerIds, hasFieldSelection],
   );
 
   // No match loaded
@@ -456,15 +518,25 @@ export function MatchLivePage(): React.ReactNode {
           >
             +1
           </button>
-          <span className="min-w-8 text-center text-2xl font-bold tabular-nums text-foreground sm:min-w-10 sm:text-3xl lg:text-4xl">
+          <button
+            type="button"
+            onClick={() => setShowScoreEdit("home")}
+            className="min-w-8 touch-manipulation text-center text-2xl font-bold tabular-nums text-foreground transition-colors hover:text-green-400 sm:min-w-10 sm:text-3xl lg:text-4xl"
+            aria-label={t("match.live.score.editHome")}
+          >
             {match.homeScore}
-          </span>
+          </button>
           <span className="text-xl font-light text-muted-foreground sm:text-2xl">
             -
           </span>
-          <span className="min-w-8 text-center text-2xl font-bold tabular-nums text-foreground sm:min-w-10 sm:text-3xl lg:text-4xl">
+          <button
+            type="button"
+            onClick={() => setShowScoreEdit("away")}
+            className="min-w-8 touch-manipulation text-center text-2xl font-bold tabular-nums text-foreground transition-colors hover:text-red-400 sm:min-w-10 sm:text-3xl lg:text-4xl"
+            aria-label={t("match.live.score.editAway")}
+          >
             {match.awayScore}
-          </span>
+          </button>
           <button
             type="button"
             onClick={() => registerOpponentGoal()}
@@ -579,17 +651,17 @@ export function MatchLivePage(): React.ReactNode {
         </div>
       )}
 
-      {/* Selection indicator - Shows when field player selected (for substitution) */}
-      {isSelectedOnField && selectedPlayer && (
+      {/* Selection indicator - Shows when field players selected (for substitution) */}
+      {hasFieldSelection && (
         <div className="flex items-center justify-between border-b border-green-700 bg-green-900/30 px-3 py-2">
           <span className="text-sm font-medium text-green-300">
-            {t("match.live.selection.tapBenchPlayer", {
-              name: selectedPlayer.name,
+            {t("match.live.selection.fieldSelected", {
+              count: selectedFieldPlayerIds.length,
             })}
           </span>
           <button
             type="button"
-            onClick={() => selectPlayer(undefined)}
+            onClick={clearSelection}
             className={cn(
               "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
               "text-sm text-green-300",
@@ -601,17 +673,17 @@ export function MatchLivePage(): React.ReactNode {
         </div>
       )}
 
-      {/* Selection hint - Shows when bench player selected */}
-      {isSelectedOnBench && selectedPlayer && (
+      {/* Selection hint - Shows when bench players selected */}
+      {hasBenchSelection && (
         <div className="flex items-center justify-between border-b border-primary/50 bg-primary/10 px-3 py-2">
           <span className="text-sm font-medium text-primary">
-            {t("match.live.selection.tapFieldPlayer", {
-              name: selectedPlayer.name,
+            {t("match.live.selection.benchSelected", {
+              count: selectedBenchPlayerIds.length,
             })}
           </span>
           <button
             type="button"
-            onClick={() => selectPlayer(undefined)}
+            onClick={clearSelection}
             className={cn(
               "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
               "text-sm text-primary",
@@ -634,11 +706,11 @@ export function MatchLivePage(): React.ReactNode {
               ? "border-b-2 border-green-500 text-green-400"
               : "text-muted-foreground",
             // Highlight if bench player selected (indicating "tap here")
-            isSelectedOnBench && mobileTab !== "field" && "bg-primary/10",
+            hasBenchSelection && mobileTab !== "field" && "bg-primary/10",
           )}
         >
           {t("match.live.field.title")} ({fieldPlayers.length})
-          {isSelectedOnBench && mobileTab !== "field" && " ←"}
+          {hasBenchSelection && mobileTab !== "field" && " ←"}
         </button>
         <button
           type="button"
@@ -649,10 +721,10 @@ export function MatchLivePage(): React.ReactNode {
               ? "border-b-2 border-primary text-foreground"
               : "text-muted-foreground",
             // Highlight if field player selected (indicating "tap here")
-            isSelectedOnField && mobileTab !== "bench" && "bg-primary/10",
+            hasFieldSelection && mobileTab !== "bench" && "bg-primary/10",
           )}
         >
-          {isSelectedOnField && mobileTab !== "bench" && "→ "}
+          {hasFieldSelection && mobileTab !== "bench" && "→ "}
           {t("match.live.bench.title")} (
           {benchPlayers.length + outPlayers.length})
         </button>
@@ -676,7 +748,7 @@ export function MatchLivePage(): React.ReactNode {
           <div className="flex-1 overflow-y-auto p-2">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {fieldPlayers.map((player) => {
-                const isSelected = selectedPlayerId === player.playerId;
+                const isSelected = selectedPlayerIds.includes(player.playerId);
                 const isSuggestedOut =
                   nextSuggestion?.playerOutId === player.playerId;
                 const playTimeSeconds = getPlayerPlayTime(player);
@@ -713,6 +785,11 @@ export function MatchLivePage(): React.ReactNode {
                             #{player.number}
                           </span>
                         )}
+                        {(player.yellowCards ?? 0) > 0 && (
+                          <span className="text-xs">
+                            {"🟨".repeat(Math.min(player.yellowCards ?? 0, 2))}
+                          </span>
+                        )}
                         {player.goals > 0 && (
                           <span className="text-xs">
                             {"⚽".repeat(Math.min(player.goals, 5))}
@@ -726,36 +803,68 @@ export function MatchLivePage(): React.ReactNode {
                         {formatTime(Math.floor(playTimeSeconds))}
                       </span>
                     </button>
-                    {/* Quick action buttons */}
+                    {/* Quick action buttons - dynamic based on sport profile */}
                     <div className="flex border-t border-white/20">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          registerPenalty(
-                            player.playerId,
-                            defaultPenaltyDuration,
-                          );
-                        }}
-                        className="flex-1 touch-manipulation py-1.5 text-[10px] font-medium text-amber-300 transition-colors hover:bg-amber-900/50 sm:text-xs"
-                        aria-label={t("match.live.actions.penalty")}
-                      >
-                        2m
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          registerRedCard(
-                            player.playerId,
-                            defaultPenaltyDuration,
-                          );
-                        }}
-                        className="flex-1 touch-manipulation border-x border-white/20 py-1.5 text-[10px] font-medium text-red-400 transition-colors hover:bg-red-900/50 sm:text-xs"
-                        aria-label={t("match.live.actions.redCard")}
-                      >
-                        🟥
-                      </button>
+                      {/* Time penalty button - show if sport has time penalties */}
+                      {sportProfile?.penalties.timePenalties &&
+                        sportProfile.penalties.timePenalties.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              registerPenalty(
+                                player.playerId,
+                                defaultPenaltyDuration,
+                              );
+                            }}
+                            className="flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium text-amber-300 transition-colors hover:bg-amber-900/50 sm:text-xs"
+                            aria-label={t("match.live.actions.penalty")}
+                          >
+                            {Math.floor(defaultPenaltyDuration / 60)}m
+                          </button>
+                        )}
+                      {/* Yellow card button - show if sport has yellow cards */}
+                      {sportProfile?.penalties.cards?.includes("yellow") && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            registerYellowCard(
+                              player.playerId,
+                              sportProfile.penalties.secondYellowIsRed ?? false,
+                              defaultPenaltyDuration,
+                            );
+                          }}
+                          className={cn(
+                            "flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium text-yellow-400 transition-colors hover:bg-yellow-900/50 sm:text-xs",
+                            (player.yellowCards ?? 0) > 0 && "bg-yellow-900/30",
+                          )}
+                          aria-label={t("match.live.actions.yellowCard")}
+                        >
+                          🟨
+                          {(player.yellowCards ?? 0) > 0 && (
+                            <span className="ml-0.5">{player.yellowCards}</span>
+                          )}
+                        </button>
+                      )}
+                      {/* Red card button - show if sport has red cards */}
+                      {sportProfile?.penalties.cards?.includes("red") && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            registerRedCard(
+                              player.playerId,
+                              defaultPenaltyDuration,
+                            );
+                          }}
+                          className="flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium text-red-400 transition-colors hover:bg-red-900/50 sm:text-xs"
+                          aria-label={t("match.live.actions.redCard")}
+                        >
+                          🟥
+                        </button>
+                      )}
+                      {/* Injury button - always shown */}
                       <button
                         type="button"
                         onClick={(e) => {
@@ -822,7 +931,7 @@ export function MatchLivePage(): React.ReactNode {
             <div className="flex flex-col gap-2">
               {/* Bench players */}
               {benchPlayers.map((player) => {
-                const isSelected = selectedPlayerId === player.playerId;
+                const isSelected = selectedPlayerIds.includes(player.playerId);
                 const isSuggestedIn =
                   nextSuggestion?.playerInId === player.playerId;
                 const playTimeSeconds = getPlayerPlayTime(player);
@@ -948,7 +1057,7 @@ export function MatchLivePage(): React.ReactNode {
         )}
 
         {/* Quick substitute button */}
-        {nextSuggestion && !selectedPlayerId && (
+        {nextSuggestion && selectedPlayerIds.length === 0 && (
           <button
             type="button"
             onClick={handleQuickSubstitute}
@@ -1073,6 +1182,62 @@ export function MatchLivePage(): React.ReactNode {
       {showSyncPanel && teamDoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <P2PSyncPanel doc={teamDoc} onClose={() => setShowSyncPanel(false)} />
+        </div>
+      )}
+
+      {/* Score Edit Modal */}
+      {showScoreEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="flex w-full max-w-xs flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-2xl">
+            <h3 className="text-center text-lg font-bold text-foreground">
+              {t(
+                showScoreEdit === "home"
+                  ? "match.live.score.editHomeTitle"
+                  : "match.live.score.editAwayTitle",
+              )}
+            </h3>
+            <div className="flex items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={() =>
+                  adjustScore(
+                    showScoreEdit,
+                    (showScoreEdit === "home"
+                      ? match.homeScore
+                      : match.awayScore) - 1,
+                  )
+                }
+                className="flex h-14 w-14 touch-manipulation items-center justify-center rounded-xl bg-muted text-2xl font-bold text-foreground transition-colors hover:bg-accent"
+              >
+                -
+              </button>
+              <span className="min-w-16 text-center text-4xl font-bold tabular-nums text-foreground">
+                {showScoreEdit === "home" ? match.homeScore : match.awayScore}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  adjustScore(
+                    showScoreEdit,
+                    (showScoreEdit === "home"
+                      ? match.homeScore
+                      : match.awayScore) + 1,
+                  )
+                }
+                className="flex h-14 w-14 touch-manipulation items-center justify-center rounded-xl bg-muted text-2xl font-bold text-foreground transition-colors hover:bg-accent"
+              >
+                +
+              </button>
+            </div>
+            <Button
+              size="xl"
+              variant="default"
+              className="touch-manipulation"
+              onClick={() => setShowScoreEdit(null)}
+            >
+              {t("common.done")}
+            </Button>
+          </div>
         </div>
       )}
 

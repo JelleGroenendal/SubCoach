@@ -69,6 +69,12 @@ function buildEventDescription(
         duration: Math.floor(event.durationSeconds / 60),
       });
     }
+    case "yellowCard": {
+      const player = rosterMap.get(event.playerId);
+      return t("history.detail.event.yellowCard", {
+        player: player?.name ?? "?",
+      });
+    }
     case "redCard": {
       const player = rosterMap.get(event.playerId);
       return t("history.detail.event.redCard", {

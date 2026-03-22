@@ -7,12 +7,19 @@ import { useMatchStore } from "@/stores/matchStore";
 import { Button } from "@/components/ui/button";
 import type { MatchPlayer, Player } from "@/data/schemas";
 
-const PERIOD_DURATION_OPTIONS = [10, 15, 20, 25, 30] as const;
-const PLAYERS_ON_FIELD_OPTIONS = [
-  { value: 5, label: "4+1" },
-  { value: 6, label: "5+1" },
-  { value: 7, label: "6+1" },
+const PERIOD_DURATION_OPTIONS = [
+  5, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45,
 ] as const;
+
+// Generate player options from 4 to 11 (covers all sports)
+function getPlayersOnFieldOptions(): Array<{ value: number; label: string }> {
+  const options = [];
+  for (let total = 4; total <= 11; total++) {
+    const outfield = total - 1;
+    options.push({ value: total, label: `${outfield}+1` });
+  }
+  return options;
+}
 
 type PlayerSelection = {
   playerId: string;
@@ -339,7 +346,7 @@ function MatchSetupForm({
                 "focus:outline-none focus:ring-2 focus:ring-ring",
               )}
             >
-              {PLAYERS_ON_FIELD_OPTIONS.map((opt) => (
+              {getPlayersOnFieldOptions().map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {t("team.edit.settings.playersOnFieldValue", {
                     total: opt.value,

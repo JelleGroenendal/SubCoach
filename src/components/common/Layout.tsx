@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { TeamSelector } from "./TeamSelector";
 import { CrashRecovery } from "./CrashRecovery";
+import { InstallPrompt } from "./InstallPrompt";
 
 const NAV_ITEMS = [
   { path: "/", labelKey: "nav.home" },
@@ -71,6 +72,7 @@ export function Layout(): React.ReactNode {
       <main className={cn("mx-auto w-full max-w-4xl flex-1 p-4", "pb-20")}>
         <Outlet />
       </main>
+      <InstallPrompt />
     </div>
   );
 }

@@ -471,9 +471,39 @@ export function TeamEditPage(): React.ReactNode {
                     {player.number}
                   </span>
                 )}
-                <span className="flex-1 text-base font-medium text-foreground">
+                <span
+                  className={cn(
+                    "flex-1 text-base font-medium",
+                    player.active
+                      ? "text-foreground"
+                      : "text-muted-foreground line-through",
+                  )}
+                >
                   {player.name}
                 </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    updatePlayer(player.id, { active: !player.active })
+                  }
+                  className={cn(
+                    "min-h-10 min-w-10 touch-manipulation rounded-md px-2 py-1",
+                    "text-sm transition-colors",
+                    player.active
+                      ? "text-green-500 hover:bg-green-900/20"
+                      : "text-muted-foreground hover:bg-accent",
+                  )}
+                  aria-label={t(
+                    player.active
+                      ? "team.edit.players.deactivate"
+                      : "team.edit.players.activate",
+                    {
+                      name: player.name,
+                    },
+                  )}
+                >
+                  {player.active ? "✓" : "○"}
+                </button>
                 <button
                   type="button"
                   onClick={() =>

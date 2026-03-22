@@ -14,7 +14,7 @@ interface MatchState {
   // Current team context (must be set before using match operations)
   teamId: string | undefined;
   match: Match | undefined;
-  selectedPlayerId: string | undefined;
+  selectedPlayerIds: string[];
   substitutionPlan: SubstitutionPlan;
   lastAction: { event: MatchEvent; index: number } | undefined;
   showUndo: boolean;
@@ -33,12 +33,18 @@ interface MatchState {
   pauseTimer: () => void;
   updateElapsed: (seconds: number) => void;
   startNextPeriod: () => void;
-  selectPlayer: (playerId: string | undefined) => void;
+  togglePlayerSelection: (playerId: string) => void;
+  clearSelection: () => void;
   executeSubstitution: (playerInId: string, playerOutId: string) => void;
   registerGoal: (playerId: string) => void;
   registerOpponentGoal: () => void;
   registerPenalty: (playerId: string, durationSeconds: number) => void;
   endPenalty: (penaltyId: string) => void;
+  registerYellowCard: (
+    playerId: string,
+    secondYellowIsRed: boolean,
+    penaltyDurationSeconds?: number,
+  ) => void;
   registerRedCard: (playerId: string, penaltyDurationSeconds?: number) => void;
   registerInjury: (playerId: string) => void;
   undoLastAction: () => void;
@@ -51,7 +57,7 @@ interface MatchState {
 export const useMatchStore = create<MatchState>((set, get) => ({
   teamId: undefined,
   match: undefined,
-  selectedPlayerId: undefined,
+  selectedPlayerIds: [],
   substitutionPlan: { suggestions: [], warnings: [] },
   lastAction: undefined,
   showUndo: false,
@@ -176,8 +182,21 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     set({ match: updated, substitutionPlan: plan });
   },
 
-  selectPlayer: (playerId) => {
-    set({ selectedPlayerId: playerId });
+  togglePlayerSelection: (playerId: string) => {
+    const { selectedPlayerIds } = get();
+    if (selectedPlayerIds.includes(playerId)) {
+      // Deselect
+      set({
+        selectedPlayerIds: selectedPlayerIds.filter((id) => id !== playerId),
+      });
+    } else {
+      // Select
+      set({ selectedPlayerIds: [...selectedPlayerIds, playerId] });
+    }
+  },
+
+  clearSelection: () => {
+    set({ selectedPlayerIds: [] });
   },
 
   executeSubstitution: (playerInId, playerOutId) => {
@@ -214,9 +233,14 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     };
     saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
+    // Remove the substituted player from selection
+    const { selectedPlayerIds } = get();
+    const newSelection = selectedPlayerIds.filter(
+      (id) => id !== playerInId && id !== playerOutId,
+    );
     set({
       match: updated,
-      selectedPlayerId: undefined,
+      selectedPlayerIds: newSelection,
       substitutionPlan: plan,
       lastAction: { event, index: updated.events.length - 1 },
       showUndo: true,
@@ -347,6 +371,104 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
     set({ match: updated, substitutionPlan: plan });
+  },
+
+  registerYellowCard: (
+    playerId,
+    secondYellowIsRed,
+    penaltyDurationSeconds = 120,
+  ) => {
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
+
+    const player = match.roster.find((p) => p.playerId === playerId);
+    if (!player) return;
+
+    const currentYellowCards = player.yellowCards ?? 0;
+    const newYellowCards = currentYellowCards + 1;
+
+    // Check if this is a second yellow (becomes red)
+    if (secondYellowIsRed && newYellowCards >= 2) {
+      // This triggers a red card
+      const yellowEvent: MatchEvent = {
+        type: "yellowCard",
+        timestamp: match.elapsedSeconds,
+        playerId,
+      };
+      const redEvent: MatchEvent = {
+        type: "redCard",
+        timestamp: match.elapsedSeconds,
+        playerId,
+        wasSecondYellow: true,
+      };
+      // Start penalty for numerical disadvantage
+      const penaltyId = crypto.randomUUID();
+      const penaltyEvent: MatchEvent = {
+        type: "penalty",
+        timestamp: match.elapsedSeconds,
+        playerId,
+        durationSeconds: penaltyDurationSeconds,
+        penaltyId,
+      };
+      const roster = match.roster.map((p) => {
+        if (p.playerId === playerId) {
+          const periods = p.periods.map((per, i) =>
+            i === p.periods.length - 1 && !per.outAt
+              ? { ...per, outAt: match.elapsedSeconds }
+              : per,
+          );
+          return {
+            ...p,
+            status: "redCard" as const,
+            periods,
+            yellowCards: newYellowCards,
+          };
+        }
+        return p;
+      });
+      const updated: Match = {
+        ...match,
+        roster,
+        events: [...match.events, yellowEvent, redEvent, penaltyEvent],
+      };
+      saveCurrentMatch(teamId, updated);
+      const plan = recalcSchedule(updated);
+      set({
+        match: updated,
+        substitutionPlan: plan,
+        lastAction: { event: yellowEvent, index: updated.events.length - 3 },
+        showUndo: true,
+      });
+    } else {
+      // Just a yellow card, no red
+      const event: MatchEvent = {
+        type: "yellowCard",
+        timestamp: match.elapsedSeconds,
+        playerId,
+      };
+      const roster = match.roster.map((p) => {
+        if (p.playerId === playerId) {
+          return { ...p, yellowCards: newYellowCards };
+        }
+        return p;
+      });
+      const updated: Match = {
+        ...match,
+        roster,
+        events: [...match.events, event],
+      };
+      saveCurrentMatch(teamId, updated);
+      const plan = recalcSchedule(updated);
+      set({
+        match: updated,
+        substitutionPlan: plan,
+        lastAction: { event, index: updated.events.length - 1 },
+        showUndo: true,
+      });
+    }
+    setTimeout(() => {
+      if (get().showUndo) set({ showUndo: false });
+    }, 5000);
   },
 
   registerRedCard: (playerId, penaltyDurationSeconds = 120) => {
@@ -509,6 +631,14 @@ export const useMatchStore = create<MatchState>((set, get) => ({
             }
           }
           return { ...p, status: "field" as const, periods };
+        }
+        return p;
+      });
+    } else if (event.type === "yellowCard") {
+      // Decrement yellow card count
+      updated.roster = updated.roster.map((p) => {
+        if (p.playerId === event.playerId) {
+          return { ...p, yellowCards: Math.max(0, (p.yellowCards ?? 1) - 1) };
         }
         return p;
       });

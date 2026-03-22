@@ -24,6 +24,8 @@ export const MatchPlayerSchema = z.object({
   periods: z.array(PlayPeriodSchema),
   isKeeper: z.boolean().optional(),
   hasBeenSubstitutedOut: z.boolean().optional(),
+  yellowCards: z.number().int().min(0).optional(),
+  fouls: z.number().int().min(0).optional(),
 });
 
 export const MatchSchema = z.object({

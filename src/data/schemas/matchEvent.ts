@@ -32,10 +32,17 @@ export const PenaltyEndEventSchema = z.object({
   penaltyId: z.string(),
 });
 
+export const YellowCardEventSchema = z.object({
+  type: z.literal("yellowCard"),
+  timestamp: z.number(),
+  playerId: z.string(),
+});
+
 export const RedCardEventSchema = z.object({
   type: z.literal("redCard"),
   timestamp: z.number(),
   playerId: z.string(),
+  wasSecondYellow: z.boolean().optional(),
 });
 
 export const InjuryEventSchema = z.object({
@@ -73,6 +80,7 @@ export const MatchEventSchema = z.discriminatedUnion("type", [
   OpponentGoalEventSchema,
   PenaltyEventSchema,
   PenaltyEndEventSchema,
+  YellowCardEventSchema,
   RedCardEventSchema,
   InjuryEventSchema,
   PeriodStartEventSchema,
@@ -87,6 +95,7 @@ export type GoalEvent = z.infer<typeof GoalEventSchema>;
 export type OpponentGoalEvent = z.infer<typeof OpponentGoalEventSchema>;
 export type PenaltyEvent = z.infer<typeof PenaltyEventSchema>;
 export type PenaltyEndEvent = z.infer<typeof PenaltyEndEventSchema>;
+export type YellowCardEvent = z.infer<typeof YellowCardEventSchema>;
 export type RedCardEvent = z.infer<typeof RedCardEventSchema>;
 export type InjuryEvent = z.infer<typeof InjuryEventSchema>;
 export type PeriodStartEvent = z.infer<typeof PeriodStartEventSchema>;

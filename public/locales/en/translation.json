@@ -5,7 +5,8 @@
     "cancel": "Cancel",
     "edit": "Edit",
     "delete": "Delete",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "done": "Done"
   },
   "nav": {
     "home": "Home",
@@ -83,7 +84,9 @@
         "namePlaceholder": "Player name",
         "add": "Add",
         "edit": "Edit {{name}}",
-        "remove": "Remove {{name}}"
+        "remove": "Remove {{name}}",
+        "activate": "Activate {{name}}",
+        "deactivate": "Deactivate {{name}}"
       },
       "dangerZone": {
         "title": "Danger zone",
@@ -133,8 +136,12 @@
         "matchEnded": "Match ended"
       },
       "score": {
-        "addHome": "Home team goal",
-        "addAway": "Opponent goal"
+        "addHome": "Add home goal",
+        "addAway": "Add away goal",
+        "editHome": "Edit home score",
+        "editAway": "Edit away score",
+        "editHomeTitle": "Home Score",
+        "editAwayTitle": "Away Score"
       },
       "period": "Period {{period}}",
       "field": {
@@ -153,6 +160,7 @@
       },
       "actions": {
         "penalty": "2-min penalty",
+        "yellowCard": "Yellow card",
         "redCard": "Red card",
         "injury": "Injury"
       },
@@ -163,6 +171,7 @@
         "goal": "Goal by {{player}}",
         "opponentGoal": "Opponent goal",
         "penalty": "2-min penalty for {{player}}",
+        "yellowCard": "Yellow card for {{player}}",
         "redCard": "Red card for {{player}}",
         "injury": "Injury of {{player}}"
       },
@@ -176,7 +185,9 @@
       "selection": {
         "selected": "Selected: {{name}}",
         "tapFieldPlayer": "Tap field player to substitute with {{name}}",
-        "tapBenchPlayer": "{{name}} selected - tap bench player to substitute"
+        "tapBenchPlayer": "{{name}} selected - tap bench player to substitute",
+        "fieldSelected": "{{count}} field player(s) selected - tap bench to substitute",
+        "benchSelected": "{{count}} bench player(s) selected - tap field to substitute"
       },
       "out": {
         "title": "Out",
@@ -236,6 +247,7 @@
         "goal": "Goal: {{player}}",
         "opponentGoal": "Opponent goal",
         "penalty": "{{duration}}-min penalty: {{player}}",
+        "yellowCard": "Yellow card: {{player}}",
         "redCard": "Red card: {{player}}",
         "injury": "Injury: {{player}}",
         "periodStart": "Period {{period}} started",
@@ -262,7 +274,10 @@
     "updateAvailable": "Update available",
     "updateDescription": "A new version of SubCoach is available.",
     "update": "Update now",
-    "later": "Later"
+    "later": "Later",
+    "install": "Install",
+    "installTitle": "Install SubCoach",
+    "installDescription": "Add to home screen for the best experience"
   },
   "offline": {
     "offline": "You're offline - app works normally",
