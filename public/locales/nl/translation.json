@@ -288,6 +288,7 @@
     },
     "live": {
       "title": "Wedstrijd",
+      "viewerMode": "Kijkmodus - alleen de wedstrijdleider kan wijzigingen maken",
       "timer": {
         "toggle": "Start of pauzeer de klok",
         "running": "Speelt",

@@ -288,6 +288,7 @@
     },
     "live": {
       "title": "Match",
+      "viewerMode": "Viewer mode - only the match host can make changes",
       "timer": {
         "toggle": "Start or pause the clock",
         "running": "Playing",

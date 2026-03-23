@@ -41,6 +41,7 @@ export function MatchLivePage(): React.ReactNode {
     showUndo,
     lastAction,
     pendingReplacement,
+    isHost,
     setTeamId,
     loadMatch,
     startTimer,
@@ -111,8 +112,12 @@ export function MatchLivePage(): React.ReactNode {
     };
   }, []);
 
-  // Timer tick (1s interval when playing)
+  // Timer tick (1s interval when playing) - only on host device
+  // Viewers receive elapsed time via Yjs sync
   useEffect(() => {
+    // Only run timer on host device
+    if (!isHost) return;
+
     if (match?.status === "playing") {
       lastTickTimeRef.current = Date.now();
       tickRef.current = setInterval(() => {
@@ -136,10 +141,12 @@ export function MatchLivePage(): React.ReactNode {
         tickRef.current = undefined;
       }
     };
-  }, [match?.status, updateElapsed]);
+  }, [match?.status, updateElapsed, isHost]);
 
-  // Auto-save every 30 seconds
+  // Auto-save every 30 seconds - only on host device
   useEffect(() => {
+    if (!isHost) return;
+
     autoSaveRef.current = setInterval(() => {
       autoSave();
     }, 30000);
@@ -148,16 +155,17 @@ export function MatchLivePage(): React.ReactNode {
         clearInterval(autoSaveRef.current);
       }
     };
-  }, [autoSave]);
+  }, [autoSave, isHost]);
 
-  // Halftime detection
+  // Halftime detection - only on host device
   useEffect(() => {
+    if (!isHost) return;
     if (!match || match.status !== "playing") return;
     const periodSeconds = match.periodDurationMinutes * 60;
     if (isPeriodFinished(match.elapsedSeconds, periodSeconds)) {
       pauseTimer();
     }
-  }, [match, pauseTimer]);
+  }, [match, pauseTimer, isHost]);
 
   const periodSeconds = useMemo(
     () => (match ? match.periodDurationMinutes * 60 : 0),
@@ -466,8 +474,10 @@ export function MatchLivePage(): React.ReactNode {
   }, [nextSuggestion, executeSubstitution]);
 
   // Switch to the other tab after selecting a player (for easier substitution flow)
+  // Only works for host - viewers cannot interact with players
   const handleFieldPlayerTapWithTabSwitch = useCallback(
     (playerId: string) => {
+      if (!isHost) return; // Viewers cannot interact
       const wasSelected = selectedPlayerIds.includes(playerId);
       handleFieldPlayerTap(playerId);
       // If we just selected (not deselected) and no bench selection, switch to bench tab
@@ -475,11 +485,12 @@ export function MatchLivePage(): React.ReactNode {
         setMobileTab("bench");
       }
     },
-    [handleFieldPlayerTap, selectedPlayerIds, hasBenchSelection],
+    [handleFieldPlayerTap, selectedPlayerIds, hasBenchSelection, isHost],
   );
 
   const handleBenchPlayerTapWithTabSwitch = useCallback(
     (playerId: string) => {
+      if (!isHost) return; // Viewers cannot interact
       const wasSelected = selectedPlayerIds.includes(playerId);
       handleBenchPlayerTap(playerId);
       // If we just selected (not deselected) and no field selection, switch to field tab
@@ -487,7 +498,7 @@ export function MatchLivePage(): React.ReactNode {
         setMobileTab("field");
       }
     },
-    [handleBenchPlayerTap, selectedPlayerIds, hasFieldSelection],
+    [handleBenchPlayerTap, selectedPlayerIds, hasFieldSelection, isHost],
   );
 
   // Loading or no match loaded
@@ -510,18 +521,29 @@ export function MatchLivePage(): React.ReactNode {
 
   return (
     <div className="flex h-full w-full flex-col overflow-hidden bg-background">
+      {/* Viewer Mode Banner - shown when not the match host */}
+      {!isHost && (
+        <div className="flex items-center justify-center gap-2 bg-amber-900/50 px-3 py-2 text-center">
+          <span className="text-sm font-medium text-amber-200">
+            {t("match.live.viewerMode")}
+          </span>
+        </div>
+      )}
+
       {/* Top Bar */}
       <div className="flex items-center justify-between border-b border-border px-2 py-1.5 sm:px-3 sm:py-2">
-        {/* Timer */}
+        {/* Timer - clickable only for host */}
         <button
           type="button"
-          onClick={handleTimerTap}
+          onClick={isHost ? handleTimerTap : undefined}
+          disabled={!isHost}
           className={cn(
             "flex min-h-12 touch-manipulation flex-col items-center rounded-lg px-3 py-1 sm:px-4",
             "transition-colors",
             match.status === "playing" && "bg-field/20",
             match.status === "paused" && "bg-amber-900/30",
             match.status === "setup" && "bg-primary/10",
+            !isHost && "cursor-default",
           )}
           aria-label={t("match.live.timer.toggle")}
         >
@@ -548,8 +570,13 @@ export function MatchLivePage(): React.ReactNode {
         <div className="flex items-center gap-1 sm:gap-2">
           <button
             type="button"
-            onClick={() => setShowScoreEdit("home")}
-            className="min-w-8 touch-manipulation text-center text-2xl font-bold tabular-nums text-foreground transition-colors hover:text-green-400 sm:min-w-10 sm:text-3xl lg:text-4xl"
+            onClick={isHost ? () => setShowScoreEdit("home") : undefined}
+            disabled={!isHost}
+            className={cn(
+              "min-w-8 touch-manipulation text-center text-2xl font-bold tabular-nums text-foreground transition-colors sm:min-w-10 sm:text-3xl lg:text-4xl",
+              isHost && "hover:text-green-400",
+              !isHost && "cursor-default",
+            )}
             aria-label={t("match.live.score.editHome")}
           >
             {match.homeScore}
@@ -559,24 +586,32 @@ export function MatchLivePage(): React.ReactNode {
           </span>
           <button
             type="button"
-            onClick={() => setShowScoreEdit("away")}
-            className="min-w-8 touch-manipulation text-center text-2xl font-bold tabular-nums text-foreground transition-colors hover:text-red-400 sm:min-w-10 sm:text-3xl lg:text-4xl"
+            onClick={isHost ? () => setShowScoreEdit("away") : undefined}
+            disabled={!isHost}
+            className={cn(
+              "min-w-8 touch-manipulation text-center text-2xl font-bold tabular-nums text-foreground transition-colors sm:min-w-10 sm:text-3xl lg:text-4xl",
+              isHost && "hover:text-red-400",
+              !isHost && "cursor-default",
+            )}
             aria-label={t("match.live.score.editAway")}
           >
             {match.awayScore}
           </button>
-          <button
-            type="button"
-            onClick={() => registerOpponentGoal()}
-            className={cn(
-              "min-h-12 min-w-12 touch-manipulation rounded-lg px-2",
-              "text-xs font-medium text-red-400",
-              "transition-colors hover:bg-red-900/30",
-            )}
-            aria-label={t("match.live.score.addAway")}
-          >
-            +1
-          </button>
+          {/* Only show +1 opponent button for host */}
+          {isHost && (
+            <button
+              type="button"
+              onClick={() => registerOpponentGoal()}
+              className={cn(
+                "min-h-12 min-w-12 touch-manipulation rounded-lg px-2",
+                "text-xs font-medium text-red-400",
+                "transition-colors hover:bg-red-900/30",
+              )}
+              aria-label={t("match.live.score.addAway")}
+            >
+              +1
+            </button>
+          )}
         </div>
 
         {/* Period + Menu */}
@@ -590,21 +625,23 @@ export function MatchLivePage(): React.ReactNode {
             </span>
           </div>
 
-          {/* Undo */}
-          <button
-            type="button"
-            onClick={undoLastAction}
-            disabled={!lastAction}
-            className={cn(
-              "hidden min-h-12 min-w-12 touch-manipulation rounded-lg px-2 sm:flex",
-              "items-center justify-center text-sm font-medium text-muted-foreground",
-              "transition-colors hover:bg-accent",
-              !lastAction && "opacity-30",
-            )}
-            aria-label={t("match.live.undo.button")}
-          >
-            ↩
-          </button>
+          {/* Undo - host only */}
+          {isHost && (
+            <button
+              type="button"
+              onClick={undoLastAction}
+              disabled={!lastAction}
+              className={cn(
+                "hidden min-h-12 min-w-12 touch-manipulation rounded-lg px-2 sm:flex",
+                "items-center justify-center text-sm font-medium text-muted-foreground",
+                "transition-colors hover:bg-accent",
+                !lastAction && "opacity-30",
+              )}
+              aria-label={t("match.live.undo.button")}
+            >
+              ↩
+            </button>
+          )}
 
           {/* Menu */}
           <div className="relative">
@@ -654,20 +691,23 @@ export function MatchLivePage(): React.ReactNode {
                   <span>❓</span>
                   {t("match.live.menu.help")}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMenu(false);
-                    setShowEndConfirm(true);
-                  }}
-                  className={cn(
-                    "flex min-h-12 w-full touch-manipulation items-center rounded-md px-3 py-2",
-                    "text-sm font-medium text-destructive",
-                    "transition-colors hover:bg-destructive/10",
-                  )}
-                >
-                  {t("match.live.menu.endMatch")}
-                </button>
+                {/* End match - host only */}
+                {isHost && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowMenu(false);
+                      setShowEndConfirm(true);
+                    }}
+                    className={cn(
+                      "flex min-h-12 w-full touch-manipulation items-center rounded-md px-3 py-2",
+                      "text-sm font-medium text-destructive",
+                      "transition-colors hover:bg-destructive/10",
+                    )}
+                  >
+                    {t("match.live.menu.endMatch")}
+                  </button>
+                )}
               </div>
             )}
           </div>

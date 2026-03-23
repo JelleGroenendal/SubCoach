@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
+import { cn, getDeviceId } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
 import { useMatchStore } from "@/stores/matchStore";
 import { useCurrentMatch } from "@/data/yjs";
@@ -14,9 +14,16 @@ function isInterruptedMatch(match: Match | undefined): match is Match {
   // 1. It's not finished
   // 2. It's been started (has events)
   // 3. Current page is not the live match page
+  // 4. This device is the match host (the one who started it)
   if (match.status === "finished") return false;
   if (match.status === "setup") return false;
   if (match.events.length === 0) return false;
+
+  // Only show crash recovery for the match host
+  // Other devices are viewers and shouldn't see this popup
+  if (match.hostDeviceId && match.hostDeviceId !== getDeviceId()) {
+    return false;
+  }
 
   // Check if we're on the match page
   const isOnMatchPage = window.location.pathname.startsWith("/match/");

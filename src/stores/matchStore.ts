@@ -10,6 +10,7 @@ import {
 import { recalculateSchedule } from "@/engine/substitution/recalculate";
 import { getTotalMatchSeconds } from "@/engine/timer/matchTimer";
 import { getSportProfile } from "@/engine/sport-profiles";
+import { getDeviceId } from "@/lib/utils";
 
 /**
  * Represents a pending replacement request.
@@ -34,6 +35,13 @@ interface MatchState {
   showUndo: boolean;
   /** When set, UI should prompt user to select a bench player to enter the field */
   pendingReplacement: PendingReplacement | undefined;
+
+  /**
+   * Whether this device is the match host (controller).
+   * Only the host can control the match (timer, subs, goals, etc.)
+   * Other devices are viewers only - they see the match state but cannot modify it.
+   */
+  isHost: boolean;
 
   setTeamId: (teamId: string | undefined) => void;
   loadMatch: () => void;
@@ -91,18 +99,21 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   lastAction: undefined,
   showUndo: false,
   pendingReplacement: undefined,
+  isHost: false,
 
   setTeamId: (teamId) => {
     set({ teamId });
     if (teamId) {
       const match = getCurrentMatch(teamId);
-      set({ match });
+      // Check if this device is the match host
+      const isHost = match?.hostDeviceId === getDeviceId();
+      set({ match, isHost });
       if (match && match.status !== "finished") {
         const plan = recalcSchedule(match);
         set({ substitutionPlan: plan });
       }
     } else {
-      set({ match: undefined });
+      set({ match: undefined, isHost: false });
     }
   },
 
@@ -110,7 +121,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const { teamId } = get();
     if (!teamId) return;
     const match = getCurrentMatch(teamId);
-    set({ match });
+    // Check if this device is the match host
+    const isHost = match?.hostDeviceId === getDeviceId();
+    set({ match, isHost });
     if (match && match.status !== "finished") {
       const plan = recalcSchedule(match);
       set({ substitutionPlan: plan });
@@ -136,11 +149,13 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       events: [],
       sportProfileId: params.sportProfileId,
       usePositionAwareSubstitutions: params.usePositionAwareSubstitutions,
+      hostDeviceId: getDeviceId(), // Mark this device as the match host
       createdAt: now,
     };
     saveCurrentMatch(params.teamId, match);
     const plan = recalcSchedule(match);
-    set({ teamId: params.teamId, match, substitutionPlan: plan });
+    // This device created the match, so it's the host
+    set({ teamId: params.teamId, match, substitutionPlan: plan, isHost: true });
   },
 
   startTimer: () => {

@@ -57,6 +57,13 @@ export const MatchSchema = z.object({
   substitutionWindowsUsed: z.number().int().min(0).optional(),
   usePositionAwareSubstitutions: z.boolean().optional(),
 
+  /**
+   * Device ID of the coach who started this match.
+   * Only this device can control the match (timer, subs, etc.)
+   * Other devices are viewers only.
+   */
+  hostDeviceId: z.string().optional(),
+
   createdAt: z.number(),
   finishedAt: z.number().optional(),
 });
