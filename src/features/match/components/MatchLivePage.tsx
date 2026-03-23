@@ -1428,6 +1428,51 @@ export function MatchLivePage(): React.ReactNode {
                   {t("match.live.bench.empty")}
                 </p>
               )}
+
+              {/* Future substitutions - shown at bottom of bench */}
+              {futureSuggestions.length > 0 && (
+                <div className="mt-4 border-t border-border pt-3">
+                  <h3 className="mb-2 text-xs font-medium text-muted-foreground">
+                    {t("match.live.suggestion.upcoming")}
+                  </h3>
+                  <div className="flex flex-col gap-1">
+                    {futureSuggestions.map((suggestion, index) => {
+                      const playerIn = match.roster.find(
+                        (p) => p.playerId === suggestion.playerInId,
+                      );
+                      const playerOut = match.roster.find(
+                        (p) => p.playerId === suggestion.playerOutId,
+                      );
+                      const playerInTime = playerIn
+                        ? Math.round(getPlayerPlayTime(playerIn) / 60)
+                        : 0;
+                      const playerOutTime = playerOut
+                        ? Math.round(getPlayerPlayTime(playerOut) / 60)
+                        : 0;
+
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2 text-sm"
+                        >
+                          <span>
+                            <span className="text-red-400">
+                              {playerOut?.name ?? "?"}
+                            </span>
+                            {" → "}
+                            <span className="text-green-400">
+                              {playerIn?.name ?? "?"}
+                            </span>
+                          </span>
+                          <span className="tabular-nums text-xs text-muted-foreground">
+                            {playerOutTime}m → {playerInTime}m
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1520,53 +1565,6 @@ export function MatchLivePage(): React.ReactNode {
                 {t(warning)}
               </span>
             ))}
-          </div>
-        )}
-
-        {/* Future substitutions - scrollable */}
-        {futureSuggestions.length > 0 && (
-          <div className="border-t border-border">
-            <div className="px-3 py-1.5">
-              <span className="text-xs font-medium text-muted-foreground">
-                {t("match.live.suggestion.upcoming")}
-              </span>
-            </div>
-            <div className="max-h-24 overflow-y-auto px-3 pb-2">
-              {futureSuggestions.map((suggestion, index) => {
-                const playerIn = match.roster.find(
-                  (p) => p.playerId === suggestion.playerInId,
-                );
-                const playerOut = match.roster.find(
-                  (p) => p.playerId === suggestion.playerOutId,
-                );
-                const playerInTime = playerIn
-                  ? Math.round(getPlayerPlayTime(playerIn) / 60)
-                  : 0;
-                const playerOutTime = playerOut
-                  ? Math.round(getPlayerPlayTime(playerOut) / 60)
-                  : 0;
-
-                return (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between py-1 text-xs text-muted-foreground"
-                  >
-                    <span>
-                      <span className="text-red-400/70">
-                        {playerOut?.name ?? "?"}
-                      </span>
-                      {" → "}
-                      <span className="text-green-400/70">
-                        {playerIn?.name ?? "?"}
-                      </span>
-                    </span>
-                    <span className="tabular-nums opacity-70">
-                      {playerOutTime}m → {playerInTime}m
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         )}
 
