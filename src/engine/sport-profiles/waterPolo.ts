@@ -65,6 +65,8 @@ export const waterPoloProfile: SportProfile = {
     flying: true,
     canSubBack: true,
     injuryAllowsReplacement: true,
+    intervalPresetsMinutes: [2, 4, 5, 8],
+    defaultIntervalMinutes: 4,
   },
 
   penalties: {

@@ -52,6 +52,8 @@ export const floorballProfile: SportProfile = {
     flying: true,
     canSubBack: true,
     injuryAllowsReplacement: true,
+    intervalPresetsMinutes: [1, 2, 3, 5],
+    defaultIntervalMinutes: 2,
   },
 
   penalties: {

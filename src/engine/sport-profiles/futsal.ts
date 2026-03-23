@@ -59,6 +59,8 @@ export const futsalProfile: SportProfile = {
     flying: true,
     canSubBack: true,
     injuryAllowsReplacement: true,
+    intervalPresetsMinutes: [2, 3, 5, 7, 10],
+    defaultIntervalMinutes: 5,
   },
 
   penalties: {

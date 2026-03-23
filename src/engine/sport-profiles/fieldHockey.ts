@@ -59,6 +59,8 @@ export const fieldHockeyProfile: SportProfile = {
     flying: true,
     canSubBack: true,
     injuryAllowsReplacement: true,
+    intervalPresetsMinutes: [5, 7, 10, 15],
+    defaultIntervalMinutes: 7,
   },
 
   penalties: {

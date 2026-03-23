@@ -20,7 +20,7 @@ export function HistoryListPage(): React.ReactNode {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { activeTeamId, initialize } = useTeamStore();
-  const { matches, deleteFromHistory } = useMatchHistory(activeTeamId);
+  const { matches, loading, deleteFromHistory } = useMatchHistory(activeTeamId);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -45,6 +45,15 @@ export function HistoryListPage(): React.ReactNode {
     },
     [t, deleteFromHistory],
   );
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+        <p className="text-muted-foreground">{t("common.loading")}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 pb-8 pt-4">

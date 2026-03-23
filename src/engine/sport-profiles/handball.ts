@@ -71,6 +71,8 @@ export const handballProfile: SportProfile = {
     flying: true,
     canSubBack: true,
     injuryAllowsReplacement: true, // Injured player can be immediately replaced
+    intervalPresetsMinutes: [2, 3, 5, 7, 10, 15],
+    defaultIntervalMinutes: 5,
   },
 
   penalties: {

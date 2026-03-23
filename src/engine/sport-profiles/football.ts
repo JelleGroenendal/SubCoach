@@ -61,6 +61,8 @@ export const footballProfile: SportProfile = {
     flying: true, // youth KNVB rolling subs
     canSubBack: true, // youth KNVB re-entry allowed
     injuryAllowsReplacement: true,
+    intervalPresetsMinutes: [5, 10, 15, 20, 25],
+    defaultIntervalMinutes: 10,
   },
 
   penalties: {

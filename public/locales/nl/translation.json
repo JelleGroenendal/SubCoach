@@ -11,6 +11,9 @@
     "close": "Sluiten",
     "back": "Terug"
   },
+  "accessibility": {
+    "skipToContent": "Naar hoofdinhoud springen"
+  },
   "error": {
     "title": "Er ging iets mis",
     "description": "Er is een onverwachte fout opgetreden. Je gegevens zijn veilig.",
@@ -230,7 +233,13 @@
         "playersOnField": "Spelers op het veld",
         "playersOnFieldValue": "{{total}} spelers ({{format}})",
         "positionAware": "Positiebewuste wissels",
-        "positionAwareDescription": "Wissel bij voorkeur spelers binnen dezelfde positiegroep (aanval, verdediging, etc.)"
+        "positionAwareDescription": "Wissel bij voorkeur spelers binnen dezelfde positiegroep (aanval, verdediging, etc.)",
+        "substitutionMode": "Wisseltiming",
+        "substitutionModeDescription": "Kies hoe wisselsuggesties worden berekend.",
+        "modeEqual": "Gelijke speeltijd",
+        "modeFixed": "Vaste intervallen",
+        "fixedInterval": "Intervalduur",
+        "intervalMinutes": "{{minutes}} min"
       },
       "players": {
         "title": "Spelers",

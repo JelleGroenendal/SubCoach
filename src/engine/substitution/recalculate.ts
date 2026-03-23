@@ -12,6 +12,12 @@ export type RecalculateInput = {
   usePositionAwareSubstitutions?: boolean;
   /** Map from positionId to groupId (for position-aware substitutions) */
   positionGroupMap?: Record<string, string>;
+  /** Substitution mode: "equal" (default) or "fixed" */
+  substitutionMode?: "equal" | "fixed";
+  /** Fixed interval in seconds (when mode is "fixed") */
+  fixedIntervalSeconds?: number;
+  /** Time of last substitution in seconds (for fixed interval calc) */
+  lastSubstitutionTimeSeconds?: number;
 };
 
 /**
@@ -47,6 +53,9 @@ export function recalculateSchedule(input: RecalculateInput): SubstitutionPlan {
     keeperPlayerId,
     usePositionAwareSubstitutions = false,
     positionGroupMap = {},
+    substitutionMode = "equal",
+    fixedIntervalSeconds,
+    lastSubstitutionTimeSeconds = 0,
   } = input;
 
   // Filter out unavailable players (injured, red card)
@@ -83,6 +92,9 @@ export function recalculateSchedule(input: RecalculateInput): SubstitutionPlan {
     playersOnField,
     hasKeeper,
     usePositionAwareSubstitutions,
+    substitutionMode,
+    fixedIntervalSeconds,
+    lastSubstitutionTimeSeconds,
   };
 
   return calculateSchedule(scheduleInput);

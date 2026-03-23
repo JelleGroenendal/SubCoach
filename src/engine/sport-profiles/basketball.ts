@@ -64,6 +64,8 @@ export const basketballProfile: SportProfile = {
     flying: false, // dead ball only
     canSubBack: true,
     injuryAllowsReplacement: true,
+    intervalPresetsMinutes: [2, 3, 5, 8, 10],
+    defaultIntervalMinutes: 5,
   },
 
   penalties: {

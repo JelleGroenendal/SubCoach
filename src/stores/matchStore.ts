@@ -11,6 +11,11 @@ import { recalculateSchedule } from "@/engine/substitution/recalculate";
 import { getTotalMatchSeconds } from "@/engine/timer/matchTimer";
 import { getSportProfile } from "@/engine/sport-profiles";
 import { getDeviceId } from "@/lib/utils";
+import {
+  vibrateSuccess,
+  vibrateWarning,
+  vibrateNotification,
+} from "@/lib/haptics";
 
 /**
  * Represents a pending replacement request.
@@ -54,6 +59,8 @@ interface MatchState {
     playersOnField: number;
     sportProfileId?: string;
     usePositionAwareSubstitutions?: boolean;
+    substitutionMode?: "equal" | "fixed";
+    fixedSubstitutionIntervalMinutes?: number;
   }) => void;
   startTimer: () => void;
   pauseTimer: () => void;
@@ -149,6 +156,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       events: [],
       sportProfileId: params.sportProfileId,
       usePositionAwareSubstitutions: params.usePositionAwareSubstitutions,
+      substitutionMode: params.substitutionMode,
+      fixedSubstitutionIntervalMinutes: params.fixedSubstitutionIntervalMinutes,
+      lastSubstitutionTimeSeconds: 0,
       hostDeviceId: getDeviceId(), // Mark this device as the match host
       createdAt: now,
     };
@@ -280,10 +290,16 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       }
       return p;
     });
+    // Calculate current match time for tracking last substitution
+    const currentMatchTime =
+      (match.currentPeriod - 1) * match.periodDurationMinutes * 60 +
+      match.elapsedSeconds;
+
     const updated: Match = {
       ...match,
       roster,
       events: [...match.events, event],
+      lastSubstitutionTimeSeconds: currentMatchTime,
     };
     saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
@@ -292,6 +308,10 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const newSelection = selectedPlayerIds.filter(
       (id) => id !== playerInId && id !== playerOutId,
     );
+
+    // Haptic feedback for substitution
+    vibrateSuccess();
+
     set({
       match: updated,
       selectedPlayerIds: newSelection,
@@ -322,6 +342,10 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       events: [...match.events, event],
     };
     saveCurrentMatch(teamId, updated);
+
+    // Haptic feedback for goal
+    vibrateSuccess();
+
     set({
       match: updated,
       lastAction: { event, index: updated.events.length - 1 },
@@ -367,6 +391,10 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       events: [...match.events, event],
     };
     saveCurrentMatch(teamId, updated);
+
+    // Haptic feedback for opponent goal (notification style)
+    vibrateNotification();
+
     set({
       match: updated,
       lastAction: { event, index: updated.events.length - 1 },
@@ -422,6 +450,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     };
     saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
+
+    // Haptic feedback for penalty (warning style)
+    vibrateWarning();
 
     // If team doesn't play short, prompt for a replacement player
     const pendingReplacement: PendingReplacement | undefined = !teamPlaysShort
@@ -583,6 +614,10 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       };
       saveCurrentMatch(teamId, updated);
       const plan = recalcSchedule(updated);
+
+      // Haptic feedback for yellow card
+      vibrateWarning();
+
       set({
         match: updated,
         substitutionPlan: plan,
@@ -630,6 +665,10 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     };
     saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
+
+    // Haptic feedback for red card (strong warning)
+    vibrateWarning();
+
     set({
       match: updated,
       substitutionPlan: plan,
@@ -673,6 +712,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     };
     saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
+
+    // Haptic feedback for injury (warning style)
+    vibrateWarning();
 
     // If sport allows replacement, set pending replacement so UI prompts for substitute
     const pendingReplacement: PendingReplacement | undefined = allowsReplacement
@@ -996,6 +1038,13 @@ function recalcSchedule(match: Match): SubstitutionPlan {
     }
   }
 
+  // Calculate fixed interval in seconds if mode is "fixed"
+  const fixedIntervalSeconds =
+    match.substitutionMode === "fixed" &&
+    match.fixedSubstitutionIntervalMinutes !== undefined
+      ? match.fixedSubstitutionIntervalMinutes * 60
+      : undefined;
+
   return recalculateSchedule({
     roster: match.roster,
     totalMatchSeconds: totalSeconds,
@@ -1005,5 +1054,8 @@ function recalcSchedule(match: Match): SubstitutionPlan {
     keeperPlayerId: match.keeperPlayerId,
     usePositionAwareSubstitutions: match.usePositionAwareSubstitutions,
     positionGroupMap,
+    substitutionMode: match.substitutionMode,
+    fixedIntervalSeconds,
+    lastSubstitutionTimeSeconds: match.lastSubstitutionTimeSeconds ?? 0,
   });
 }

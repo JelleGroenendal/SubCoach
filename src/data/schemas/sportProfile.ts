@@ -50,6 +50,9 @@ export const SportProfileSchema = z.object({
     canSubBack: z.boolean(),
     substitutionWindows: z.number().int().min(1).optional(),
     injuryAllowsReplacement: z.boolean().optional(), // If true, injured player can be replaced immediately (no playing short)
+    // Substitution interval presets (in minutes) - sport-specific options
+    intervalPresetsMinutes: z.array(z.number().int().min(1).max(30)).optional(),
+    defaultIntervalMinutes: z.number().int().min(1).max(30).optional(),
   }),
 
   penalties: z.object({

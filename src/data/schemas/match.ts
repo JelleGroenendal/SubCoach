@@ -57,6 +57,13 @@ export const MatchSchema = z.object({
   substitutionWindowsUsed: z.number().int().min(0).optional(),
   usePositionAwareSubstitutions: z.boolean().optional(),
 
+  /** Substitution timing mode: "equal" (default) or "fixed" */
+  substitutionMode: z.enum(["equal", "fixed"]).optional(),
+  /** Fixed interval in minutes (when mode is "fixed") */
+  fixedSubstitutionIntervalMinutes: z.number().int().min(1).max(30).optional(),
+  /** Time of the last substitution in seconds (for fixed interval tracking) */
+  lastSubstitutionTimeSeconds: z.number().min(0).optional(),
+
   /**
    * Device ID of the coach who started this match.
    * Only this device can control the match (timer, subs, etc.)

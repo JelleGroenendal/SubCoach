@@ -233,12 +233,35 @@ export function TeamEditPage(): React.ReactNode {
 
   return (
     <div className="flex flex-col gap-8 py-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">{t("team.edit.title")}</h1>
-        <p className="mt-1 text-muted-foreground">
-          {t("team.edit.description")}
-        </p>
+      {/* Header with back button */}
+      <div className="flex items-start gap-4">
+        <button
+          type="button"
+          onClick={() => navigate("/")}
+          className="mt-1 flex min-h-10 min-w-10 touch-manipulation items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          aria-label={t("common.back")}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold">{t("team.edit.title")}</h1>
+          <p className="mt-1 text-muted-foreground">
+            {t("team.edit.description")}
+          </p>
+        </div>
       </div>
 
       {/* Team Settings */}
@@ -451,6 +474,114 @@ export function TeamEditPage(): React.ReactNode {
             </button>
           </div>
         )}
+
+        {/* Substitution Timing Mode */}
+        <div className="flex flex-col gap-4 border-t border-border pt-4">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-sm font-medium text-foreground">
+              {t("team.edit.settings.substitutionMode")}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {t("team.edit.settings.substitutionModeDescription")}
+            </span>
+          </div>
+
+          {/* Mode Toggle Buttons */}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                updateTeam({
+                  settings: {
+                    ...team.settings,
+                    substitutionMode: "equal",
+                  },
+                })
+              }
+              className={cn(
+                "flex-1 min-h-12 touch-manipulation rounded-lg border-2 px-4 py-2",
+                "text-sm font-medium transition-colors",
+                (team.settings.substitutionMode ?? "equal") === "equal"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background text-muted-foreground hover:border-primary/50",
+              )}
+            >
+              {t("team.edit.settings.modeEqual")}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                updateTeam({
+                  settings: {
+                    ...team.settings,
+                    substitutionMode: "fixed",
+                    fixedSubstitutionIntervalMinutes:
+                      team.settings.fixedSubstitutionIntervalMinutes ??
+                      currentSportProfile?.substitutions
+                        .defaultIntervalMinutes ??
+                      5,
+                  },
+                })
+              }
+              className={cn(
+                "flex-1 min-h-12 touch-manipulation rounded-lg border-2 px-4 py-2",
+                "text-sm font-medium transition-colors",
+                team.settings.substitutionMode === "fixed"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-background text-muted-foreground hover:border-primary/50",
+              )}
+            >
+              {t("team.edit.settings.modeFixed")}
+            </button>
+          </div>
+
+          {/* Fixed Interval Selector - only shown when mode is "fixed" */}
+          {team.settings.substitutionMode === "fixed" &&
+            currentSportProfile?.substitutions.intervalPresetsMinutes && (
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="fixed-interval"
+                  className="text-sm font-medium text-muted-foreground"
+                >
+                  {t("team.edit.settings.fixedInterval")}
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {currentSportProfile.substitutions.intervalPresetsMinutes.map(
+                    (minutes) => {
+                      const isSelected =
+                        team.settings.fixedSubstitutionIntervalMinutes ===
+                        minutes;
+                      return (
+                        <button
+                          key={minutes}
+                          type="button"
+                          onClick={() =>
+                            updateTeam({
+                              settings: {
+                                ...team.settings,
+                                fixedSubstitutionIntervalMinutes: minutes,
+                              },
+                            })
+                          }
+                          className={cn(
+                            "min-h-12 min-w-12 touch-manipulation rounded-lg border-2 px-4 py-2",
+                            "text-sm font-medium transition-colors",
+                            isSelected
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border bg-background text-muted-foreground hover:border-primary/50",
+                          )}
+                        >
+                          {t("team.edit.settings.intervalMinutes", {
+                            minutes,
+                          })}
+                        </button>
+                      );
+                    },
+                  )}
+                </div>
+              </div>
+            )}
+        </div>
       </section>
 
       {/* Player List */}

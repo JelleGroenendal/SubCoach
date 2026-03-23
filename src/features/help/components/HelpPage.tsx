@@ -29,7 +29,7 @@ export function HelpPage(): React.ReactNode {
           type="button"
           onClick={handleSkip}
           className={cn(
-            "touch-manipulation rounded-lg px-4 py-2",
+            "min-h-12 touch-manipulation rounded-lg px-4 py-2",
             "text-sm font-medium text-muted-foreground",
             "transition-colors hover:text-foreground",
           )}

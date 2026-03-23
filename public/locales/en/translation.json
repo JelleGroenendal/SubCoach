@@ -11,6 +11,9 @@
     "close": "Close",
     "back": "Back"
   },
+  "accessibility": {
+    "skipToContent": "Skip to main content"
+  },
   "error": {
     "title": "Something went wrong",
     "description": "An unexpected error occurred. Your data is safe.",
@@ -230,7 +233,13 @@
         "playersOnField": "Players on field",
         "playersOnFieldValue": "{{total}} players ({{format}})",
         "positionAware": "Position-aware substitutions",
-        "positionAwareDescription": "Prefer substituting players within the same position group (attack, defense, etc.)"
+        "positionAwareDescription": "Prefer substituting players within the same position group (attack, defense, etc.)",
+        "substitutionMode": "Substitution timing",
+        "substitutionModeDescription": "Choose how substitution suggestions are calculated.",
+        "modeEqual": "Equal play time",
+        "modeFixed": "Fixed intervals",
+        "fixedInterval": "Interval duration",
+        "intervalMinutes": "{{minutes}} min"
       },
       "players": {
         "title": "Players",

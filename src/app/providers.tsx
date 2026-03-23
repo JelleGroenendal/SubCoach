@@ -6,6 +6,7 @@ import { PWAUpdatePrompt } from "@/components/common/PWAUpdatePrompt";
 import { InstallPrompt } from "@/components/common/InstallPrompt";
 import { OfflineIndicator } from "@/components/common/OfflineIndicator";
 import { AutoSyncProvider } from "@/components/common/AutoSyncProvider";
+import { ToastContainer } from "@/components/common/ToastContainer";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -25,6 +26,7 @@ export function Providers({ children }: ProvidersProps): ReactNode {
           <OfflineIndicator />
           <AutoSyncProvider />
           {children}
+          <ToastContainer />
           <PWAUpdatePrompt />
           <InstallPrompt />
         </Suspense>

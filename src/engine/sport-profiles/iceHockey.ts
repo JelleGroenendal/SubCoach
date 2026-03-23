@@ -58,6 +58,8 @@ export const iceHockeyProfile: SportProfile = {
     flying: true, // line changes
     canSubBack: true,
     injuryAllowsReplacement: true,
+    intervalPresetsMinutes: [1, 2, 3, 5],
+    defaultIntervalMinutes: 2,
   },
 
   penalties: {
