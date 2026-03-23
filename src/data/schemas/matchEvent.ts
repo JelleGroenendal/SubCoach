@@ -24,6 +24,8 @@ export const PenaltyEventSchema = z.object({
   playerId: z.string(),
   durationSeconds: z.number().int().min(1),
   penaltyId: z.string(),
+  /** If false, player sits out but team can substitute (e.g., 10-min misconduct in hockey) */
+  teamPlaysShort: z.boolean().optional(), // defaults to true for backward compatibility
 });
 
 export const PenaltyEndEventSchema = z.object({

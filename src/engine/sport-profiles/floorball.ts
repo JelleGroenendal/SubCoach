@@ -68,6 +68,12 @@ export const floorballProfile: SportProfile = {
         teamPlaysShort: true,
         endsOnGoal: false,
       },
+      {
+        name: "10min",
+        durationSeconds: 600,
+        teamPlaysShort: false, // Player sits out, but team can substitute
+        endsOnGoal: false,
+      },
     ],
     cards: [],
     secondYellowIsRed: false,

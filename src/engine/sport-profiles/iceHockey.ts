@@ -74,6 +74,12 @@ export const iceHockeyProfile: SportProfile = {
         teamPlaysShort: true,
         endsOnGoal: false,
       },
+      {
+        name: "misconduct",
+        durationSeconds: 600,
+        teamPlaysShort: false, // Player sits out, but team can substitute
+        endsOnGoal: false,
+      },
     ],
     cards: [],
     secondYellowIsRed: false,

@@ -58,7 +58,11 @@ interface MatchState {
   removeGoal: (playerId: string) => void;
   registerOpponentGoal: () => void;
   removeOpponentGoal: () => void;
-  registerPenalty: (playerId: string, durationSeconds: number) => void;
+  registerPenalty: (
+    playerId: string,
+    durationSeconds: number,
+    teamPlaysShort?: boolean,
+  ) => void;
   endPenalty: (penaltyId: string) => void;
   registerYellowCard: (
     playerId: string,
@@ -370,7 +374,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     set({ match: updated });
   },
 
-  registerPenalty: (playerId, durationSeconds) => {
+  registerPenalty: (playerId, durationSeconds, teamPlaysShort = true) => {
     const { teamId, match } = get();
     if (!teamId || !match) return;
     const penaltyId = crypto.randomUUID();
@@ -380,7 +384,11 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       playerId,
       durationSeconds,
       penaltyId,
+      teamPlaysShort,
     };
+
+    // If teamPlaysShort is false (e.g., misconduct), player sits out but team can substitute
+    // We still mark player as penalty status, but we'll trigger a replacement prompt
     const roster = match.roster.map((p) => {
       if (p.playerId === playerId) {
         const periods = p.periods.map((per, i) =>
@@ -399,11 +407,18 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     };
     saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
+
+    // If team doesn't play short, prompt for a replacement player
+    const pendingReplacement: PendingReplacement | undefined = !teamPlaysShort
+      ? { type: "penaltyEnd", playerId, penaltyId }
+      : undefined;
+
     set({
       match: updated,
       substitutionPlan: plan,
       lastAction: { event, index: updated.events.length - 1 },
       showUndo: true,
+      pendingReplacement,
     });
     setTimeout(() => {
       if (get().showUndo) set({ showUndo: false });

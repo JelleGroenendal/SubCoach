@@ -846,24 +846,31 @@ export function MatchLivePage(): React.ReactNode {
                     </button>
                     {/* Quick action buttons - dynamic based on sport profile */}
                     <div className="flex border-t border-white/20">
-                      {/* Time penalty button - show if sport has time penalties */}
+                      {/* Time penalty buttons - show one button per penalty type */}
                       {sportProfile?.penalties.timePenalties &&
-                        sportProfile.penalties.timePenalties.length > 0 && (
+                        sportProfile.penalties.timePenalties.map((penalty) => (
                           <button
+                            key={penalty.name}
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               registerPenalty(
                                 player.playerId,
-                                defaultPenaltyDuration,
+                                penalty.durationSeconds,
+                                penalty.teamPlaysShort,
                               );
                             }}
-                            className="flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium text-amber-300 transition-colors hover:bg-amber-900/50 sm:text-xs"
+                            className={cn(
+                              "flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium transition-colors hover:bg-amber-900/50 sm:text-xs",
+                              penalty.teamPlaysShort
+                                ? "text-amber-300"
+                                : "text-orange-300", // Different color for misconduct (no power play)
+                            )}
                             aria-label={t("match.live.actions.penalty")}
                           >
-                            {Math.floor(defaultPenaltyDuration / 60)}m
+                            {Math.floor(penalty.durationSeconds / 60)}m
                           </button>
-                        )}
+                        ))}
                       {/* Yellow card button - show if sport has yellow cards */}
                       {sportProfile?.penalties.cards?.includes("yellow") && (
                         <button
