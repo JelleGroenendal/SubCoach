@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { formatTime, isPeriodFinished } from "@/engine/timer/matchTimer";
 import { getActivePenalties } from "@/engine/timer/penaltyTimer";
 import { requestWakeLock } from "@/lib/pwa";
+import { vibrateNotification } from "@/lib/haptics";
 import { getSportProfile } from "@/engine/sport-profiles";
 import { getTeamDoc } from "@/data/yjs/yjsProvider";
 import { useP2PSync } from "@/data/sync";
@@ -92,6 +93,7 @@ export function MatchLivePage(): React.ReactNode {
     undefined,
   );
   const lastTickTimeRef = useRef<number>(0);
+  const lastSuggestionRef = useRef<string | undefined>(undefined);
 
   // Initialize team store on mount (loads from Yjs/IndexedDB)
   useEffect(() => {
@@ -277,6 +279,23 @@ export function MatchLivePage(): React.ReactNode {
     if (substitutionPlan.suggestions.length === 0) return undefined;
     return substitutionPlan.suggestions[0];
   }, [substitutionPlan]);
+
+  // Haptic feedback when a new substitution suggestion appears
+  useEffect(() => {
+    if (!nextSuggestion || !isHost) return;
+
+    // Create a unique ID for this suggestion
+    const suggestionId = `${nextSuggestion.playerOutId}-${nextSuggestion.playerInId}`;
+
+    // Only vibrate if this is a NEW suggestion (different from last one)
+    if (lastSuggestionRef.current !== suggestionId) {
+      lastSuggestionRef.current = suggestionId;
+      // Only vibrate if match is playing (not during setup/paused)
+      if (match?.status === "playing") {
+        vibrateNotification();
+      }
+    }
+  }, [nextSuggestion, isHost, match?.status]);
 
   const getPlayerPlayTime = useCallback(
     (player: MatchPlayer): number => {
