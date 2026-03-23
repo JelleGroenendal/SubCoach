@@ -160,6 +160,16 @@ export function HomePage(): React.ReactNode {
           {t("home.matchHistory")}
         </Link>
       </div>
+
+      {/* Receive another team link */}
+      <Link
+        to="/join"
+        className={cn(
+          "text-sm text-muted-foreground underline-offset-4 hover:underline",
+        )}
+      >
+        {t("home.receiveAnotherTeam")}
+      </Link>
     </div>
   );
 }

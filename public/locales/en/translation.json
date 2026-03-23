@@ -199,6 +199,7 @@
     "editTeam": "Manage team",
     "startMatch": "Start match",
     "matchHistory": "History",
+    "receiveAnotherTeam": "Receive another team from a coach",
     "welcome": {
       "title": "Welcome to SubCoach",
       "description": "Create your team and start with automatic substitution management. Works 100% offline.",
