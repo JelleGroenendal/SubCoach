@@ -377,17 +377,35 @@ export function TeamEditPage(): React.ReactNode {
 
         {/* Period Count */}
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-muted-foreground">
+          <label
+            htmlFor="period-count"
+            className="text-sm font-medium text-muted-foreground"
+          >
             {t("team.edit.settings.periodCount")}
           </label>
-          <div
+          <select
+            id="period-count"
+            value={team.settings.periodCount}
+            onChange={(e) =>
+              updateTeam({
+                settings: {
+                  ...team.settings,
+                  periodCount: parseInt(e.target.value, 10),
+                },
+              })
+            }
             className={cn(
-              "min-h-12 flex items-center rounded-lg border border-input bg-muted px-3 py-2",
-              "text-base text-muted-foreground",
+              "min-h-12 touch-manipulation rounded-lg border border-input bg-background px-3 py-2",
+              "text-base text-foreground",
+              "focus:outline-none focus:ring-2 focus:ring-ring",
             )}
           >
-            {team.settings.periodCount}
-          </div>
+            {[1, 2, 3, 4].map((count) => (
+              <option key={count} value={count}>
+                {count}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Players on Field */}
