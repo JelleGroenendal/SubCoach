@@ -38,16 +38,16 @@
       "position": {
         "keeper": "Keeper",
         "keeperAbbr": "K",
-        "leftWing": "Linksbuiten",
-        "leftWingAbbr": "LB",
-        "leftBack": "Links opbouw",
+        "leftCorner": "Linkerhoek",
+        "leftCornerAbbr": "LH",
+        "leftBack": "Linkeropbouw",
         "leftBackAbbr": "LO",
-        "center": "Midden opbouw",
+        "center": "Middenopbouw",
         "centerAbbr": "MO",
-        "rightBack": "Rechts opbouw",
+        "rightBack": "Rechteropbouw",
         "rightBackAbbr": "RO",
-        "rightWing": "Rechtsbuiten",
-        "rightWingAbbr": "RB",
+        "rightCorner": "Rechterhoek",
+        "rightCornerAbbr": "RH",
         "pivot": "Cirkel",
         "pivotAbbr": "CI"
       }

@@ -38,16 +38,16 @@
       "position": {
         "keeper": "Goalkeeper",
         "keeperAbbr": "GK",
-        "leftWing": "Left Wing",
-        "leftWingAbbr": "LW",
+        "leftCorner": "Left Corner",
+        "leftCornerAbbr": "LC",
         "leftBack": "Left Back",
         "leftBackAbbr": "LB",
         "center": "Center Back",
         "centerAbbr": "CB",
         "rightBack": "Right Back",
         "rightBackAbbr": "RB",
-        "rightWing": "Right Wing",
-        "rightWingAbbr": "RW",
+        "rightCorner": "Right Corner",
+        "rightCornerAbbr": "RC",
         "pivot": "Pivot",
         "pivotAbbr": "PV"
       }
