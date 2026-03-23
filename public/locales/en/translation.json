@@ -531,8 +531,10 @@
     "waitingForCoach": "Waiting for other coach",
     "waitingForData": "Receiving team data...",
     "imported": "Team imported!",
-    "importedDescription": "The team has been added to your app. You can now use it.",
-    "goToTeam": "Go to team"
+    "importedDescription": "The team has been added to your app. Changes will sync automatically.",
+    "goToTeam": "Go to team",
+    "syncActive": "Sync active",
+    "coaches": "coaches"
   },
   "joinTeam": {
     "title": "Receive Team",

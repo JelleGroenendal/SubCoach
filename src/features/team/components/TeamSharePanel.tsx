@@ -62,7 +62,7 @@ export function TeamSharePanel({
     setJoinCode("");
   }, [disconnect]);
 
-  // Team was imported successfully
+  // Team was imported successfully - show sync status
   if (teamImported) {
     return (
       <div className="flex flex-col gap-4 rounded-xl border border-green-500/50 bg-green-500/10 p-4">
@@ -77,16 +77,40 @@ export function TeamSharePanel({
           {t("teamShare.importedDescription")}
         </p>
 
-        <Button
-          size="xl"
-          variant="default"
-          onClick={() => {
-            disconnect();
-            navigate("/");
-          }}
-        >
-          {t("teamShare.goToTeam")}
-        </Button>
+        {/* Show continuous sync status */}
+        <div className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+          <div className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-green-500" />
+            <span className="text-sm">{t("teamShare.syncActive")}</span>
+          </div>
+          <span className="text-sm text-muted-foreground">
+            {peerCount + 1} {t("teamShare.coaches")}
+          </span>
+        </div>
+
+        <div className="flex gap-2">
+          <Button
+            size="xl"
+            variant="default"
+            className="flex-1"
+            onClick={() => {
+              // Don't disconnect - keep sync alive!
+              navigate("/");
+            }}
+          >
+            {t("teamShare.goToTeam")}
+          </Button>
+          <Button
+            size="xl"
+            variant="destructive"
+            onClick={() => {
+              disconnect();
+              navigate("/");
+            }}
+          >
+            {t("sync.disconnect")}
+          </Button>
+        </div>
       </div>
     );
   }

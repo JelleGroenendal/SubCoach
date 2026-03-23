@@ -531,8 +531,10 @@
     "waitingForCoach": "Wachten op andere coach",
     "waitingForData": "Teamdata ontvangen...",
     "imported": "Team geïmporteerd!",
-    "importedDescription": "Het team is toegevoegd aan je app. Je kunt het nu gebruiken.",
-    "goToTeam": "Naar team"
+    "importedDescription": "Het team is toegevoegd aan je app. Wijzigingen worden automatisch gesynchroniseerd.",
+    "goToTeam": "Naar team",
+    "syncActive": "Sync actief",
+    "coaches": "coaches"
   },
   "joinTeam": {
     "title": "Team ontvangen",
