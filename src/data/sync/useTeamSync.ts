@@ -84,6 +84,22 @@ export function useTeamSync(): TeamSyncHook {
     const doc = getTeamDoc(teamId);
     await waitForTeamSync(teamId);
 
+    // Debug: log what's in the doc we're about to share
+    const infoMap = doc.getMap("info");
+    const playersMap = doc.getMap("players");
+    console.log(
+      "[TeamSync] Hosting team doc - info size:",
+      infoMap.size,
+      "players size:",
+      playersMap.size,
+    );
+    if (infoMap.size > 0) {
+      console.log(
+        "[TeamSync] Host doc info contents:",
+        Object.fromEntries(infoMap.entries()),
+      );
+    }
+
     // Host the room
     const roomCode = await p2pSync.hostRoom(doc);
 
@@ -113,8 +129,13 @@ export function useTeamSync(): TeamSyncHook {
 
       try {
         // Debug: log when doc receives updates
-        doc.on("update", (update: Uint8Array) => {
-          console.log("[TeamSync] Doc received update, size:", update.length);
+        doc.on("update", (update: Uint8Array, origin: unknown) => {
+          console.log(
+            "[TeamSync] Doc received update, size:",
+            update.length,
+            "origin:",
+            origin,
+          );
           // Check what's in the doc now
           const infoMap = doc.getMap("info");
           const playersMap = doc.getMap("players");
@@ -130,7 +151,21 @@ export function useTeamSync(): TeamSyncHook {
               Object.fromEntries(infoMap.entries()),
             );
           }
+          if (playersMap.size > 0) {
+            console.log(
+              "[TeamSync] Players map keys:",
+              Array.from(playersMap.keys()),
+            );
+          }
         });
+
+        // Also log initial state of the doc
+        console.log(
+          "[TeamSync] Initial doc state - info size:",
+          doc.getMap("info").size,
+          "players size:",
+          doc.getMap("players").size,
+        );
 
         // Join the room to start receiving data
         await p2pSync.joinRoom(roomCode, doc);
