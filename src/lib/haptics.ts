@@ -61,3 +61,10 @@ export function vibrateError(): void {
 export function vibrateNotification(): void {
   vibrate([50, 30, 50]);
 }
+
+/**
+ * Substitution suggestion feedback - strong double pulse to get coach's attention
+ */
+export function vibrateSubstitution(): void {
+  vibrate([150, 100, 150]);
+}

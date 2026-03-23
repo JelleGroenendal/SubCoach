@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { formatTime, isPeriodFinished } from "@/engine/timer/matchTimer";
 import { getActivePenalties } from "@/engine/timer/penaltyTimer";
 import { requestWakeLock } from "@/lib/pwa";
-import { vibrateNotification } from "@/lib/haptics";
+import { vibrateSubstitution } from "@/lib/haptics";
 import { getSportProfile } from "@/engine/sport-profiles";
 import { getTeamDoc } from "@/data/yjs/yjsProvider";
 import { useP2PSync } from "@/data/sync";
@@ -292,7 +292,7 @@ export function MatchLivePage(): React.ReactNode {
       lastSuggestionRef.current = suggestionId;
       // Only vibrate if match is playing (not during setup/paused)
       if (match?.status === "playing") {
-        vibrateNotification();
+        vibrateSubstitution();
       }
     }
   }, [nextSuggestion, isHost, match?.status]);
