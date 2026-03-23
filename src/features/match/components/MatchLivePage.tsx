@@ -275,10 +275,30 @@ export function MatchLivePage(): React.ReactNode {
     [match],
   );
 
-  const nextSuggestion = useMemo(() => {
-    if (substitutionPlan.suggestions.length === 0) return undefined;
-    return substitutionPlan.suggestions[0];
+  // Current suggestions (to execute now) - max 2
+  const currentSuggestions = useMemo(() => {
+    return substitutionPlan.suggestions
+      .filter((s) => s.reason !== "scheduled")
+      .slice(0, 2);
   }, [substitutionPlan]);
+
+  // Future suggestions (scheduled for later)
+  const futureSuggestions = useMemo(() => {
+    return substitutionPlan.suggestions.filter((s) => s.reason === "scheduled");
+  }, [substitutionPlan]);
+
+  // Sets for quick lookup when marking players
+  const suggestedOutIds = useMemo(
+    () => new Set(currentSuggestions.map((s) => s.playerOutId)),
+    [currentSuggestions],
+  );
+  const suggestedInIds = useMemo(
+    () => new Set(currentSuggestions.map((s) => s.playerInId)),
+    [currentSuggestions],
+  );
+
+  // Keep nextSuggestion for haptic feedback (first suggestion only)
+  const nextSuggestion = currentSuggestions[0];
 
   // Haptic feedback when a new substitution suggestion appears
   useEffect(() => {
@@ -472,11 +492,14 @@ export function MatchLivePage(): React.ReactNode {
     }
   }, [lastAction, match, t]);
 
-  // Quick substitute handler for suggestion
+  // Quick substitute handler for all current suggestions
   const handleQuickSubstitute = useCallback(() => {
-    if (!nextSuggestion) return;
-    executeSubstitution(nextSuggestion.playerInId, nextSuggestion.playerOutId);
-  }, [nextSuggestion, executeSubstitution]);
+    if (currentSuggestions.length === 0) return;
+    // Execute all current suggestions
+    for (const suggestion of currentSuggestions) {
+      executeSubstitution(suggestion.playerInId, suggestion.playerOutId);
+    }
+  }, [currentSuggestions, executeSubstitution]);
 
   // Switch to the other tab after selecting a player (for easier substitution flow)
   // Only works for host - viewers cannot interact with players
@@ -886,8 +909,7 @@ export function MatchLivePage(): React.ReactNode {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {fieldPlayers.map((player) => {
                 const isSelected = selectedPlayerIds.includes(player.playerId);
-                const isSuggestedOut =
-                  nextSuggestion?.playerOutId === player.playerId;
+                const isSuggestedOut = suggestedOutIds.has(player.playerId);
                 const playTimeSeconds = getPlayerPlayTime(player);
                 const playerPosition = player.positionId
                   ? sportProfile?.players.positions?.find(
@@ -1132,8 +1154,7 @@ export function MatchLivePage(): React.ReactNode {
               {/* Bench players */}
               {benchPlayers.map((player) => {
                 const isSelected = selectedPlayerIds.includes(player.playerId);
-                const isSuggestedIn =
-                  nextSuggestion?.playerInId === player.playerId;
+                const isSuggestedIn = suggestedInIds.has(player.playerId);
                 const playTimeSeconds = getPlayerPlayTime(player);
                 const playerPosition = player.positionId
                   ? sportProfile?.players.positions?.find(
@@ -1437,54 +1458,59 @@ export function MatchLivePage(): React.ReactNode {
           </div>
         )}
 
-        {/* Quick substitute button */}
-        {nextSuggestion &&
-          selectedPlayerIds.length === 0 &&
-          (() => {
-            const playerIn = match.roster.find(
-              (p) => p.playerId === nextSuggestion.playerInId,
-            );
-            const playerOut = match.roster.find(
-              (p) => p.playerId === nextSuggestion.playerOutId,
-            );
-            const playerInTime = playerIn
-              ? Math.round(getPlayerPlayTime(playerIn) / 60)
-              : 0;
-            const playerOutTime = playerOut
-              ? Math.round(getPlayerPlayTime(playerOut) / 60)
-              : 0;
+        {/* Quick substitute button - shows all current suggestions */}
+        {currentSuggestions.length > 0 && selectedPlayerIds.length === 0 && (
+          <button
+            type="button"
+            onClick={handleQuickSubstitute}
+            className={cn(
+              "flex w-full touch-manipulation items-center justify-between gap-2 border-b border-border bg-amber-900/20 px-3 py-2",
+              "transition-colors hover:bg-amber-900/30",
+            )}
+          >
+            <div className="flex flex-col items-start gap-1">
+              {currentSuggestions.map((suggestion, index) => {
+                const playerIn = match.roster.find(
+                  (p) => p.playerId === suggestion.playerInId,
+                );
+                const playerOut = match.roster.find(
+                  (p) => p.playerId === suggestion.playerOutId,
+                );
+                const playerInTime = playerIn
+                  ? Math.round(getPlayerPlayTime(playerIn) / 60)
+                  : 0;
+                const playerOutTime = playerOut
+                  ? Math.round(getPlayerPlayTime(playerOut) / 60)
+                  : 0;
 
-            return (
-              <button
-                type="button"
-                onClick={handleQuickSubstitute}
-                className={cn(
-                  "flex min-h-14 w-full touch-manipulation items-center justify-between gap-2 border-b border-border bg-amber-900/20 px-3 py-2",
-                  "transition-colors hover:bg-amber-900/30",
-                )}
-              >
-                <div className="flex flex-col items-start gap-0.5">
-                  <span className="text-sm font-medium text-amber-300">
-                    {t("match.live.suggestion.swap", {
-                      playerIn: playerIn?.name ?? "?",
-                      playerOut: playerOut?.name ?? "?",
-                    })}
-                  </span>
-                  <span className="text-xs text-amber-400/70">
-                    {t("match.live.suggestion.reason", {
-                      playerIn: playerIn?.name ?? "?",
-                      playerOut: playerOut?.name ?? "?",
-                      inTime: playerInTime,
-                      outTime: playerOutTime,
-                    })}
-                  </span>
-                </div>
-                <span className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white">
-                  {t("match.live.suggestion.execute")}
-                </span>
-              </button>
-            );
-          })()}
+                return (
+                  <div
+                    key={index}
+                    className="flex flex-col items-start gap-0.5"
+                  >
+                    <span className="text-sm font-medium text-amber-300">
+                      <span className="text-red-400">
+                        {playerOut?.name ?? "?"}
+                      </span>
+                      {" → "}
+                      <span className="text-green-400">
+                        {playerIn?.name ?? "?"}
+                      </span>
+                    </span>
+                    <span className="text-xs text-amber-400/70">
+                      {playerOutTime} min → {playerInTime} min
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <span className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white">
+              {currentSuggestions.length > 1
+                ? t("match.live.suggestion.executeAll")
+                : t("match.live.suggestion.execute")}
+            </span>
+          </button>
+        )}
 
         {/* Warnings */}
         {substitutionPlan.warnings.length > 0 && (
@@ -1494,6 +1520,53 @@ export function MatchLivePage(): React.ReactNode {
                 {t(warning)}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* Future substitutions - scrollable */}
+        {futureSuggestions.length > 0 && (
+          <div className="border-t border-border">
+            <div className="px-3 py-1.5">
+              <span className="text-xs font-medium text-muted-foreground">
+                {t("match.live.suggestion.upcoming")}
+              </span>
+            </div>
+            <div className="max-h-24 overflow-y-auto px-3 pb-2">
+              {futureSuggestions.map((suggestion, index) => {
+                const playerIn = match.roster.find(
+                  (p) => p.playerId === suggestion.playerInId,
+                );
+                const playerOut = match.roster.find(
+                  (p) => p.playerId === suggestion.playerOutId,
+                );
+                const playerInTime = playerIn
+                  ? Math.round(getPlayerPlayTime(playerIn) / 60)
+                  : 0;
+                const playerOutTime = playerOut
+                  ? Math.round(getPlayerPlayTime(playerOut) / 60)
+                  : 0;
+
+                return (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between py-1 text-xs text-muted-foreground"
+                  >
+                    <span>
+                      <span className="text-red-400/70">
+                        {playerOut?.name ?? "?"}
+                      </span>
+                      {" → "}
+                      <span className="text-green-400/70">
+                        {playerIn?.name ?? "?"}
+                      </span>
+                    </span>
+                    <span className="tabular-nums opacity-70">
+                      {playerOutTime}m → {playerInTime}m
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 

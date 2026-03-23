@@ -360,7 +360,9 @@
         "title": "Voorgestelde wissel",
         "swap": "{{playerOut}} → {{playerIn}}",
         "reason": "{{playerOut}} {{outTime}} min, {{playerIn}} {{inTime}} min",
-        "execute": "Wisselen"
+        "execute": "Wisselen",
+        "executeAll": "Alle wisselen",
+        "upcoming": "Volgende wissels"
       },
       "selection": {
         "selected": "Geselecteerd: {{name}}",

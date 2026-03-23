@@ -360,7 +360,9 @@
         "title": "Suggested substitution",
         "swap": "{{playerOut}} → {{playerIn}}",
         "reason": "{{playerOut}} {{outTime}} min, {{playerIn}} {{inTime}} min",
-        "execute": "Substitute"
+        "execute": "Substitute",
+        "executeAll": "Substitute all",
+        "upcoming": "Upcoming substitutions"
       },
       "selection": {
         "selected": "Selected: {{name}}",
