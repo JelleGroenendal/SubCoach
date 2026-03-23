@@ -368,6 +368,14 @@
         "recover": "Markeer {{name}} als hersteld",
         "recoverButton": "Hersteld"
       },
+      "replacement": {
+        "title": "Kies vervanger",
+        "injuryMessage": "{{name}} is geblesseerd. Selecteer een bankspeler om in te komen.",
+        "penaltyEndMessage": "De straf van {{name}} is afgelopen. Selecteer een bankspeler om in te komen.",
+        "redCardMessage": "Selecteer een bankspeler om de plek op te vullen ({{name}} blijft eruit).",
+        "skipButton": "Speel met minder",
+        "noBenchPlayers": "Geen bankspelers beschikbaar"
+      },
       "endMatch": {
         "title": "Wedstrijd beëindigen",
         "confirm": "Weet je zeker dat je de wedstrijd wilt beëindigen? Dit kan niet ongedaan worden gemaakt.",

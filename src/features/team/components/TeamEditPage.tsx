@@ -42,9 +42,9 @@ export function TeamEditPage(): React.ReactNode {
 
   const [newPlayerName, setNewPlayerName] = useState("");
   const [newPlayerNumber, setNewPlayerNumber] = useState("");
-  const [newPlayerPositionId, setNewPlayerPositionId] = useState<
-    string | undefined
-  >(undefined);
+  const [newPlayerPositionIds, setNewPlayerPositionIds] = useState<string[]>(
+    [],
+  );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSharePanel, setShowSharePanel] = useState(false);
   const [editingPlayerId, setEditingPlayerId] = useState<string | undefined>(
@@ -52,9 +52,7 @@ export function TeamEditPage(): React.ReactNode {
   );
   const [editName, setEditName] = useState("");
   const [editNumber, setEditNumber] = useState("");
-  const [editPositionId, setEditPositionId] = useState<string | undefined>(
-    undefined,
-  );
+  const [editPositionIds, setEditPositionIds] = useState<string[]>([]);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const teamNameDebounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
@@ -114,24 +112,29 @@ export function TeamEditPage(): React.ReactNode {
         ? parsedNumber
         : undefined;
 
-    addPlayer(name, validNumber, newPlayerPositionId);
+    addPlayer(
+      name,
+      validNumber,
+      newPlayerPositionIds[0], // Keep backward compat with positionId
+      newPlayerPositionIds.length > 0 ? newPlayerPositionIds : undefined,
+    );
     setNewPlayerName("");
     setNewPlayerNumber("");
-    setNewPlayerPositionId(undefined);
+    setNewPlayerPositionIds([]);
     nameInputRef.current?.focus();
-  }, [newPlayerName, newPlayerNumber, newPlayerPositionId, addPlayer]);
+  }, [newPlayerName, newPlayerNumber, newPlayerPositionIds, addPlayer]);
 
   const handleStartEdit = useCallback(
     (
       playerId: string,
       name: string,
       number: number | undefined,
-      positionId: string | undefined,
+      positionIds: string[] | undefined,
     ) => {
       setEditingPlayerId(playerId);
       setEditName(name);
       setEditNumber(number !== undefined ? String(number) : "");
-      setEditPositionId(positionId);
+      setEditPositionIds(positionIds ?? []);
     },
     [],
   );
@@ -154,19 +157,20 @@ export function TeamEditPage(): React.ReactNode {
     updatePlayer(editingPlayerId, {
       name,
       number: validNumber,
-      positionId: editPositionId,
+      positionId: editPositionIds[0], // Keep backward compat
+      positionIds: editPositionIds.length > 0 ? editPositionIds : undefined,
     });
     setEditingPlayerId(undefined);
     setEditName("");
     setEditNumber("");
-    setEditPositionId(undefined);
-  }, [editingPlayerId, editName, editNumber, editPositionId, updatePlayer]);
+    setEditPositionIds([]);
+  }, [editingPlayerId, editName, editNumber, editPositionIds, updatePlayer]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingPlayerId(undefined);
     setEditName("");
     setEditNumber("");
-    setEditPositionId(undefined);
+    setEditPositionIds([]);
   }, []);
 
   const handleRemovePlayer = useCallback(
@@ -516,27 +520,40 @@ export function TeamEditPage(): React.ReactNode {
                     max={99}
                   />
                   {positions.length > 0 && (
-                    <select
-                      value={editPositionId ?? ""}
-                      onChange={(e) =>
-                        setEditPositionId(e.target.value || undefined)
-                      }
-                      className={cn(
-                        "min-h-10 w-24 touch-manipulation rounded-md border border-input bg-background px-2 py-1",
-                        "text-sm text-foreground",
-                        "focus:outline-none focus:ring-2 focus:ring-ring",
-                      )}
-                      aria-label={t("team.edit.players.position")}
-                    >
-                      <option value="">
-                        {t("team.edit.players.noPosition")}
-                      </option>
-                      {positions.map((pos) => (
-                        <option key={pos.id} value={pos.id}>
-                          {t(pos.abbreviation)}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex flex-wrap gap-1.5">
+                      {positions.map((pos) => {
+                        const isSelected = editPositionIds.includes(pos.id);
+                        return (
+                          <button
+                            key={pos.id}
+                            type="button"
+                            onClick={() => {
+                              if (isSelected) {
+                                setEditPositionIds(
+                                  editPositionIds.filter((id) => id !== pos.id),
+                                );
+                              } else {
+                                setEditPositionIds([
+                                  ...editPositionIds,
+                                  pos.id,
+                                ]);
+                              }
+                            }}
+                            className={cn(
+                              "min-h-8 touch-manipulation rounded-md border px-2 py-1",
+                              "text-xs font-medium transition-colors",
+                              isSelected
+                                ? "border-primary bg-primary/20 text-primary"
+                                : "border-input bg-background text-muted-foreground hover:bg-accent",
+                            )}
+                            aria-label={t(pos.abbreviation)}
+                            aria-pressed={isSelected}
+                          >
+                            {t(pos.abbreviation)}
+                          </button>
+                        );
+                      })}
+                    </div>
                   )}
                   <Button
                     size="xl"
@@ -560,10 +577,13 @@ export function TeamEditPage(): React.ReactNode {
               );
             }
 
-            // Get position for this player
-            const playerPosition = player.positionId
-              ? positions.find((p) => p.id === player.positionId)
-              : undefined;
+            // Get positions for this player (support both positionIds array and legacy positionId)
+            const playerPositions =
+              player.positionIds && player.positionIds.length > 0
+                ? positions.filter((p) => player.positionIds?.includes(p.id))
+                : player.positionId
+                  ? positions.filter((p) => p.id === player.positionId)
+                  : [];
 
             return (
               <div
@@ -588,10 +608,17 @@ export function TeamEditPage(): React.ReactNode {
                 >
                   {player.name}
                 </span>
-                {playerPosition && (
-                  <span className="rounded bg-primary/20 px-1.5 py-0.5 text-xs font-medium text-primary">
-                    {t(playerPosition.abbreviation)}
-                  </span>
+                {playerPositions.length > 0 && (
+                  <div className="flex gap-1">
+                    {playerPositions.map((pos) => (
+                      <span
+                        key={pos.id}
+                        className="rounded bg-primary/20 px-1.5 py-0.5 text-xs font-medium text-primary"
+                      >
+                        {t(pos.abbreviation)}
+                      </span>
+                    ))}
+                  </div>
                 )}
                 <button
                   type="button"
@@ -623,7 +650,7 @@ export function TeamEditPage(): React.ReactNode {
                       player.id,
                       player.name,
                       player.number,
-                      player.positionId,
+                      player.positionIds,
                     )
                   }
                   className={cn(
@@ -691,25 +718,40 @@ export function TeamEditPage(): React.ReactNode {
             max={99}
           />
           {positions.length > 0 && (
-            <select
-              value={newPlayerPositionId ?? ""}
-              onChange={(e) =>
-                setNewPlayerPositionId(e.target.value || undefined)
-              }
-              className={cn(
-                "min-h-12 w-28 touch-manipulation rounded-lg border border-input bg-background px-2 py-2",
-                "text-sm text-foreground",
-                "focus:outline-none focus:ring-2 focus:ring-ring",
-              )}
-              aria-label={t("team.edit.players.position")}
-            >
-              <option value="">{t("team.edit.players.noPosition")}</option>
-              {positions.map((pos) => (
-                <option key={pos.id} value={pos.id}>
-                  {t(pos.abbreviation)}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap gap-1.5">
+              {positions.map((pos) => {
+                const isSelected = newPlayerPositionIds.includes(pos.id);
+                return (
+                  <button
+                    key={pos.id}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setNewPlayerPositionIds(
+                          newPlayerPositionIds.filter((id) => id !== pos.id),
+                        );
+                      } else {
+                        setNewPlayerPositionIds([
+                          ...newPlayerPositionIds,
+                          pos.id,
+                        ]);
+                      }
+                    }}
+                    className={cn(
+                      "min-h-10 touch-manipulation rounded-md border px-2 py-1",
+                      "text-xs font-medium transition-colors",
+                      isSelected
+                        ? "border-primary bg-primary/20 text-primary"
+                        : "border-input bg-background text-muted-foreground hover:bg-accent",
+                    )}
+                    aria-label={t(pos.abbreviation)}
+                    aria-pressed={isSelected}
+                  >
+                    {t(pos.abbreviation)}
+                  </button>
+                );
+              })}
+            </div>
           )}
           <Button
             size="match"

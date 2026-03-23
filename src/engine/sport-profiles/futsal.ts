@@ -58,6 +58,7 @@ export const futsalProfile: SportProfile = {
     unlimited: true,
     flying: true,
     canSubBack: true,
+    injuryAllowsReplacement: true,
   },
 
   penalties: {

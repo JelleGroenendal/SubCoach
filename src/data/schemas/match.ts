@@ -18,7 +18,10 @@ export const MatchPlayerSchema = z.object({
   playerId: z.string(),
   name: z.string(),
   number: z.number().int().min(1).max(99).optional(),
+  /** @deprecated Use positionIds instead */
   positionId: z.string().optional(),
+  /** Multiple positions a player can play */
+  positionIds: z.array(z.string()).optional(),
   status: z.enum(["field", "bench", "penalty", "injured", "redCard"]),
   totalPlayTimeSeconds: z.number().min(0),
   goals: z.number().int().min(0),

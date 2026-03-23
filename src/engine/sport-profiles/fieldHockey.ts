@@ -58,6 +58,7 @@ export const fieldHockeyProfile: SportProfile = {
     unlimited: true,
     flying: true,
     canSubBack: true,
+    injuryAllowsReplacement: true,
   },
 
   penalties: {

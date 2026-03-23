@@ -11,6 +11,19 @@ import { recalculateSchedule } from "@/engine/substitution/recalculate";
 import { getTotalMatchSeconds } from "@/engine/timer/matchTimer";
 import { getSportProfile } from "@/engine/sport-profiles";
 
+/**
+ * Represents a pending replacement request.
+ * When a player is injured, sent off with penalty, etc., and the sport rules allow
+ * immediate replacement, this state tracks that a replacement needs to be chosen.
+ */
+interface PendingReplacement {
+  type: "injury" | "penaltyEnd" | "redCardPenaltyEnd";
+  /** The player who left the field (for injury) or whose penalty ended */
+  playerId: string;
+  /** For penalty/redCard: the penaltyId that triggered this */
+  penaltyId?: string;
+}
+
 interface MatchState {
   // Current team context (must be set before using match operations)
   teamId: string | undefined;
@@ -19,6 +32,8 @@ interface MatchState {
   substitutionPlan: SubstitutionPlan;
   lastAction: { event: MatchEvent; index: number } | undefined;
   showUndo: boolean;
+  /** When set, UI should prompt user to select a bench player to enter the field */
+  pendingReplacement: PendingReplacement | undefined;
 
   setTeamId: (teamId: string | undefined) => void;
   loadMatch: () => void;
@@ -40,7 +55,9 @@ interface MatchState {
   clearSelection: () => void;
   executeSubstitution: (playerInId: string, playerOutId: string) => void;
   registerGoal: (playerId: string) => void;
+  removeGoal: (playerId: string) => void;
   registerOpponentGoal: () => void;
+  removeOpponentGoal: () => void;
   registerPenalty: (playerId: string, durationSeconds: number) => void;
   endPenalty: (penaltyId: string) => void;
   registerYellowCard: (
@@ -51,6 +68,10 @@ interface MatchState {
   registerRedCard: (playerId: string, penaltyDurationSeconds?: number) => void;
   registerInjury: (playerId: string) => void;
   recoverFromInjury: (playerId: string) => void;
+  /** Complete a pending replacement by bringing a bench player onto the field */
+  completePendingReplacement: (playerInId: string) => void;
+  /** Cancel/dismiss a pending replacement (team plays short) */
+  cancelPendingReplacement: () => void;
   undoLastAction: () => void;
   dismissUndo: () => void;
   endMatch: () => void;
@@ -65,6 +86,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   substitutionPlan: { suggestions: [], warnings: [] },
   lastAction: undefined,
   showUndo: false,
+  pendingReplacement: undefined,
 
   setTeamId: (teamId) => {
     set({ teamId });
@@ -291,6 +313,28 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     }, 5000);
   },
 
+  removeGoal: (playerId) => {
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
+
+    // Find the player and check they have goals to remove
+    const player = match.roster.find((p) => p.playerId === playerId);
+    if (!player || player.goals <= 0) return;
+
+    const roster = match.roster.map((p) =>
+      p.playerId === playerId ? { ...p, goals: Math.max(0, p.goals - 1) } : p,
+    );
+    const updated: Match = {
+      ...match,
+      homeScore: Math.max(0, match.homeScore - 1),
+      roster,
+      // Note: We don't remove the goal event from history, just adjust the count
+      // This keeps the timeline accurate while allowing score corrections
+    };
+    saveCurrentMatch(teamId, updated);
+    set({ match: updated });
+  },
+
   registerOpponentGoal: () => {
     const { teamId, match } = get();
     if (!teamId || !match) return;
@@ -312,6 +356,18 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     setTimeout(() => {
       if (get().showUndo) set({ showUndo: false });
     }, 5000);
+  },
+
+  removeOpponentGoal: () => {
+    const { teamId, match } = get();
+    if (!teamId || !match || match.awayScore <= 0) return;
+
+    const updated: Match = {
+      ...match,
+      awayScore: Math.max(0, match.awayScore - 1),
+    };
+    saveCurrentMatch(teamId, updated);
+    set({ match: updated });
   },
 
   registerPenalty: (playerId, durationSeconds) => {
@@ -357,12 +413,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   endPenalty: (penaltyId) => {
     const { teamId, match } = get();
     if (!teamId || !match) return;
-    const event: MatchEvent = {
-      type: "penaltyEnd",
-      timestamp: match.elapsedSeconds,
-      penaltyId,
-    };
-    // Find the player associated with this penalty
+
+    // Find the player and check if they have a red card
     const penaltyEvent = match.events.find(
       (e) => e.type === "penalty" && e.penaltyId === penaltyId,
     );
@@ -370,12 +422,30 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       penaltyEvent && "playerId" in penaltyEvent
         ? penaltyEvent.playerId
         : undefined;
+
+    const player = match.roster.find((p) => p.playerId === playerId);
+    const isRedCardPenalty = player?.status === "redCard";
+
+    // Check sport rules for red card handling
+    const sportProfile = getSportProfile(match.sportProfileId ?? "handball");
+    const redCardPermanent = sportProfile?.penalties.redCardPermanent ?? false;
+
+    const event: MatchEvent = {
+      type: "penaltyEnd",
+      timestamp: match.elapsedSeconds,
+      penaltyId,
+    };
+
+    // For regular penalty: player goes to bench
+    // For red card penalty: player stays out, but team can bring someone else in
     const roster = match.roster.map((p) => {
       if (p.playerId === playerId && p.status === "penalty") {
         return { ...p, status: "bench" as const };
       }
+      // Red card player stays at redCard status
       return p;
     });
+
     const updated: Match = {
       ...match,
       roster,
@@ -383,7 +453,18 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     };
     saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
-    set({ match: updated, substitutionPlan: plan });
+
+    // If this was a red card penalty and the sport allows replacement after penalty ends,
+    // prompt for a replacement player
+    const pendingReplacement: PendingReplacement | undefined =
+      isRedCardPenalty && !redCardPermanent
+        ? { type: "redCardPenaltyEnd", playerId: playerId!, penaltyId }
+        : // For regular penalty, also offer to bring someone in (penalty player went to bench)
+          player?.status === "penalty"
+          ? { type: "penaltyEnd", playerId: playerId!, penaltyId }
+          : undefined;
+
+    set({ match: updated, substitutionPlan: plan, pendingReplacement });
   },
 
   registerYellowCard: (
@@ -533,6 +614,12 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   registerInjury: (playerId) => {
     const { teamId, match } = get();
     if (!teamId || !match) return;
+
+    // Check if sport allows immediate replacement for injuries
+    const sportProfile = getSportProfile(match.sportProfileId ?? "handball");
+    const allowsReplacement =
+      sportProfile?.substitutions.injuryAllowsReplacement ?? true;
+
     const event: MatchEvent = {
       type: "injury",
       timestamp: match.elapsedSeconds,
@@ -556,11 +643,18 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     };
     saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
+
+    // If sport allows replacement, set pending replacement so UI prompts for substitute
+    const pendingReplacement: PendingReplacement | undefined = allowsReplacement
+      ? { type: "injury", playerId }
+      : undefined;
+
     set({
       match: updated,
       substitutionPlan: plan,
       lastAction: { event, index: updated.events.length - 1 },
       showUndo: true,
+      pendingReplacement,
     });
     setTimeout(() => {
       if (get().showUndo) set({ showUndo: false });
@@ -597,6 +691,56 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     setTimeout(() => {
       if (get().showUndo) set({ showUndo: false });
     }, 5000);
+  },
+
+  completePendingReplacement: (playerInId) => {
+    const { teamId, match, pendingReplacement } = get();
+    if (!teamId || !match || !pendingReplacement) return;
+
+    // Bring the selected bench player onto the field
+    const event: MatchEvent = {
+      type: "substitution",
+      timestamp: match.elapsedSeconds,
+      playerInId,
+      // For injury/penalty replacement, there's no player "out" - just someone coming in
+      // We use a special marker to indicate this is a replacement, not a swap
+      playerOutId: pendingReplacement.playerId,
+    };
+
+    const roster = match.roster.map((p) => {
+      if (p.playerId === playerInId && p.status === "bench") {
+        // Bring player onto field
+        return {
+          ...p,
+          status: "field" as const,
+          periods: [...p.periods, { inAt: match.elapsedSeconds }],
+        };
+      }
+      return p;
+    });
+
+    const updated: Match = {
+      ...match,
+      roster,
+      events: [...match.events, event],
+    };
+    saveCurrentMatch(teamId, updated);
+    const plan = recalcSchedule(updated);
+    set({
+      match: updated,
+      substitutionPlan: plan,
+      pendingReplacement: undefined,
+      lastAction: { event, index: updated.events.length - 1 },
+      showUndo: true,
+    });
+    setTimeout(() => {
+      if (get().showUndo) set({ showUndo: false });
+    }, 5000);
+  },
+
+  cancelPendingReplacement: () => {
+    // Dismiss the replacement prompt - team continues playing short
+    set({ pendingReplacement: undefined });
   },
 
   undoLastAction: () => {

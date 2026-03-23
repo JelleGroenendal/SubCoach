@@ -56,16 +56,25 @@ export function recalculateSchedule(input: RecalculateInput): SubstitutionPlan {
 
   // Build schedule input from current state
   // CRITICAL: Use live play time, not totalPlayTimeSeconds (which is outdated)
-  const scheduleRoster = availablePlayers.map((p) => ({
-    playerId: p.playerId,
-    status: (p.status === "field" || p.status === "penalty"
-      ? "field"
-      : "bench") as "field" | "bench",
-    isKeeper: keeperPlayerId === p.playerId,
-    totalPlayTimeSeconds: getLivePlayTime(p, currentTimeSeconds),
-    // Map positionId to groupId for position-aware substitutions
-    groupId: p.positionId ? positionGroupMap[p.positionId] : undefined,
-  }));
+  const scheduleRoster = availablePlayers.map((p) => {
+    // Support both old positionId and new positionIds
+    // For groupId, use the first position's group (primary position)
+    const positions = p.positionIds ?? (p.positionId ? [p.positionId] : []);
+    const primaryPositionId = positions[0];
+    const groupId = primaryPositionId
+      ? positionGroupMap[primaryPositionId]
+      : undefined;
+
+    return {
+      playerId: p.playerId,
+      status: (p.status === "field" || p.status === "penalty"
+        ? "field"
+        : "bench") as "field" | "bench",
+      isKeeper: keeperPlayerId === p.playerId,
+      totalPlayTimeSeconds: getLivePlayTime(p, currentTimeSeconds),
+      groupId,
+    };
+  });
 
   const scheduleInput: ScheduleInput = {
     roster: scheduleRoster,

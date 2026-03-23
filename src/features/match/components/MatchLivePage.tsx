@@ -40,6 +40,7 @@ export function MatchLivePage(): React.ReactNode {
     substitutionPlan,
     showUndo,
     lastAction,
+    pendingReplacement,
     setTeamId,
     loadMatch,
     startTimer,
@@ -56,6 +57,8 @@ export function MatchLivePage(): React.ReactNode {
     registerRedCard,
     registerInjury,
     recoverFromInjury,
+    completePendingReplacement,
+    cancelPendingReplacement,
     endPenalty,
     undoLastAction,
     dismissUndo,
@@ -1376,6 +1379,87 @@ export function MatchLivePage(): React.ReactNode {
                     {t("match.live.injury.confirmButton")}
                   </Button>
                 </div>
+              </div>
+            </div>
+          );
+        })()}
+
+      {/* Pending Replacement Modal */}
+      {pendingReplacement &&
+        (() => {
+          const player = match.roster.find(
+            (p) => p.playerId === pendingReplacement.playerId,
+          );
+          if (!player) return null;
+
+          // Get available bench players
+          const availableBench = match.roster.filter(
+            (p) => p.status === "bench" && p.playerId !== match.keeperPlayerId,
+          );
+
+          // Determine message based on replacement type
+          let message: string;
+          if (pendingReplacement.type === "injury") {
+            message = t("match.live.replacement.injuryMessage", {
+              name: player.name,
+            });
+          } else if (pendingReplacement.type === "redCardPenaltyEnd") {
+            message = t("match.live.replacement.redCardMessage", {
+              name: player.name,
+            });
+          } else {
+            message = t("match.live.replacement.penaltyEndMessage", {
+              name: player.name,
+            });
+          }
+
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+              <div className="flex max-h-[80vh] w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-2xl">
+                <h3 className="text-lg font-bold text-foreground">
+                  {t("match.live.replacement.title")}
+                </h3>
+                <p className="text-sm text-muted-foreground">{message}</p>
+
+                {availableBench.length > 0 ? (
+                  <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
+                    {availableBench.map((benchPlayer) => (
+                      <button
+                        key={benchPlayer.playerId}
+                        type="button"
+                        onClick={() =>
+                          completePendingReplacement(benchPlayer.playerId)
+                        }
+                        className={cn(
+                          "flex min-h-14 w-full touch-manipulation items-center gap-3 rounded-lg p-3",
+                          "bg-muted text-left transition-colors hover:bg-accent",
+                        )}
+                      >
+                        {benchPlayer.number !== undefined && (
+                          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/20 text-sm font-bold text-primary">
+                            {benchPlayer.number}
+                          </span>
+                        )}
+                        <span className="font-medium text-foreground">
+                          {benchPlayer.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-sm text-muted-foreground">
+                    {t("match.live.replacement.noBenchPlayers")}
+                  </p>
+                )}
+
+                <Button
+                  size="xl"
+                  variant="ghost"
+                  className="touch-manipulation"
+                  onClick={cancelPendingReplacement}
+                >
+                  {t("match.live.replacement.skipButton")}
+                </Button>
               </div>
             </div>
           );

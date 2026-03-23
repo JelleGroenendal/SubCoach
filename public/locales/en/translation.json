@@ -368,6 +368,14 @@
         "recover": "Mark {{name}} as recovered",
         "recoverButton": "Recovered"
       },
+      "replacement": {
+        "title": "Choose replacement",
+        "injuryMessage": "{{name}} is injured. Select a bench player to come on.",
+        "penaltyEndMessage": "{{name}}'s penalty has ended. Select a bench player to come on.",
+        "redCardMessage": "Select a bench player to fill the spot ({{name}} remains out).",
+        "skipButton": "Play short",
+        "noBenchPlayers": "No bench players available"
+      },
       "endMatch": {
         "title": "End match",
         "confirm": "Are you sure you want to end the match? This cannot be undone.",

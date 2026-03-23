@@ -51,6 +51,7 @@ export const floorballProfile: SportProfile = {
     unlimited: true,
     flying: true,
     canSubBack: true,
+    injuryAllowsReplacement: true,
   },
 
   penalties: {

@@ -49,6 +49,7 @@ export const SportProfileSchema = z.object({
     maxSubstitutions: z.number().int().min(1).optional(),
     canSubBack: z.boolean(),
     substitutionWindows: z.number().int().min(1).optional(),
+    injuryAllowsReplacement: z.boolean().optional(), // If true, injured player can be replaced immediately (no playing short)
   }),
 
   penalties: z.object({

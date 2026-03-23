@@ -63,6 +63,7 @@ export const basketballProfile: SportProfile = {
     unlimited: true,
     flying: false, // dead ball only
     canSubBack: true,
+    injuryAllowsReplacement: true,
   },
 
   penalties: {

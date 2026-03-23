@@ -64,6 +64,7 @@ export const waterPoloProfile: SportProfile = {
     unlimited: true,
     flying: true,
     canSubBack: true,
+    injuryAllowsReplacement: true,
   },
 
   penalties: {

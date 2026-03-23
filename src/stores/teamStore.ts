@@ -57,10 +57,17 @@ interface TeamState {
   ) => void;
   deleteTeam: (teamId: string) => void;
   // Player CRUD
-  addPlayer: (name: string, number?: number, positionId?: string) => void;
+  addPlayer: (
+    name: string,
+    number?: number,
+    positionId?: string,
+    positionIds?: string[],
+  ) => void;
   updatePlayer: (
     playerId: string,
-    updates: Partial<Pick<Player, "name" | "number" | "positionId" | "active">>,
+    updates: Partial<
+      Pick<Player, "name" | "number" | "positionId" | "positionIds" | "active">
+    >,
   ) => void;
   removePlayer: (playerId: string) => void;
   reorderPlayers: (fromIndex: number, toIndex: number) => void;
@@ -188,7 +195,7 @@ export const useTeamStore = create<TeamState>((set, get) => ({
     }
   },
 
-  addPlayer: (name, number, positionId) => {
+  addPlayer: (name, number, positionId, positionIds) => {
     const { activeTeamId } = get();
     if (!activeTeamId) return;
 
@@ -197,6 +204,7 @@ export const useTeamStore = create<TeamState>((set, get) => ({
       name,
       number,
       positionId,
+      positionIds,
       active: true,
     };
 
