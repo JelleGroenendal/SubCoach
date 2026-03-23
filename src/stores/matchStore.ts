@@ -169,8 +169,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   startTimer: () => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
     const event: MatchEvent = {
       type: "periodStart",
       timestamp: match.elapsedSeconds,
@@ -196,24 +196,24 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   pauseTimer: () => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
     const updated: Match = { ...match, status: "paused" };
     saveCurrentMatch(teamId, updated);
     set({ match: updated });
   },
 
   updateElapsed: (seconds) => {
-    const { match } = get();
-    if (!match || match.status !== "playing") return;
+    const { match, isHost } = get();
+    if (!match || match.status !== "playing" || !isHost) return;
     set({
       match: { ...match, elapsedSeconds: seconds },
     });
   },
 
   startNextPeriod: () => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
     const updated: Match = {
       ...match,
       status: "playing",
@@ -240,7 +240,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   togglePlayerSelection: (playerId: string) => {
-    const { selectedPlayerIds } = get();
+    const { selectedPlayerIds, isHost } = get();
+    if (!isHost) return;
     if (selectedPlayerIds.includes(playerId)) {
       // Deselect
       set({
@@ -257,8 +258,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   executeSubstitution: (playerInId, playerOutId) => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
     const event: MatchEvent = {
       type: "substitution",
       timestamp: match.elapsedSeconds,
@@ -325,8 +326,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   registerGoal: (playerId) => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
     const event: MatchEvent = {
       type: "goal",
       timestamp: match.elapsedSeconds,
@@ -357,8 +358,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   removeGoal: (playerId) => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
 
     // Find the player and check they have goals to remove
     const player = match.roster.find((p) => p.playerId === playerId);
@@ -379,8 +380,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   registerOpponentGoal: () => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
     const event: MatchEvent = {
       type: "opponentGoal",
       timestamp: match.elapsedSeconds,
@@ -406,8 +407,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   removeOpponentGoal: () => {
-    const { teamId, match } = get();
-    if (!teamId || !match || match.awayScore <= 0) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost || match.awayScore <= 0) return;
 
     const updated: Match = {
       ...match,
@@ -418,8 +419,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   registerPenalty: (playerId, durationSeconds, teamPlaysShort = true) => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
     const penaltyId = crypto.randomUUID();
     const event: MatchEvent = {
       type: "penalty",
@@ -472,8 +473,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   endPenalty: (penaltyId) => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
 
     // Find the player and check if they have a red card
     const penaltyEvent = match.events.find(
@@ -533,8 +534,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     secondYellowIsRed,
     penaltyDurationSeconds = 120,
   ) => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
 
     const player = match.roster.find((p) => p.playerId === playerId);
     if (!player) return;
@@ -631,8 +632,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   registerRedCard: (playerId, penaltyDurationSeconds = 120) => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
     const event: MatchEvent = {
       type: "redCard",
       timestamp: match.elapsedSeconds,
@@ -681,8 +682,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   registerInjury: (playerId) => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
 
     // Check if sport allows immediate replacement for injuries
     const sportProfile = getSportProfile(match.sportProfileId ?? "handball");
@@ -734,8 +735,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   recoverFromInjury: (playerId) => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
     const event: MatchEvent = {
       type: "injuryRecovery",
       timestamp: match.elapsedSeconds,
@@ -766,8 +767,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   completePendingReplacement: (playerInId) => {
-    const { teamId, match, pendingReplacement } = get();
-    if (!teamId || !match || !pendingReplacement) return;
+    const { teamId, match, pendingReplacement, isHost } = get();
+    if (!teamId || !match || !pendingReplacement || !isHost) return;
 
     // Bring the selected bench player onto the field
     const event: MatchEvent = {
@@ -812,12 +813,14 @@ export const useMatchStore = create<MatchState>((set, get) => ({
 
   cancelPendingReplacement: () => {
     // Dismiss the replacement prompt - team continues playing short
+    const { isHost } = get();
+    if (!isHost) return;
     set({ pendingReplacement: undefined });
   },
 
   undoLastAction: () => {
-    const { teamId, match, lastAction } = get();
-    if (!teamId || !match || !lastAction) return;
+    const { teamId, match, lastAction, isHost } = get();
+    if (!teamId || !match || !lastAction || !isHost) return;
     const event = lastAction.event;
     const updated = { ...match };
 
@@ -933,8 +936,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   endMatch: () => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
     // Close all open play periods
     const roster = match.roster.map((p) => {
       if (p.status === "field") {
@@ -986,8 +989,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   autoSave: () => {
-    const { teamId, match } = get();
-    if (!teamId || !match || match.status === "finished") return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || match.status === "finished" || !isHost) return;
     // Update play times before saving
     const roster = match.roster.map((p) => {
       const totalPlayTimeSeconds = p.periods.reduce((sum, per) => {
@@ -1001,8 +1004,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   },
 
   adjustScore: (side, score) => {
-    const { teamId, match } = get();
-    if (!teamId || !match) return;
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost) return;
     const updated = {
       ...match,
       [side === "home" ? "homeScore" : "awayScore"]: Math.max(0, score),
