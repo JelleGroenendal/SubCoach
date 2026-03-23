@@ -231,16 +231,18 @@ class P2PSyncManager {
 
     try {
       // Join room using BitTorrent trackers (no server needed)
-      // Configure multiple trackers for redundancy and STUN servers for NAT traversal
+      // Configure multiple WebSocket trackers for redundancy and STUN servers for NAT traversal
       this.room = joinRoom(
         {
           appId: "subcoach",
-          // Use multiple WebSocket BitTorrent trackers for redundancy
+          // Use ALL available WebSocket BitTorrent trackers for maximum redundancy
+          // Only wss:// (secure WebSocket) trackers work in browsers
           relayUrls: [
             "wss://tracker.openwebtorrent.com",
             "wss://tracker.webtorrent.dev",
-            "wss://tracker.files.fm:7073/announce",
             "wss://tracker.btorrent.xyz",
+            "wss://tracker.files.fm:7073/announce",
+            "wss://tracker.fastcast.nz",
           ],
           // Configure ICE servers for better NAT traversal
           rtcConfig: {
@@ -248,6 +250,8 @@ class P2PSyncManager {
               { urls: "stun:stun.l.google.com:19302" },
               { urls: "stun:stun1.l.google.com:19302" },
               { urls: "stun:stun2.l.google.com:19302" },
+              { urls: "stun:stun3.l.google.com:19302" },
+              { urls: "stun:stun4.l.google.com:19302" },
               { urls: "stun:global.stun.twilio.com:3478" },
             ],
           },
