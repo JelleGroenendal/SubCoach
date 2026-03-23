@@ -206,9 +206,19 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   updateElapsed: (seconds) => {
     const { match, isHost } = get();
     if (!match || match.status !== "playing" || !isHost) return;
-    set({
-      match: { ...match, elapsedSeconds: seconds },
-    });
+
+    const updatedMatch = { ...match, elapsedSeconds: seconds };
+
+    // Recalculate substitution plan every 5 seconds to catch fixed interval suggestions
+    const shouldRecalc =
+      Math.floor(seconds / 5) !== Math.floor(match.elapsedSeconds / 5);
+
+    if (shouldRecalc) {
+      const plan = recalcSchedule(updatedMatch);
+      set({ match: updatedMatch, substitutionPlan: plan });
+    } else {
+      set({ match: updatedMatch });
+    }
   },
 
   startNextPeriod: () => {
