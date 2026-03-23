@@ -202,10 +202,39 @@ export function MatchLivePage(): React.ReactNode {
   }, [match, endPenalty]);
 
   // Player lists
-  const fieldPlayers = useMemo(
-    () => (match ? match.roster.filter((p) => p.status === "field") : []),
-    [match],
-  );
+  // Build position order map from sport profile (position index = sort order)
+  const positionOrder = useMemo(() => {
+    const positions = sportProfile?.players.positions ?? [];
+    const order: Record<string, number> = {};
+    positions.forEach((pos, index) => {
+      order[pos.id] = index;
+    });
+    return order;
+  }, [sportProfile]);
+
+  const fieldPlayers = useMemo(() => {
+    if (!match) return [];
+    const field = match.roster.filter((p) => p.status === "field");
+
+    // Sort by position order (from sport profile)
+    // Players without position come last, sorted by play time (least first)
+    return field.sort((a, b) => {
+      const aPositionIndex =
+        a.positionId !== undefined ? (positionOrder[a.positionId] ?? 999) : 999;
+      const bPositionIndex =
+        b.positionId !== undefined ? (positionOrder[b.positionId] ?? 999) : 999;
+
+      // Primary sort: position index
+      if (aPositionIndex !== bPositionIndex) {
+        return aPositionIndex - bPositionIndex;
+      }
+
+      // Secondary sort for same position: play time (least first - next to sub)
+      const aPlayTime = a.totalPlayTimeSeconds ?? 0;
+      const bPlayTime = b.totalPlayTimeSeconds ?? 0;
+      return aPlayTime - bPlayTime;
+    });
+  }, [match, positionOrder]);
 
   const benchPlayers = useMemo(() => {
     if (!match) return [];
