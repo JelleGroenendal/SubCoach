@@ -232,17 +232,18 @@ class P2PSyncManager {
     try {
       // Join room using BitTorrent trackers (no server needed)
       // Configure multiple WebSocket trackers for redundancy and STUN servers for NAT traversal
+      const fullRoomName = `subcoach-${roomCode}`;
+      console.log("[P2P] Joining room with name:", fullRoomName);
+
       this.room = joinRoom(
         {
           appId: "subcoach",
-          // Use ALL available WebSocket BitTorrent trackers for maximum redundancy
-          // Only wss:// (secure WebSocket) trackers work in browsers
+          // Use WebSocket BitTorrent trackers - only wss:// works in browsers
+          // tracker.openwebtorrent.com is the most reliable
           relayUrls: [
             "wss://tracker.openwebtorrent.com",
             "wss://tracker.webtorrent.dev",
-            "wss://tracker.btorrent.xyz",
             "wss://tracker.files.fm:7073/announce",
-            "wss://tracker.fastcast.nz",
           ],
           // Configure ICE servers for better NAT traversal
           rtcConfig: {
@@ -256,7 +257,7 @@ class P2PSyncManager {
             ],
           },
         },
-        `subcoach-${roomCode}`,
+        fullRoomName,
       );
 
       // Setup awareness for cursor/presence
@@ -340,6 +341,11 @@ class P2PSyncManager {
 
       // Log successful room creation
       console.log("[P2P] Room created, waiting for peers...");
+      console.log("[P2P] Using trackers:", [
+        "wss://tracker.openwebtorrent.com",
+        "wss://tracker.webtorrent.dev",
+        "wss://tracker.files.fm:7073/announce",
+      ]);
 
       // Handle peer join
       this.room.onPeerJoin((peerId) => {
