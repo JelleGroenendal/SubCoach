@@ -334,9 +334,12 @@ class P2PSyncManager {
         this.missedHeartbeats = 0;
       });
 
+      // Log successful room creation
+      console.log("[P2P] Room created, waiting for peers...");
+
       // Handle peer join
       this.room.onPeerJoin((peerId) => {
-        console.log("[P2P] Peer joined:", peerId);
+        console.log("[P2P] *** PEER JOINED ***:", peerId);
         this.peerCount++;
         this.status = "connected";
         this.clearRetryState(); // Connection successful, reset retry state
@@ -409,6 +412,7 @@ class P2PSyncManager {
       this.awareness.on("update", this.awarenessUpdateHandler);
 
       // Connection established (even if no peers yet)
+      console.log("[P2P] Connected to room, status: connected");
       this.status = "connected";
       this.lastPongReceived = Date.now();
       this.notifyListeners();
