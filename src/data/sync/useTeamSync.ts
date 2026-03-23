@@ -106,7 +106,32 @@ export function useTeamSync(): TeamSyncHook {
       // Get or create a team doc for the incoming data
       const doc = getTeamDoc(tempTeamId);
 
+      // Wait for local IndexedDB sync to complete before joining P2P room
+      // This ensures the doc is ready to receive remote updates
+      await waitForTeamSync(tempTeamId);
+      console.log("[TeamSync] Local doc ready, joining room...");
+
       try {
+        // Debug: log when doc receives updates
+        doc.on("update", (update: Uint8Array) => {
+          console.log("[TeamSync] Doc received update, size:", update.length);
+          // Check what's in the doc now
+          const infoMap = doc.getMap("info");
+          const playersMap = doc.getMap("players");
+          console.log(
+            "[TeamSync] Doc info map size:",
+            infoMap.size,
+            "players map size:",
+            playersMap.size,
+          );
+          if (infoMap.size > 0) {
+            console.log(
+              "[TeamSync] Info map contents:",
+              Object.fromEntries(infoMap.entries()),
+            );
+          }
+        });
+
         // Join the room to start receiving data
         await p2pSync.joinRoom(roomCode, doc);
 
@@ -121,6 +146,22 @@ export function useTeamSync(): TeamSyncHook {
 
             // Check if we've received team info
             const teamInfo = getTeamInfo(tempTeamId);
+
+            // Log progress periodically (every 5 seconds)
+            if (attempts % 10 === 1) {
+              const infoMap = doc.getMap("info");
+              const playersMap = doc.getMap("players");
+              console.log(
+                "[TeamSync] Checking for team data, attempt",
+                attempts,
+                "infoMap.size:",
+                infoMap.size,
+                "playersMap.size:",
+                playersMap.size,
+                "teamInfo:",
+                teamInfo,
+              );
+            }
 
             if (teamInfo && teamInfo.name) {
               // Team data has arrived! Import it to our app

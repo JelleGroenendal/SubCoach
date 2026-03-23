@@ -251,6 +251,12 @@ class P2PSyncManager {
       // Handle incoming sync messages
       getSync((data, peerId) => {
         try {
+          console.log(
+            "[P2P] Received sync message from",
+            peerId,
+            "size:",
+            data.length,
+          );
           const decoder = decoding.createDecoder(data);
           const encoder = encoding.createEncoder();
           const messageType = syncProtocol.readSyncMessage(
@@ -259,8 +265,19 @@ class P2PSyncManager {
             doc,
             null,
           );
-          if (messageType !== 0 && encoding.length(encoder) > 0) {
-            sendSync(encoding.toUint8Array(encoder), peerId);
+          console.log(
+            "[P2P] Sync message type:",
+            messageType,
+            "response size:",
+            encoding.length(encoder),
+          );
+          if (encoding.length(encoder) > 0) {
+            const responseData = encoding.toUint8Array(encoder);
+            console.log(
+              "[P2P] Sending sync response, size:",
+              responseData.length,
+            );
+            sendSync(responseData, peerId);
           }
           // Reset sync error count on success
           this.consecutiveSyncErrors = 0;
@@ -297,6 +314,7 @@ class P2PSyncManager {
 
       // Handle peer join
       this.room.onPeerJoin((peerId) => {
+        console.log("[P2P] Peer joined:", peerId);
         this.peerCount++;
         this.status = "connected";
         this.clearRetryState(); // Connection successful, reset retry state
@@ -304,10 +322,15 @@ class P2PSyncManager {
         this.missedHeartbeats = 0;
         this.notifyListeners();
 
-        // Send initial sync state to new peer
+        // Send initial sync state to new peer (sync step 1 = state vector)
         const encoder = encoding.createEncoder();
         syncProtocol.writeSyncStep1(encoder, doc);
-        sendSync(encoding.toUint8Array(encoder), peerId);
+        const syncData = encoding.toUint8Array(encoder);
+        console.log(
+          "[P2P] Sending sync step 1 to peer, size:",
+          syncData.length,
+        );
+        sendSync(syncData, peerId);
 
         // Send awareness state
         sendAwareness(
