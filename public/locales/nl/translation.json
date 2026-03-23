@@ -331,6 +331,7 @@
         "field": "Bekijk veldspelers",
         "bench": "Bekijk bankspelers"
       },
+      "toggleLayout": "Wissel weergave (tabs/gestapeld)",
       "goal": {
         "selectScorer": "Tik op de doelpuntenmaker"
       },

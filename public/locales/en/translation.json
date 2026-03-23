@@ -331,6 +331,7 @@
         "field": "View field players",
         "bench": "View bench players"
       },
+      "toggleLayout": "Toggle layout (tabs/stacked)",
       "goal": {
         "selectScorer": "Tap the goal scorer"
       },

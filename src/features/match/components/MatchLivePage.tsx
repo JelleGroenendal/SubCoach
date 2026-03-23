@@ -15,6 +15,7 @@ import { P2PSyncPanel } from "./P2PSyncPanel";
 import type { MatchPlayer } from "@/data/schemas";
 
 type MobileTab = "field" | "bench";
+type MobileLayout = "tabs" | "stacked";
 
 export function MatchLivePage(): React.ReactNode {
   const { t } = useTranslation();
@@ -75,6 +76,7 @@ export function MatchLivePage(): React.ReactNode {
     null,
   );
   const [mobileTab, setMobileTab] = useState<MobileTab>("field");
+  const [mobileLayout, setMobileLayout] = useState<MobileLayout>("tabs");
   const [pendingInjuryPlayerId, setPendingInjuryPlayerId] = useState<
     string | null
   >(null);
@@ -222,65 +224,6 @@ export function MatchLivePage(): React.ReactNode {
       return bLastOut - aLastOut; // Descending (most recent first)
     });
   }, [match]);
-
-  // Group bench players by position group when position-aware substitutions is enabled
-  const benchPlayersByGroup = useMemo(() => {
-    if (
-      !match?.usePositionAwareSubstitutions ||
-      !sportProfile?.players.positionGroups
-    ) {
-      return null; // Return null to indicate ungrouped mode
-    }
-
-    const groups = sportProfile.players.positionGroups;
-    const positions = sportProfile.players.positions ?? [];
-
-    // Build positionId -> groupId map
-    const positionToGroup: Record<string, string> = {};
-    for (const pos of positions) {
-      if (pos.groupId) {
-        positionToGroup[pos.id] = pos.groupId;
-      }
-    }
-
-    // Group players by their position group
-    const grouped: Record<string, MatchPlayer[]> = {};
-    const ungrouped: MatchPlayer[] = [];
-
-    for (const player of benchPlayers) {
-      const groupId = player.positionId
-        ? positionToGroup[player.positionId]
-        : undefined;
-      if (groupId) {
-        if (!grouped[groupId]) {
-          grouped[groupId] = [];
-        }
-        grouped[groupId].push(player);
-      } else {
-        ungrouped.push(player);
-      }
-    }
-
-    // Build result array with group info
-    return groups
-      .map((group) => ({
-        groupId: group.id,
-        groupName: group.name,
-        players: grouped[group.id] ?? [],
-      }))
-      .filter((g) => g.players.length > 0 || g.groupId === "keeper") // Keep keeper group even if empty
-      .concat(
-        ungrouped.length > 0
-          ? [
-              {
-                groupId: "other",
-                groupName: "common.other",
-                players: ungrouped,
-              },
-            ]
-          : [],
-      );
-  }, [match?.usePositionAwareSubstitutions, sportProfile, benchPlayers]);
 
   const penaltyPlayers = useMemo(
     () => (match ? match.roster.filter((p) => p.status === "penalty") : []),
@@ -758,53 +701,118 @@ export function MatchLivePage(): React.ReactNode {
         </div>
       )}
 
-      {/* Mobile Tab Bar */}
+      {/* Mobile Tab Bar / Layout Toggle */}
       <div className="flex border-b border-border sm:hidden">
+        {mobileLayout === "tabs" ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setMobileTab("field")}
+              className={cn(
+                "flex-1 touch-manipulation py-3 text-center text-sm font-medium",
+                mobileTab === "field"
+                  ? "border-b-2 border-green-500 text-green-400"
+                  : "text-muted-foreground",
+                // Highlight if bench player selected (indicating "tap here")
+                hasBenchSelection && mobileTab !== "field" && "bg-primary/10",
+              )}
+              aria-label={t("match.live.tabs.field")}
+              aria-selected={mobileTab === "field"}
+            >
+              {t("match.live.field.title")} ({fieldPlayers.length})
+              {hasBenchSelection && mobileTab !== "field" && " ←"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab("bench")}
+              className={cn(
+                "flex-1 touch-manipulation py-3 text-center text-sm font-medium",
+                mobileTab === "bench"
+                  ? "border-b-2 border-primary text-foreground"
+                  : "text-muted-foreground",
+                // Highlight if field player selected (indicating "tap here")
+                hasFieldSelection && mobileTab !== "bench" && "bg-primary/10",
+              )}
+              aria-label={t("match.live.tabs.bench")}
+              aria-selected={mobileTab === "bench"}
+            >
+              {hasFieldSelection && mobileTab !== "bench" && "→ "}
+              {t("match.live.bench.title")} (
+              {benchPlayers.length + outPlayers.length})
+            </button>
+          </>
+        ) : (
+          <div className="flex flex-1 items-center justify-between px-3 py-2">
+            <span className="text-sm font-medium text-green-400">
+              {t("match.live.field.title")} ({fieldPlayers.length}) +{" "}
+              {t("match.live.bench.title")} ({benchPlayers.length})
+            </span>
+          </div>
+        )}
+        {/* Layout toggle button */}
         <button
           type="button"
-          onClick={() => setMobileTab("field")}
-          className={cn(
-            "flex-1 touch-manipulation py-3 text-center text-sm font-medium",
-            mobileTab === "field"
-              ? "border-b-2 border-green-500 text-green-400"
-              : "text-muted-foreground",
-            // Highlight if bench player selected (indicating "tap here")
-            hasBenchSelection && mobileTab !== "field" && "bg-primary/10",
-          )}
-          aria-label={t("match.live.tabs.field")}
-          aria-selected={mobileTab === "field"}
+          onClick={() =>
+            setMobileLayout((l) => (l === "tabs" ? "stacked" : "tabs"))
+          }
+          className="touch-manipulation border-l border-border px-3 py-2 text-muted-foreground transition-colors hover:text-foreground"
+          aria-label={t("match.live.toggleLayout")}
         >
-          {t("match.live.field.title")} ({fieldPlayers.length})
-          {hasBenchSelection && mobileTab !== "field" && " ←"}
-        </button>
-        <button
-          type="button"
-          onClick={() => setMobileTab("bench")}
-          className={cn(
-            "flex-1 touch-manipulation py-3 text-center text-sm font-medium",
-            mobileTab === "bench"
-              ? "border-b-2 border-primary text-foreground"
-              : "text-muted-foreground",
-            // Highlight if field player selected (indicating "tap here")
-            hasFieldSelection && mobileTab !== "bench" && "bg-primary/10",
+          {mobileLayout === "tabs" ? (
+            // Icon for stacked view (vertical bars)
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="18" height="8" rx="1" />
+              <rect x="3" y="13" width="18" height="8" rx="1" />
+            </svg>
+          ) : (
+            // Icon for tabs view (horizontal split)
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="3" y="3" width="8" height="18" rx="1" />
+              <rect x="13" y="3" width="8" height="18" rx="1" />
+            </svg>
           )}
-          aria-label={t("match.live.tabs.bench")}
-          aria-selected={mobileTab === "bench"}
-        >
-          {hasFieldSelection && mobileTab !== "bench" && "→ "}
-          {t("match.live.bench.title")} (
-          {benchPlayers.length + outPlayers.length})
         </button>
       </div>
 
       {/* Main Area */}
-      <div className="flex flex-1 overflow-hidden">
+      <div
+        className={cn(
+          "flex flex-1 overflow-hidden",
+          // Stacked layout on mobile: vertical flex with scroll
+          mobileLayout === "stacked" && "flex-col overflow-y-auto sm:flex-row",
+        )}
+      >
         {/* Field Players */}
         <div
           className={cn(
             "flex flex-col border-r border-border",
             "w-full sm:w-[55%] lg:w-[60%]",
-            mobileTab !== "field" && "hidden sm:flex",
+            // In tabs mode: hide based on selected tab
+            // In stacked mode: always show, no border on mobile
+            mobileLayout === "tabs" &&
+              mobileTab !== "field" &&
+              "hidden sm:flex",
+            mobileLayout === "stacked" && "border-r-0 sm:border-r",
           )}
         >
           <div className="hidden items-center justify-between px-3 py-2 sm:flex">
@@ -1031,7 +1039,13 @@ export function MatchLivePage(): React.ReactNode {
           className={cn(
             "flex flex-col",
             "w-full sm:w-[45%] lg:w-[40%]",
-            mobileTab !== "bench" && "hidden sm:flex",
+            // In tabs mode: hide based on selected tab
+            // In stacked mode: always show with border-top on mobile
+            mobileLayout === "tabs" &&
+              mobileTab !== "bench" &&
+              "hidden sm:flex",
+            mobileLayout === "stacked" &&
+              "border-t border-border sm:border-t-0",
           )}
         >
           <div className="hidden items-center justify-between px-3 py-2 sm:flex">
@@ -1041,151 +1055,69 @@ export function MatchLivePage(): React.ReactNode {
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             <div className="flex flex-col gap-2">
-              {/* Bench players - grouped or ungrouped based on position-aware setting */}
-              {benchPlayersByGroup
-                ? // Grouped mode: show players by position group
-                  benchPlayersByGroup.map((group) => (
-                    <div key={group.groupId} className="flex flex-col gap-1">
-                      {/* Group header - only show if there are players */}
-                      {group.players.length > 0 && (
-                        <div className="mt-1 mb-0.5 flex items-center gap-2 px-1 first:mt-0">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                            {t(group.groupName)}
-                          </span>
-                          <span className="h-px flex-1 bg-border" />
-                        </div>
-                      )}
-                      {group.players.map((player) => {
-                        const isSelected = selectedPlayerIds.includes(
-                          player.playerId,
-                        );
-                        const isSuggestedIn =
-                          nextSuggestion?.playerInId === player.playerId;
-                        const playTimeSeconds = getPlayerPlayTime(player);
-                        const playerPosition = player.positionId
-                          ? sportProfile?.players.positions?.find(
-                              (p) => p.id === player.positionId,
-                            )
-                          : undefined;
+              {/* Bench players - always flat list (no grouping) */}
+              {benchPlayers.map((player) => {
+                const isSelected = selectedPlayerIds.includes(player.playerId);
+                const isSuggestedIn =
+                  nextSuggestion?.playerInId === player.playerId;
+                const playTimeSeconds = getPlayerPlayTime(player);
+                const playerPosition = player.positionId
+                  ? sportProfile?.players.positions?.find(
+                      (p) => p.id === player.positionId,
+                    )
+                  : undefined;
 
-                        return (
-                          <button
-                            key={player.playerId}
-                            type="button"
-                            onClick={() =>
-                              handleBenchPlayerTapWithTabSwitch(player.playerId)
-                            }
-                            className={cn(
-                              "flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-xl p-3 sm:min-h-14 sm:rounded-lg",
-                              "text-left transition-all select-none",
-                              "bg-bench text-foreground",
-                              isSelected && "ring-4 ring-orange-400",
-                              isSuggestedIn &&
-                                !isSelected &&
-                                "ring-2 ring-amber-500/60",
-                            )}
-                            aria-label={player.name}
-                          >
-                            {player.number !== undefined && (
-                              <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground sm:h-8 sm:w-8 sm:rounded-md">
-                                {player.number}
-                              </span>
-                            )}
-                            <div className="flex flex-1 flex-col">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-base font-medium leading-tight">
-                                  {player.name}
-                                </span>
-                                {player.isKeeper && (
-                                  <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
-                                    GK
-                                  </span>
-                                )}
-                                {playerPosition && !player.isKeeper && (
-                                  <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
-                                    {t(playerPosition.abbreviation)}
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-xs tabular-nums text-muted-foreground">
-                                {formatTime(Math.floor(playTimeSeconds))}
-                              </span>
-                            </div>
-                            {player.goals > 0 && (
-                              <span className="text-xs text-muted-foreground">
-                                {"⚽".repeat(Math.min(player.goals, 5))}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
+                return (
+                  <button
+                    key={player.playerId}
+                    type="button"
+                    onClick={() =>
+                      handleBenchPlayerTapWithTabSwitch(player.playerId)
+                    }
+                    className={cn(
+                      "flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-xl p-3 sm:min-h-14 sm:rounded-lg",
+                      "text-left transition-all select-none",
+                      "bg-bench text-foreground",
+                      isSelected && "ring-4 ring-orange-400",
+                      isSuggestedIn &&
+                        !isSelected &&
+                        "ring-2 ring-amber-500/60",
+                    )}
+                    aria-label={player.name}
+                  >
+                    {player.number !== undefined && (
+                      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground sm:h-8 sm:w-8 sm:rounded-md">
+                        {player.number}
+                      </span>
+                    )}
+                    <div className="flex flex-1 flex-col">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base font-medium leading-tight">
+                          {player.name}
+                        </span>
+                        {player.isKeeper && (
+                          <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
+                            GK
+                          </span>
+                        )}
+                        {playerPosition && !player.isKeeper && (
+                          <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
+                            {t(playerPosition.abbreviation)}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs tabular-nums text-muted-foreground">
+                        {formatTime(Math.floor(playTimeSeconds))}
+                      </span>
                     </div>
-                  ))
-                : // Ungrouped mode: flat list of bench players
-                  benchPlayers.map((player) => {
-                    const isSelected = selectedPlayerIds.includes(
-                      player.playerId,
-                    );
-                    const isSuggestedIn =
-                      nextSuggestion?.playerInId === player.playerId;
-                    const playTimeSeconds = getPlayerPlayTime(player);
-                    const playerPosition = player.positionId
-                      ? sportProfile?.players.positions?.find(
-                          (p) => p.id === player.positionId,
-                        )
-                      : undefined;
-
-                    return (
-                      <button
-                        key={player.playerId}
-                        type="button"
-                        onClick={() =>
-                          handleBenchPlayerTapWithTabSwitch(player.playerId)
-                        }
-                        className={cn(
-                          "flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-xl p-3 sm:min-h-14 sm:rounded-lg",
-                          "text-left transition-all select-none",
-                          "bg-bench text-foreground",
-                          isSelected && "ring-4 ring-orange-400",
-                          isSuggestedIn &&
-                            !isSelected &&
-                            "ring-2 ring-amber-500/60",
-                        )}
-                        aria-label={player.name}
-                      >
-                        {player.number !== undefined && (
-                          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground sm:h-8 sm:w-8 sm:rounded-md">
-                            {player.number}
-                          </span>
-                        )}
-                        <div className="flex flex-1 flex-col">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-base font-medium leading-tight">
-                              {player.name}
-                            </span>
-                            {player.isKeeper && (
-                              <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
-                                GK
-                              </span>
-                            )}
-                            {playerPosition && !player.isKeeper && (
-                              <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
-                                {t(playerPosition.abbreviation)}
-                              </span>
-                            )}
-                          </div>
-                          <span className="text-xs tabular-nums text-muted-foreground">
-                            {formatTime(Math.floor(playTimeSeconds))}
-                          </span>
-                        </div>
-                        {player.goals > 0 && (
-                          <span className="text-xs text-muted-foreground">
-                            {"⚽".repeat(Math.min(player.goals, 5))}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                    {player.goals > 0 && (
+                      <span className="text-xs text-muted-foreground">
+                        {"⚽".repeat(Math.min(player.goals, 5))}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
 
               {/* Out players (injured/red card) - can still be selected for replacement */}
               {outPlayers.length > 0 && (
