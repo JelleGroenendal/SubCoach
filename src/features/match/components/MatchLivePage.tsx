@@ -903,9 +903,7 @@ export function MatchLivePage(): React.ReactNode {
                       "bg-field text-white",
                       "overflow-hidden",
                       isSelected && "ring-4 ring-orange-400",
-                      isSuggestedOut &&
-                        !isSelected &&
-                        "ring-2 ring-amber-500/60",
+                      isSuggestedOut && !isSelected && "ring-4 ring-red-500",
                     )}
                   >
                     {/* Main tap area - for substitution/goal */}
@@ -1154,9 +1152,7 @@ export function MatchLivePage(): React.ReactNode {
                       "touch-manipulation transition-all select-none",
                       "bg-bench text-foreground",
                       isSelected && "ring-4 ring-orange-400",
-                      isSuggestedIn &&
-                        !isSelected &&
-                        "ring-2 ring-amber-500/60",
+                      isSuggestedIn && !isSelected && "ring-4 ring-green-500",
                       // Stacked mode on mobile: compact card like field players
                       mobileLayout === "stacked"
                         ? "flex min-h-20 w-full flex-col items-center justify-center gap-0.5 rounded-xl p-2 text-center sm:min-h-14 sm:flex-row sm:items-center sm:gap-3 sm:rounded-lg sm:p-3 sm:text-left"

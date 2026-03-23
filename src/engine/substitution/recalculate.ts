@@ -79,7 +79,7 @@ export function recalculateSchedule(input: RecalculateInput): SubstitutionPlan {
       status: (p.status === "field" || p.status === "penalty"
         ? "field"
         : "bench") as "field" | "bench",
-      isKeeper: keeperPlayerId === p.playerId,
+      isKeeper: p.isKeeper === true || keeperPlayerId === p.playerId,
       totalPlayTimeSeconds: getLivePlayTime(p, currentTimeSeconds),
       groupId,
     };
