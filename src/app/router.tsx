@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { Layout } from "@/components/common/Layout";
 import { HomePage } from "@/features/team/components/HomePage";
 import { TeamEditPage } from "@/features/team/components/TeamEditPage";
+import { JoinTeamPage } from "@/features/team/components/JoinTeamPage";
 import { MatchSetupPage } from "@/features/match/components/MatchSetupPage";
 import { MatchLivePage } from "@/features/match/components/MatchLivePage";
 import { MatchSummaryPage } from "@/features/match/components/MatchSummaryPage";
@@ -19,6 +20,7 @@ export const router = createBrowserRouter(
       children: [
         { index: true, element: <HomePage /> },
         { path: "team/edit", element: <TeamEditPage /> },
+        { path: "join", element: <JoinTeamPage /> },
         { path: "match/setup", element: <MatchSetupPage /> },
         { path: "match/live", element: <MatchLivePage /> },
         { path: "match/summary", element: <MatchSummaryPage /> },

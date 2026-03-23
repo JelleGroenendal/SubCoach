@@ -202,7 +202,8 @@
     "welcome": {
       "title": "Welkom bij SubCoach",
       "description": "Maak je team aan en start direct met automatisch wisselmanagement. Werkt 100% offline.",
-      "createTeam": "Maak je team aan"
+      "createTeam": "Maak je team aan",
+      "receiveTeam": "Team ontvangen van andere coach"
     },
     "teamInfo": {
       "sport": "{{sport}}",
@@ -532,6 +533,19 @@
     "imported": "Team geïmporteerd!",
     "importedDescription": "Het team is toegevoegd aan je app. Je kunt het nu gebruiken.",
     "goToTeam": "Naar team"
+  },
+  "joinTeam": {
+    "title": "Team ontvangen",
+    "description": "Voer de code in die je van een andere coach hebt gekregen om hun team te ontvangen.",
+    "receiving": "Team ontvangen...",
+    "enterCode": "Voer 6-letterige code in",
+    "connect": "Verbinden",
+    "connectedCoaches": "Verbonden coaches",
+    "waitingForData": "Teamdata ontvangen...",
+    "success": "Team ontvangen!",
+    "successDescription": "Het team is toegevoegd aan je app. Je kunt het nu gebruiken.",
+    "goToTeam": "Naar team",
+    "helpText": "Vraag de andere coach om hun team te delen. Ze geven je een 6-letterige code."
   },
   "settings": {
     "title": "Instellingen",

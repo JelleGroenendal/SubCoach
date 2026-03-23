@@ -114,7 +114,7 @@ export function useTeamSync(): TeamSyncHook {
         // We poll the doc until we see team info
         return new Promise<string | null>((resolve) => {
           let attempts = 0;
-          const maxAttempts = 60; // 30 seconds max wait
+          const maxAttempts = 120; // 60 seconds max wait (A6: extended from 30s)
 
           importCheckIntervalRef.current = setInterval(async () => {
             attempts++;

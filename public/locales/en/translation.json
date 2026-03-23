@@ -202,7 +202,8 @@
     "welcome": {
       "title": "Welcome to SubCoach",
       "description": "Create your team and start with automatic substitution management. Works 100% offline.",
-      "createTeam": "Create your team"
+      "createTeam": "Create your team",
+      "receiveTeam": "Receive team from another coach"
     },
     "teamInfo": {
       "sport": "{{sport}}",
@@ -532,6 +533,19 @@
     "imported": "Team imported!",
     "importedDescription": "The team has been added to your app. You can now use it.",
     "goToTeam": "Go to team"
+  },
+  "joinTeam": {
+    "title": "Receive Team",
+    "description": "Enter the code shared by another coach to receive their team.",
+    "receiving": "Receiving team...",
+    "enterCode": "Enter 6-character code",
+    "connect": "Connect",
+    "connectedCoaches": "Connected coaches",
+    "waitingForData": "Receiving team data...",
+    "success": "Team received!",
+    "successDescription": "The team has been added to your app. You can now use it.",
+    "goToTeam": "Go to Team",
+    "helpText": "Ask the other coach to share their team. They will give you a 6-character code."
   },
   "settings": {
     "title": "Settings",

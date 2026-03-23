@@ -57,17 +57,30 @@ export function HomePage(): React.ReactNode {
           <p className="mt-2 text-muted-foreground">
             {t("home.welcome.description")}
           </p>
-          <Link
-            to="/team/edit"
-            className={cn(
-              "mt-6 inline-flex min-h-16 min-w-16 items-center justify-center",
-              "touch-manipulation rounded-lg bg-primary px-8 py-4",
-              "text-lg font-medium text-primary-foreground",
-              "transition-colors hover:bg-primary/90",
-            )}
-          >
-            {t("home.welcome.createTeam")}
-          </Link>
+          <div className="mt-6 flex flex-col gap-3">
+            <Link
+              to="/team/edit"
+              className={cn(
+                "inline-flex min-h-16 min-w-16 items-center justify-center",
+                "touch-manipulation rounded-lg bg-primary px-8 py-4",
+                "text-lg font-medium text-primary-foreground",
+                "transition-colors hover:bg-primary/90",
+              )}
+            >
+              {t("home.welcome.createTeam")}
+            </Link>
+            <Link
+              to="/join"
+              className={cn(
+                "inline-flex min-h-12 items-center justify-center",
+                "touch-manipulation rounded-lg bg-secondary px-6 py-3",
+                "text-base font-medium text-secondary-foreground",
+                "transition-colors hover:bg-secondary/90",
+              )}
+            >
+              {t("home.welcome.receiveTeam")}
+            </Link>
+          </div>
         </div>
       </div>
     );
