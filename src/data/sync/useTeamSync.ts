@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { p2pSync } from "./p2pSync";
 import { getTeamDoc, waitForTeamSync } from "@/data/yjs/yjsProvider";
 import { getTeamRefs, addTeamRef, setActiveTeamId } from "@/data/yjs/appDoc";
-import { getTeamInfo } from "@/data/yjs/teamDoc";
 import type { TeamRef } from "@/data/schemas";
 
 interface TeamSyncState {
@@ -171,7 +170,7 @@ export function useTeamSync(): TeamSyncHook {
         await p2pSync.joinRoom(roomCode, doc);
 
         // Wait for the team data to arrive
-        // We poll the doc until we see team info
+        // We poll the doc directly (not via getTeamInfo which uses wrong ID)
         return new Promise<string | null>((resolve) => {
           let attempts = 0;
           const maxAttempts = 120; // 60 seconds max wait (A6: extended from 30s)
@@ -179,13 +178,14 @@ export function useTeamSync(): TeamSyncHook {
           importCheckIntervalRef.current = setInterval(async () => {
             attempts++;
 
-            // Check if we've received team info
-            const teamInfo = getTeamInfo(tempTeamId);
+            // Read directly from the doc we're syncing to
+            const infoMap = doc.getMap("info");
+            const playersMap = doc.getMap("players");
+            const receivedTeamId = infoMap.get("id") as string | undefined;
+            const receivedTeamName = infoMap.get("name") as string | undefined;
 
             // Log progress periodically (every 5 seconds)
             if (attempts % 10 === 1) {
-              const infoMap = doc.getMap("info");
-              const playersMap = doc.getMap("players");
               console.log(
                 "[TeamSync] Checking for team data, attempt",
                 attempts,
@@ -193,38 +193,88 @@ export function useTeamSync(): TeamSyncHook {
                 infoMap.size,
                 "playersMap.size:",
                 playersMap.size,
-                "teamInfo:",
-                teamInfo,
+                "receivedTeamId:",
+                receivedTeamId,
+                "receivedTeamName:",
+                receivedTeamName,
               );
             }
 
-            if (teamInfo && teamInfo.name) {
+            if (receivedTeamId && receivedTeamName) {
               // Team data has arrived! Import it to our app
               clearInterval(importCheckIntervalRef.current!);
               importCheckIntervalRef.current = null;
 
+              console.log(
+                "[TeamSync] Team data received! ID:",
+                receivedTeamId,
+                "Name:",
+                receivedTeamName,
+              );
+
+              // Now we need to copy the data from the temp doc to a doc with the correct ID
+              // This is because the temp doc is stored under tempTeamId in IndexedDB,
+              // but the actual team ID from the synced data is receivedTeamId
+              const realTeamDoc = getTeamDoc(receivedTeamId);
+              await waitForTeamSync(receivedTeamId);
+
+              // Copy info map
+              const realInfoMap = realTeamDoc.getMap("info");
+              realTeamDoc.transact(() => {
+                infoMap.forEach((value, key) => {
+                  realInfoMap.set(key, value);
+                });
+              });
+
+              // Copy players map
+              const realPlayersMap = realTeamDoc.getMap("players");
+              realTeamDoc.transact(() => {
+                playersMap.forEach((value, key) => {
+                  realPlayersMap.set(key, value);
+                });
+              });
+
+              // Copy matches map if any
+              const matchesMap = doc.getMap("matches");
+              if (matchesMap.size > 0) {
+                const realMatchesMap = realTeamDoc.getMap("matches");
+                realTeamDoc.transact(() => {
+                  matchesMap.forEach((value, key) => {
+                    realMatchesMap.set(key, value);
+                  });
+                });
+              }
+
+              console.log(
+                "[TeamSync] Data copied to real team doc, ID:",
+                receivedTeamId,
+              );
+
               // Check if this team already exists in our team refs
               const existingRefs = getTeamRefs();
               const alreadyExists = existingRefs.some(
-                (ref) => ref.id === teamInfo.id,
+                (ref) => ref.id === receivedTeamId,
               );
 
               if (!alreadyExists) {
                 // Add the team reference to our app
                 const teamRef: TeamRef = {
-                  id: teamInfo.id,
-                  name: teamInfo.name,
-                  sportProfileId: teamInfo.sportProfileId,
-                  createdAt: teamInfo.createdAt,
+                  id: receivedTeamId,
+                  name: receivedTeamName,
+                  sportProfileId:
+                    (infoMap.get("sportProfileId") as string) ?? "handball",
+                  createdAt: (infoMap.get("createdAt") as number) ?? Date.now(),
                 };
                 addTeamRef(teamRef);
+                console.log("[TeamSync] Team ref added:", teamRef);
               }
 
               // Set as active team
-              setActiveTeamId(teamInfo.id);
+              setActiveTeamId(receivedTeamId);
+              console.log("[TeamSync] Active team set to:", receivedTeamId);
 
               setState((prev) => ({ ...prev, teamImported: true }));
-              resolve(teamInfo.id);
+              resolve(receivedTeamId);
             } else if (attempts >= maxAttempts) {
               // Timeout - no data received
               clearInterval(importCheckIntervalRef.current!);
