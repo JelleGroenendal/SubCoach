@@ -233,7 +233,6 @@ class P2PSyncManager {
       // Join room using BitTorrent trackers (no server needed)
       // Configure multiple WebSocket trackers for redundancy and STUN servers for NAT traversal
       const fullRoomName = `subcoach-${roomCode}`;
-      console.log("[P2P] Joining room with name:", fullRoomName);
 
       this.room = joinRoom(
         {
@@ -278,38 +277,16 @@ class P2PSyncManager {
       // Handle incoming sync messages
       getSync((data, peerId) => {
         try {
-          console.log(
-            "[P2P] Received sync message from",
-            peerId,
-            "size:",
-            data.length,
-          );
           const decoder = decoding.createDecoder(data);
           const encoder = encoding.createEncoder();
-          const messageType = syncProtocol.readSyncMessage(
-            decoder,
-            encoder,
-            doc,
-            null,
-          );
-          console.log(
-            "[P2P] Sync message type:",
-            messageType,
-            "response size:",
-            encoding.length(encoder),
-          );
+          syncProtocol.readSyncMessage(decoder, encoder, doc, null);
           if (encoding.length(encoder) > 0) {
-            const responseData = encoding.toUint8Array(encoder);
-            console.log(
-              "[P2P] Sending sync response, size:",
-              responseData.length,
-            );
-            sendSync(responseData, peerId);
+            sendSync(encoding.toUint8Array(encoder), peerId);
           }
           // Reset sync error count on success
           this.consecutiveSyncErrors = 0;
         } catch (e) {
-          console.error("Sync error:", e);
+          console.error("[P2P] Sync error:", e);
           this.handleSyncError(e);
         }
       });
@@ -325,7 +302,7 @@ class P2PSyncManager {
           // Reset sync error count on success
           this.consecutiveSyncErrors = 0;
         } catch (e) {
-          console.error("Awareness error:", e);
+          console.error("[P2P] Awareness error:", e);
           this.handleSyncError(e);
         }
       });
@@ -339,17 +316,8 @@ class P2PSyncManager {
         this.missedHeartbeats = 0;
       });
 
-      // Log successful room creation
-      console.log("[P2P] Room created, waiting for peers...");
-      console.log("[P2P] Using trackers:", [
-        "wss://tracker.openwebtorrent.com",
-        "wss://tracker.webtorrent.dev",
-        "wss://tracker.files.fm:7073/announce",
-      ]);
-
       // Handle peer join
       this.room.onPeerJoin((peerId) => {
-        console.log("[P2P] *** PEER JOINED ***:", peerId);
         this.peerCount++;
         this.status = "connected";
         this.clearRetryState(); // Connection successful, reset retry state
@@ -360,12 +328,7 @@ class P2PSyncManager {
         // Send initial sync state to new peer (sync step 1 = state vector)
         const encoder = encoding.createEncoder();
         syncProtocol.writeSyncStep1(encoder, doc);
-        const syncData = encoding.toUint8Array(encoder);
-        console.log(
-          "[P2P] Sending sync step 1 to peer, size:",
-          syncData.length,
-        );
-        sendSync(syncData, peerId);
+        sendSync(encoding.toUint8Array(encoder), peerId);
 
         // Send awareness state
         sendAwareness(
@@ -422,7 +385,6 @@ class P2PSyncManager {
       this.awareness.on("update", this.awarenessUpdateHandler);
 
       // Connection established (even if no peers yet)
-      console.log("[P2P] Connected to room, status: connected");
       this.status = "connected";
       this.lastPongReceived = Date.now();
       this.notifyListeners();
@@ -462,7 +424,7 @@ class P2PSyncManager {
       return;
     }
 
-    console.log("Mid-session disconnect detected, attempting to reconnect...");
+    console.warn("[P2P] Mid-session disconnect detected, reconnecting...");
 
     // Stop heartbeat
     this.stopHeartbeat();

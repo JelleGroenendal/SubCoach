@@ -83,31 +83,6 @@ export function useTeamSync(): TeamSyncHook {
     const doc = getTeamDoc(teamId);
     await waitForTeamSync(teamId);
 
-    // Debug: log what's in the doc we're about to share
-    const infoMap = doc.getMap("info");
-    const playersMap = doc.getMap("players");
-    const matchesMap = doc.getMap("matches");
-    console.log(
-      "[TeamSync] Hosting team doc - info size:",
-      infoMap.size,
-      "players size:",
-      playersMap.size,
-      "matches size:",
-      matchesMap.size,
-    );
-    if (infoMap.size > 0) {
-      console.log(
-        "[TeamSync] Host doc info contents:",
-        Object.fromEntries(infoMap.entries()),
-      );
-    }
-    if (matchesMap.size > 0) {
-      console.log(
-        "[TeamSync] Host doc matches:",
-        Array.from(matchesMap.keys()),
-      );
-    }
-
     // Host the room
     const roomCode = await p2pSync.hostRoom(doc);
 
@@ -135,34 +110,8 @@ export function useTeamSync(): TeamSyncHook {
       // Get or create a temp doc for initial sync
       const tempDoc = getTeamDoc(tempTeamId);
       await waitForTeamSync(tempTeamId);
-      console.log("[TeamSync] Local temp doc ready, joining room...");
 
       try {
-        // Debug: log when doc receives updates
-        tempDoc.on("update", (update: Uint8Array, origin: unknown) => {
-          console.log(
-            "[TeamSync] Temp doc received update, size:",
-            update.length,
-            "origin:",
-            origin,
-          );
-          const infoMap = tempDoc.getMap("info");
-          const playersMap = tempDoc.getMap("players");
-          console.log(
-            "[TeamSync] Temp doc info map size:",
-            infoMap.size,
-            "players map size:",
-            playersMap.size,
-          );
-        });
-
-        console.log(
-          "[TeamSync] Initial temp doc state - info size:",
-          tempDoc.getMap("info").size,
-          "players size:",
-          tempDoc.getMap("players").size,
-        );
-
         // Join the room to start receiving data
         await p2pSync.joinRoom(roomCode, tempDoc);
 
@@ -179,29 +128,9 @@ export function useTeamSync(): TeamSyncHook {
             const receivedTeamId = infoMap.get("id") as string | undefined;
             const receivedTeamName = infoMap.get("name") as string | undefined;
 
-            if (attempts % 10 === 1) {
-              console.log(
-                "[TeamSync] Checking for team data, attempt",
-                attempts,
-                "infoMap.size:",
-                infoMap.size,
-                "playersMap.size:",
-                playersMap.size,
-                "receivedTeamId:",
-                receivedTeamId,
-              );
-            }
-
             if (receivedTeamId && receivedTeamName) {
               clearInterval(importCheckIntervalRef.current!);
               importCheckIntervalRef.current = null;
-
-              console.log(
-                "[TeamSync] Team data received! ID:",
-                receivedTeamId,
-                "Name:",
-                receivedTeamName,
-              );
 
               // Step 1: Copy data to the real team doc (for local persistence)
               const realTeamDoc = getTeamDoc(receivedTeamId);
@@ -223,31 +152,14 @@ export function useTeamSync(): TeamSyncHook {
               });
 
               const matchesMap = tempDoc.getMap("matches");
-              console.log(
-                "[TeamSync] Received matches count:",
-                matchesMap.size,
-              );
               if (matchesMap.size > 0) {
-                console.log(
-                  "[TeamSync] Received match IDs:",
-                  Array.from(matchesMap.keys()),
-                );
                 const realMatchesMap = realTeamDoc.getMap("matches");
                 realTeamDoc.transact(() => {
                   matchesMap.forEach((value, key) => {
                     realMatchesMap.set(key, value);
                   });
                 });
-                console.log(
-                  "[TeamSync] Copied matches to real doc, count:",
-                  realMatchesMap.size,
-                );
               }
-
-              console.log(
-                "[TeamSync] Data copied to real team doc, ID:",
-                receivedTeamId,
-              );
 
               // Step 2: Add team ref if not exists
               const existingRefs = getTeamRefs();
@@ -264,14 +176,10 @@ export function useTeamSync(): TeamSyncHook {
                   createdAt: (infoMap.get("createdAt") as number) ?? Date.now(),
                 };
                 addTeamRef(teamRef);
-                console.log("[TeamSync] Team ref added:", teamRef);
               }
 
               // Step 3: Disconnect from temp doc and reconnect with real doc
               // This is crucial for continuous sync!
-              console.log(
-                "[TeamSync] Switching to real team doc for continuous sync...",
-              );
               p2pSync.disconnect();
 
               // Small delay to ensure clean disconnect
@@ -279,16 +187,12 @@ export function useTeamSync(): TeamSyncHook {
 
               // Rejoin with the REAL team doc - now both devices sync the same doc
               await p2pSync.joinRoom(roomCode, realTeamDoc);
-              console.log(
-                "[TeamSync] Reconnected with real team doc, continuous sync active!",
-              );
 
               // Update the syncing team ref to the real ID
               syncingTeamIdRef.current = receivedTeamId;
 
               // Set as active team
               setActiveTeamId(receivedTeamId);
-              console.log("[TeamSync] Active team set to:", receivedTeamId);
 
               setState((prev) => ({ ...prev, teamImported: true }));
               resolve(receivedTeamId);
