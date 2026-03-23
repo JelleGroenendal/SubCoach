@@ -1077,14 +1077,28 @@ export function MatchLivePage(): React.ReactNode {
               "border-t border-border sm:border-t-0",
           )}
         >
-          <div className="hidden items-center justify-between px-3 py-2 sm:flex">
+          {/* Header - show in stacked mode on mobile, always on desktop */}
+          <div
+            className={cn(
+              "items-center justify-between px-3 py-2",
+              mobileLayout === "stacked" ? "flex" : "hidden sm:flex",
+            )}
+          >
             <h2 className="text-sm font-semibold text-muted-foreground">
               {t("match.live.bench.title")} ({benchPlayers.length})
             </h2>
           </div>
           <div className="flex-1 overflow-y-auto p-2">
-            <div className="flex flex-col gap-2">
-              {/* Bench players - always flat list (no grouping) */}
+            {/* In stacked mode: grid layout like field players
+                In tabs mode: vertical list */}
+            <div
+              className={cn(
+                mobileLayout === "stacked"
+                  ? "grid grid-cols-3 gap-2 sm:flex sm:flex-col sm:gap-2"
+                  : "flex flex-col gap-2",
+              )}
+            >
+              {/* Bench players */}
               {benchPlayers.map((player) => {
                 const isSelected = selectedPlayerIds.includes(player.playerId);
                 const isSuggestedIn =
@@ -1104,45 +1118,109 @@ export function MatchLivePage(): React.ReactNode {
                       handleBenchPlayerTapWithTabSwitch(player.playerId)
                     }
                     className={cn(
-                      "flex min-h-16 w-full touch-manipulation items-center gap-3 rounded-xl p-3 sm:min-h-14 sm:rounded-lg",
-                      "text-left transition-all select-none",
+                      "touch-manipulation transition-all select-none",
                       "bg-bench text-foreground",
                       isSelected && "ring-4 ring-orange-400",
                       isSuggestedIn &&
                         !isSelected &&
                         "ring-2 ring-amber-500/60",
+                      // Stacked mode on mobile: compact card like field players
+                      mobileLayout === "stacked"
+                        ? "flex min-h-20 w-full flex-col items-center justify-center gap-0.5 rounded-xl p-2 text-center sm:min-h-14 sm:flex-row sm:items-center sm:gap-3 sm:rounded-lg sm:p-3 sm:text-left"
+                        : "flex min-h-16 w-full items-center gap-3 rounded-xl p-3 text-left sm:min-h-14 sm:rounded-lg",
                     )}
                     aria-label={player.name}
                   >
-                    {player.number !== undefined && (
-                      <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground sm:h-8 sm:w-8 sm:rounded-md">
-                        {player.number}
-                      </span>
-                    )}
-                    <div className="flex flex-1 flex-col">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-base font-medium leading-tight">
+                    {/* Stacked mobile: compact vertical layout */}
+                    {mobileLayout === "stacked" ? (
+                      <>
+                        <div className="flex items-center gap-1 sm:hidden">
+                          {player.number !== undefined && (
+                            <span className="text-xs font-bold opacity-70">
+                              #{player.number}
+                            </span>
+                          )}
+                          {player.isKeeper && (
+                            <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
+                              GK
+                            </span>
+                          )}
+                          {playerPosition && !player.isKeeper && (
+                            <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
+                              {t(playerPosition.abbreviation)}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm font-semibold leading-tight sm:hidden">
                           {player.name}
                         </span>
-                        {player.isKeeper && (
-                          <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
-                            GK
+                        <span className="text-[10px] tabular-nums opacity-70 sm:hidden">
+                          {formatTime(Math.floor(playTimeSeconds))}
+                        </span>
+                        {/* Desktop: horizontal layout (same as before) */}
+                        <span className="hidden h-8 w-8 items-center justify-center rounded-md bg-muted text-sm font-bold text-muted-foreground sm:flex">
+                          {player.number}
+                        </span>
+                        <div className="hidden flex-1 flex-col sm:flex">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base font-medium leading-tight">
+                              {player.name}
+                            </span>
+                            {player.isKeeper && (
+                              <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
+                                GK
+                              </span>
+                            )}
+                            {playerPosition && !player.isKeeper && (
+                              <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
+                                {t(playerPosition.abbreviation)}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            {formatTime(Math.floor(playTimeSeconds))}
+                          </span>
+                        </div>
+                        {player.goals > 0 && (
+                          <span className="hidden text-xs text-muted-foreground sm:block">
+                            {"⚽".repeat(Math.min(player.goals, 5))}
                           </span>
                         )}
-                        {playerPosition && !player.isKeeper && (
-                          <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
-                            {t(playerPosition.abbreviation)}
+                      </>
+                    ) : (
+                      <>
+                        {/* Tabs mode: horizontal layout */}
+                        {player.number !== undefined && (
+                          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground sm:h-8 sm:w-8 sm:rounded-md">
+                            {player.number}
                           </span>
                         )}
-                      </div>
-                      <span className="text-xs tabular-nums text-muted-foreground">
-                        {formatTime(Math.floor(playTimeSeconds))}
-                      </span>
-                    </div>
-                    {player.goals > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {"⚽".repeat(Math.min(player.goals, 5))}
-                      </span>
+                        <div className="flex flex-1 flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base font-medium leading-tight">
+                              {player.name}
+                            </span>
+                            {player.isKeeper && (
+                              <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
+                                GK
+                              </span>
+                            )}
+                            {playerPosition && !player.isKeeper && (
+                              <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
+                                {t(playerPosition.abbreviation)}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            {formatTime(Math.floor(playTimeSeconds))}
+                          </span>
+                        </div>
+                        {player.goals > 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            {"⚽".repeat(Math.min(player.goals, 5))}
+                          </span>
+                        )}
+                      </>
                     )}
                   </button>
                 );
@@ -1151,7 +1229,12 @@ export function MatchLivePage(): React.ReactNode {
               {/* Out players (injured/red card) - can still be selected for replacement */}
               {outPlayers.length > 0 && (
                 <>
-                  <div className="mt-2 border-t border-border pt-2">
+                  <div
+                    className={cn(
+                      "mt-2 border-t border-border pt-2",
+                      mobileLayout === "stacked" && "col-span-3 sm:col-span-1",
+                    )}
+                  >
                     <span className="text-xs font-semibold text-muted-foreground">
                       {t("match.live.out.title")}
                     </span>
@@ -1165,48 +1248,124 @@ export function MatchLivePage(): React.ReactNode {
                       <div
                         key={player.playerId}
                         className={cn(
-                          "flex min-h-14 w-full items-center gap-3 rounded-lg p-3",
-                          "text-left",
+                          "rounded-lg text-left",
                           isInjured && "bg-orange-900/20",
                           isRedCarded && "bg-red-900/20 opacity-60",
+                          // Stacked mode on mobile: compact card
+                          mobileLayout === "stacked"
+                            ? "flex min-h-16 flex-col items-center justify-center gap-0.5 p-2 text-center sm:min-h-14 sm:flex-row sm:items-center sm:gap-3 sm:p-3 sm:text-left"
+                            : "flex min-h-14 w-full items-center gap-3 p-3",
                         )}
                       >
-                        {player.number !== undefined && (
-                          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-sm font-bold text-muted-foreground">
-                            {player.number}
-                          </span>
-                        )}
-                        <div className="flex flex-1 flex-col">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-medium leading-tight text-muted-foreground">
+                        {/* Stacked mobile: compact layout */}
+                        {mobileLayout === "stacked" ? (
+                          <>
+                            <div className="flex items-center gap-1 sm:hidden">
+                              {player.number !== undefined && (
+                                <span className="text-xs font-bold opacity-70">
+                                  #{player.number}
+                                </span>
+                              )}
+                              {isInjured && <span className="text-xs">🤕</span>}
+                              {isRedCarded && (
+                                <span className="text-xs">🟥</span>
+                              )}
+                            </div>
+                            <span className="text-xs font-medium leading-tight text-muted-foreground sm:hidden">
                               {player.name}
                             </span>
-                            {isInjured && <span className="text-sm">🤕</span>}
-                            {isRedCarded && <span className="text-sm">🟥</span>}
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {isInjured && t("match.live.out.injured")}
-                            {isRedCarded && t("match.live.out.redCard")}
-                            {" • "}
-                            {formatTime(Math.floor(playTimeSeconds))}
-                          </span>
-                        </div>
-                        {/* Recovery button - only for injured players */}
-                        {isInjured && (
-                          <button
-                            type="button"
-                            onClick={() => recoverFromInjury(player.playerId)}
-                            className={cn(
-                              "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
-                              "text-xs font-medium text-green-400",
-                              "bg-green-900/30 transition-colors hover:bg-green-900/50",
+                            {/* Desktop: horizontal layout */}
+                            {player.number !== undefined && (
+                              <span className="hidden h-8 w-8 items-center justify-center rounded-md bg-muted text-sm font-bold text-muted-foreground sm:flex">
+                                {player.number}
+                              </span>
                             )}
-                            aria-label={t("match.live.injury.recover", {
-                              name: player.name,
-                            })}
-                          >
-                            {t("match.live.injury.recoverButton")}
-                          </button>
+                            <div className="hidden flex-1 flex-col sm:flex">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-medium leading-tight text-muted-foreground">
+                                  {player.name}
+                                </span>
+                                {isInjured && (
+                                  <span className="text-sm">🤕</span>
+                                )}
+                                {isRedCarded && (
+                                  <span className="text-sm">🟥</span>
+                                )}
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {isInjured && t("match.live.out.injured")}
+                                {isRedCarded && t("match.live.out.redCard")}
+                                {" • "}
+                                {formatTime(Math.floor(playTimeSeconds))}
+                              </span>
+                            </div>
+                            {/* Recovery button - only for injured players, desktop only in stacked */}
+                            {isInjured && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  recoverFromInjury(player.playerId)
+                                }
+                                className={cn(
+                                  "hidden min-h-10 touch-manipulation rounded-md px-3 py-1.5 sm:block",
+                                  "text-xs font-medium text-green-400",
+                                  "bg-green-900/30 transition-colors hover:bg-green-900/50",
+                                )}
+                                aria-label={t("match.live.injury.recover", {
+                                  name: player.name,
+                                })}
+                              >
+                                {t("match.live.injury.recoverButton")}
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {/* Tabs mode: horizontal layout */}
+                            {player.number !== undefined && (
+                              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-sm font-bold text-muted-foreground">
+                                {player.number}
+                              </span>
+                            )}
+                            <div className="flex flex-1 flex-col">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm font-medium leading-tight text-muted-foreground">
+                                  {player.name}
+                                </span>
+                                {isInjured && (
+                                  <span className="text-sm">🤕</span>
+                                )}
+                                {isRedCarded && (
+                                  <span className="text-sm">🟥</span>
+                                )}
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {isInjured && t("match.live.out.injured")}
+                                {isRedCarded && t("match.live.out.redCard")}
+                                {" • "}
+                                {formatTime(Math.floor(playTimeSeconds))}
+                              </span>
+                            </div>
+                            {/* Recovery button - only for injured players */}
+                            {isInjured && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  recoverFromInjury(player.playerId)
+                                }
+                                className={cn(
+                                  "min-h-10 touch-manipulation rounded-md px-3 py-1.5",
+                                  "text-xs font-medium text-green-400",
+                                  "bg-green-900/30 transition-colors hover:bg-green-900/50",
+                                )}
+                                aria-label={t("match.live.injury.recover", {
+                                  name: player.name,
+                                })}
+                              >
+                                {t("match.live.injury.recoverButton")}
+                              </button>
+                            )}
+                          </>
                         )}
                       </div>
                     );
