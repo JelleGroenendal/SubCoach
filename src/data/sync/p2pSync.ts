@@ -1,4 +1,4 @@
-import { joinRoom, type Room } from "trystero";
+import { joinRoom, type Room } from "trystero/torrent";
 import * as Y from "yjs";
 import * as syncProtocol from "y-protocols/sync";
 import * as awarenessProtocol from "y-protocols/awareness";

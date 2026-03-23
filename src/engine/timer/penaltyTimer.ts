@@ -47,7 +47,7 @@ export function getActivePenalties(
     }
   }
 
-  // Find active penalties
+  // Find active penalties (including those that just expired but haven't been ended yet)
   for (const event of events) {
     if (event.type === "penalty" && !endedPenaltyIds.has(event.penaltyId)) {
       const penaltyEvent = event as PenaltyEvent;
@@ -57,15 +57,15 @@ export function getActivePenalties(
         currentTime,
       );
 
-      if (remaining > 0) {
-        penalties.push({
-          penaltyId: penaltyEvent.penaltyId,
-          playerId: penaltyEvent.playerId,
-          startTimestamp: penaltyEvent.timestamp,
-          durationSeconds: penaltyEvent.durationSeconds,
-          remainingSeconds: remaining,
-        });
-      }
+      // Include all penalties that haven't been formally ended yet
+      // This allows the UI to detect expired penalties and call endPenalty
+      penalties.push({
+        penaltyId: penaltyEvent.penaltyId,
+        playerId: penaltyEvent.playerId,
+        startTimestamp: penaltyEvent.timestamp,
+        durationSeconds: penaltyEvent.durationSeconds,
+        remainingSeconds: remaining,
+      });
     }
   }
 

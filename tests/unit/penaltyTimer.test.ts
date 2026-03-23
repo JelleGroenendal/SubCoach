@@ -59,7 +59,9 @@ describe("getActivePenalties", () => {
     expect(result[0]?.remainingSeconds).toBe(70);
   });
 
-  it("excludes expired penalties", () => {
+  it("includes expired penalties that haven't been formally ended", () => {
+    // Expired penalties are still returned so the UI can call endPenalty
+    // This allows the player to be transitioned back to bench status
     const events: MatchEvent[] = [
       {
         type: "penalty",
@@ -69,7 +71,9 @@ describe("getActivePenalties", () => {
         penaltyId: "pen1",
       },
     ];
-    expect(getActivePenalties(events, 300)).toHaveLength(0);
+    const result = getActivePenalties(events, 300);
+    expect(result).toHaveLength(1);
+    expect(result[0].remainingSeconds).toBe(0); // Expired but not ended
   });
 
   it("excludes manually ended penalties", () => {
