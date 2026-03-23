@@ -86,16 +86,25 @@ export function useTeamSync(): TeamSyncHook {
     // Debug: log what's in the doc we're about to share
     const infoMap = doc.getMap("info");
     const playersMap = doc.getMap("players");
+    const matchesMap = doc.getMap("matches");
     console.log(
       "[TeamSync] Hosting team doc - info size:",
       infoMap.size,
       "players size:",
       playersMap.size,
+      "matches size:",
+      matchesMap.size,
     );
     if (infoMap.size > 0) {
       console.log(
         "[TeamSync] Host doc info contents:",
         Object.fromEntries(infoMap.entries()),
+      );
+    }
+    if (matchesMap.size > 0) {
+      console.log(
+        "[TeamSync] Host doc matches:",
+        Array.from(matchesMap.keys()),
       );
     }
 
@@ -214,13 +223,25 @@ export function useTeamSync(): TeamSyncHook {
               });
 
               const matchesMap = tempDoc.getMap("matches");
+              console.log(
+                "[TeamSync] Received matches count:",
+                matchesMap.size,
+              );
               if (matchesMap.size > 0) {
+                console.log(
+                  "[TeamSync] Received match IDs:",
+                  Array.from(matchesMap.keys()),
+                );
                 const realMatchesMap = realTeamDoc.getMap("matches");
                 realTeamDoc.transact(() => {
                   matchesMap.forEach((value, key) => {
                     realMatchesMap.set(key, value);
                   });
                 });
+                console.log(
+                  "[TeamSync] Copied matches to real doc, count:",
+                  realMatchesMap.size,
+                );
               }
 
               console.log(
