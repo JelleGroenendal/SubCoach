@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useMatchStore } from "@/stores/matchStore";
 import { useTeamStore } from "@/stores/teamStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { Button } from "@/components/ui/button";
 import { formatTime, isPeriodFinished } from "@/engine/timer/matchTimer";
 import { getActivePenalties } from "@/engine/timer/penaltyTimer";
@@ -16,7 +17,6 @@ import { P2PSyncPanel } from "./P2PSyncPanel";
 import type { MatchPlayer } from "@/data/schemas";
 
 type MobileTab = "field" | "bench";
-type MobileLayout = "tabs" | "stacked";
 
 export function MatchLivePage(): React.ReactNode {
   const { t } = useTranslation();
@@ -77,7 +77,7 @@ export function MatchLivePage(): React.ReactNode {
     null,
   );
   const [mobileTab, setMobileTab] = useState<MobileTab>("field");
-  const [mobileLayout, setMobileLayout] = useState<MobileLayout>("tabs");
+  const { mobileLayout, setMobileLayout } = useSettingsStore();
   const [pendingInjuryPlayerId, setPendingInjuryPlayerId] = useState<
     string | null
   >(null);
@@ -838,7 +838,7 @@ export function MatchLivePage(): React.ReactNode {
         <button
           type="button"
           onClick={() =>
-            setMobileLayout((l) => (l === "tabs" ? "stacked" : "tabs"))
+            setMobileLayout(mobileLayout === "tabs" ? "stacked" : "tabs")
           }
           className="touch-manipulation border-l border-border px-3 py-2 text-muted-foreground transition-colors hover:text-foreground"
           aria-label={t("match.live.toggleLayout")}

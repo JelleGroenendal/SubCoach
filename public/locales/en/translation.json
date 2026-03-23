@@ -570,6 +570,12 @@
     "theme": "Theme",
     "themeDescription": "Toggle between dark and light theme.",
     "toggleTheme": "Toggle theme",
+    "mobileLayout": {
+      "title": "Match View Layout",
+      "description": "Choose how field and bench players are displayed on mobile.",
+      "tabs": "Tabs",
+      "stacked": "Stacked"
+    },
     "pwa": {
       "title": "Install App",
       "description": "Install SubCoach on your device for quick access.",

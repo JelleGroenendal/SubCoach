@@ -261,18 +261,25 @@ function MatchSetupForm({
     [selectedKeeperId],
   );
 
-  const handlePointerDown = useCallback(
-    (playerId: string) => {
+  // Long press handling - works with both mouse and touch
+  const handlePressStart = useCallback(
+    (playerId: string, e: React.PointerEvent | React.TouchEvent) => {
+      // Prevent text selection on long press
+      e.preventDefault();
       longPressTriggeredRef.current = false;
       longPressTimerRef.current = setTimeout(() => {
         longPressTriggeredRef.current = true;
         handleToggleUnavailable(playerId);
-      }, 600);
+        // Vibrate on long press if supported
+        if ("vibrate" in navigator) {
+          navigator.vibrate(50);
+        }
+      }, 500); // Reduced from 600ms for better responsiveness
     },
     [handleToggleUnavailable],
   );
 
-  const handlePointerUp = useCallback(
+  const handlePressEnd = useCallback(
     (playerId: string) => {
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
@@ -285,7 +292,7 @@ function MatchSetupForm({
     [handleToggleAssignment],
   );
 
-  const handlePointerLeave = useCallback(() => {
+  const handlePressCancel = useCallback(() => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = undefined;
@@ -527,9 +534,17 @@ function MatchSetupForm({
               <button
                 key={selection.playerId}
                 type="button"
-                onPointerDown={() => handlePointerDown(selection.playerId)}
-                onPointerUp={() => handlePointerUp(selection.playerId)}
-                onPointerLeave={handlePointerLeave}
+                onTouchStart={(e) => handlePressStart(selection.playerId, e)}
+                onTouchEnd={() => handlePressEnd(selection.playerId)}
+                onTouchCancel={handlePressCancel}
+                onMouseDown={(e) =>
+                  handlePressStart(
+                    selection.playerId,
+                    e as unknown as React.PointerEvent,
+                  )
+                }
+                onMouseUp={() => handlePressEnd(selection.playerId)}
+                onMouseLeave={handlePressCancel}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   handleToggleUnavailable(selection.playerId);

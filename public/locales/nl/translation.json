@@ -570,6 +570,12 @@
     "theme": "Thema",
     "themeDescription": "Schakel tussen donker en licht thema.",
     "toggleTheme": "Wissel thema",
+    "mobileLayout": {
+      "title": "Wedstrijdweergave",
+      "description": "Kies hoe veld- en bankspelers worden weergegeven op mobiel.",
+      "tabs": "Tabbladen",
+      "stacked": "Gestapeld"
+    },
     "pwa": {
       "title": "App installeren",
       "description": "Installeer SubCoach op je apparaat voor snelle toegang.",

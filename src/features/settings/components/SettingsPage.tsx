@@ -11,12 +11,14 @@ import {
 import { usePWAInstall } from "@/lib/pwa";
 import { Button } from "@/components/ui/button";
 import { KofiButton } from "@/components/common/KofiButton";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 export function SettingsPage(): React.ReactNode {
   const { t, i18n } = useTranslation();
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
   const { isInstalled, isInstallable, install, clearDismissed } =
     usePWAInstall();
+  const { mobileLayout, setMobileLayout } = useSettingsStore();
 
   const handleToggleTheme = useCallback(() => {
     const newTheme = toggleThemeUtil();
@@ -140,6 +142,42 @@ export function SettingsPage(): React.ReactNode {
                 <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />
               </svg>
             )}
+          </button>
+        </div>
+      </div>
+
+      {/* Match Layout */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <h2 className="font-semibold">{t("settings.mobileLayout.title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t("settings.mobileLayout.description")}
+        </p>
+        <div className="mt-3 flex gap-2">
+          <button
+            type="button"
+            onClick={() => setMobileLayout("tabs")}
+            className={cn(
+              "min-h-12 touch-manipulation rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+              mobileLayout === "tabs"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:bg-accent",
+            )}
+            aria-pressed={mobileLayout === "tabs"}
+          >
+            {t("settings.mobileLayout.tabs")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileLayout("stacked")}
+            className={cn(
+              "min-h-12 touch-manipulation rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+              mobileLayout === "stacked"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:bg-accent",
+            )}
+            aria-pressed={mobileLayout === "stacked"}
+          >
+            {t("settings.mobileLayout.stacked")}
           </button>
         </div>
       </div>
