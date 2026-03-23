@@ -216,15 +216,18 @@ export function MatchLivePage(): React.ReactNode {
     if (!match) return [];
     const field = match.roster.filter((p) => p.status === "field");
 
-    // Sort by position order (from sport profile)
-    // Players without position come last, sorted by play time (least first)
+    // Sort by: 1) Keeper always first, 2) Position order, 3) Play time
     return field.sort((a, b) => {
+      // Keeper always comes first
+      if (a.isKeeper && !b.isKeeper) return -1;
+      if (!a.isKeeper && b.isKeeper) return 1;
+
+      // Then sort by position order (from sport profile)
       const aPositionIndex =
         a.positionId !== undefined ? (positionOrder[a.positionId] ?? 999) : 999;
       const bPositionIndex =
         b.positionId !== undefined ? (positionOrder[b.positionId] ?? 999) : 999;
 
-      // Primary sort: position index
       if (aPositionIndex !== bPositionIndex) {
         return aPositionIndex - bPositionIndex;
       }
@@ -279,8 +282,19 @@ export function MatchLivePage(): React.ReactNode {
     (player: MatchPlayer): number => {
       if (!match) return player.totalPlayTimeSeconds;
       return player.periods.reduce((sum, per) => {
-        const outAt = per.outAt ?? match.elapsedSeconds;
-        return sum + (outAt - per.inAt);
+        let outAt: number;
+        if (per.outAt === undefined) {
+          // Open period (no outAt) - only count live time if player is on field
+          // For bench/penalty/injured players, an open period is a data inconsistency
+          // but we handle it gracefully by using the inAt as outAt (0 time for that period)
+          outAt = player.status === "field" ? match.elapsedSeconds : per.inAt;
+        } else {
+          outAt = per.outAt;
+        }
+
+        // Guard against negative times
+        const periodTime = Math.max(0, outAt - per.inAt);
+        return sum + periodTime;
       }, 0);
     },
     [match],
