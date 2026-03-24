@@ -1592,20 +1592,45 @@ export function MatchLivePage(): React.ReactNode {
           </div>
         )}
 
-        {/* Mobile undo button */}
-        {lastAction && (
+        {/* Bottom action bar - always visible on mobile */}
+        <div className="flex min-h-12 items-center justify-between border-t border-border bg-muted/50 px-2 sm:hidden">
+          {/* Undo button */}
           <button
             type="button"
             onClick={undoLastAction}
+            disabled={!lastAction}
             className={cn(
-              "flex min-h-12 w-full touch-manipulation items-center justify-center gap-2 border-t border-border bg-muted/50 px-3 py-2 sm:hidden",
-              "text-sm text-muted-foreground transition-colors hover:bg-muted",
+              "flex min-h-12 flex-1 touch-manipulation items-center justify-center gap-2 px-3 py-2",
+              "text-sm transition-colors",
+              lastAction
+                ? "text-muted-foreground hover:bg-muted"
+                : "text-muted-foreground/30",
             )}
           >
             <span>↩</span>
             <span>{t("match.live.undo.button")}</span>
           </button>
-        )}
+
+          {/* Divider */}
+          <div className="h-8 w-px bg-border" />
+
+          {/* Notes button */}
+          <button
+            type="button"
+            onClick={handleOpenNotes}
+            className={cn(
+              "flex min-h-12 flex-1 touch-manipulation items-center justify-center gap-2 px-3 py-2",
+              "text-sm transition-colors hover:bg-muted",
+              match?.notes ? "text-primary" : "text-muted-foreground",
+            )}
+          >
+            <span>📝</span>
+            <span>{t("match.live.menu.notes")}</span>
+            {match?.notes && (
+              <span className="h-2 w-2 rounded-full bg-primary" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Undo Snackbar */}
@@ -1927,29 +1952,6 @@ export function MatchLivePage(): React.ReactNode {
           </div>
         </div>
       )}
-
-      {/* Floating Notes Button - bottom right on mobile */}
-      <button
-        type="button"
-        onClick={handleOpenNotes}
-        className={cn(
-          "fixed bottom-20 right-4 z-40",
-          "flex h-14 w-14 items-center justify-center",
-          "touch-manipulation rounded-full shadow-lg",
-          "text-xl transition-all active:scale-95",
-          match?.notes
-            ? "bg-primary text-primary-foreground"
-            : "bg-card text-foreground border border-border",
-        )}
-        aria-label={t("match.live.menu.notes")}
-      >
-        📝
-        {match?.notes && (
-          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
-            ✓
-          </span>
-        )}
-      </button>
 
       {/* Dismiss overlay */}
       {showMenu && (
