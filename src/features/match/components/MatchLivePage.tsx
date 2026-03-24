@@ -672,24 +672,6 @@ export function MatchLivePage(): React.ReactNode {
             </span>
           </div>
 
-          {/* Notes button - quick access */}
-          <button
-            type="button"
-            onClick={handleOpenNotes}
-            className={cn(
-              "relative min-h-12 min-w-12 touch-manipulation rounded-lg px-2",
-              "flex items-center justify-center text-lg",
-              "transition-colors hover:bg-accent",
-              match?.notes ? "text-primary" : "text-muted-foreground",
-            )}
-            aria-label={t("match.live.menu.notes")}
-          >
-            📝
-            {match?.notes && (
-              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary" />
-            )}
-          </button>
-
           {/* Undo - host only */}
           {isHost && (
             <button
@@ -1945,6 +1927,29 @@ export function MatchLivePage(): React.ReactNode {
           </div>
         </div>
       )}
+
+      {/* Floating Notes Button - bottom right on mobile */}
+      <button
+        type="button"
+        onClick={handleOpenNotes}
+        className={cn(
+          "fixed bottom-20 right-4 z-40",
+          "flex h-14 w-14 items-center justify-center",
+          "touch-manipulation rounded-full shadow-lg",
+          "text-xl transition-all active:scale-95",
+          match?.notes
+            ? "bg-primary text-primary-foreground"
+            : "bg-card text-foreground border border-border",
+        )}
+        aria-label={t("match.live.menu.notes")}
+      >
+        📝
+        {match?.notes && (
+          <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">
+            ✓
+          </span>
+        )}
+      </button>
 
       {/* Dismiss overlay */}
       {showMenu && (
