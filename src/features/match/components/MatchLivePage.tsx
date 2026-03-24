@@ -672,6 +672,24 @@ export function MatchLivePage(): React.ReactNode {
             </span>
           </div>
 
+          {/* Notes button - quick access */}
+          <button
+            type="button"
+            onClick={handleOpenNotes}
+            className={cn(
+              "relative min-h-12 min-w-12 touch-manipulation rounded-lg px-2",
+              "flex items-center justify-center text-lg",
+              "transition-colors hover:bg-accent",
+              match?.notes ? "text-primary" : "text-muted-foreground",
+            )}
+            aria-label={t("match.live.menu.notes")}
+          >
+            📝
+            {match?.notes && (
+              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary" />
+            )}
+          </button>
+
           {/* Undo - host only */}
           {isHost && (
             <button
@@ -722,21 +740,6 @@ export function MatchLivePage(): React.ReactNode {
                   {isConnected
                     ? `${t("sync.connected")} (${peerCount + 1})`
                     : t("sync.title")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOpenNotes}
-                  className={cn(
-                    "flex min-h-12 w-full touch-manipulation items-center gap-2 rounded-md px-3 py-2",
-                    "text-sm font-medium text-foreground",
-                    "transition-colors hover:bg-accent",
-                  )}
-                >
-                  <span>📝</span>
-                  {t("match.live.menu.notes")}
-                  {match?.notes && (
-                    <span className="ml-auto text-xs text-primary">●</span>
-                  )}
                 </button>
                 <button
                   type="button"
