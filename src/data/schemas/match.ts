@@ -30,8 +30,6 @@ export const MatchPlayerSchema = z.object({
   hasBeenSubstitutedOut: z.boolean().optional(),
   yellowCards: z.number().int().min(0).optional(),
   fouls: z.number().int().min(0).optional(),
-  /** Coach notes for this player in this match */
-  notes: z.string().max(500).optional(),
 });
 
 export const MatchSchema = z.object({

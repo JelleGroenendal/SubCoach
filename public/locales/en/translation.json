@@ -398,6 +398,7 @@
       },
       "menu": {
         "button": "Menu",
+        "notes": "Notes",
         "help": "Help",
         "endMatch": "End match"
       }
@@ -421,10 +422,7 @@
       "done": "Done",
       "notes": {
         "title": "Notes",
-        "matchPlaceholder": "Notes about the match (weather, referee, tactics...)",
-        "playerPlaceholder": "Notes about {{name}}...",
-        "addPlayerNote": "Add note",
-        "saved": "Saved"
+        "matchPlaceholder": "Notes about the match (weather, referee, tactics...)"
       }
     }
   },

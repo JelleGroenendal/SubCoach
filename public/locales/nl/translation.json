@@ -398,6 +398,7 @@
       },
       "menu": {
         "button": "Menu",
+        "notes": "Notities",
         "help": "Hulp",
         "endMatch": "Wedstrijd beëindigen"
       }
@@ -421,10 +422,7 @@
       "done": "Klaar",
       "notes": {
         "title": "Notities",
-        "matchPlaceholder": "Notities over de wedstrijd (weer, scheidsrechter, tactiek...)",
-        "playerPlaceholder": "Notities over {{name}}...",
-        "addPlayerNote": "Notitie toevoegen",
-        "saved": "Opgeslagen"
+        "matchPlaceholder": "Notities over de wedstrijd (weer, scheidsrechter, tactiek...)"
       }
     }
   },

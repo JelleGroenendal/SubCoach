@@ -69,6 +69,7 @@ export function MatchLivePage(): React.ReactNode {
     endMatch,
     autoSave,
     adjustScore,
+    updateMatchNotes,
   } = useMatchStore();
 
   const [showEndConfirm, setShowEndConfirm] = useState(false);
@@ -77,6 +78,8 @@ export function MatchLivePage(): React.ReactNode {
   const [showScoreEdit, setShowScoreEdit] = useState<"home" | "away" | null>(
     null,
   );
+  const [showNotesModal, setShowNotesModal] = useState(false);
+  const [notesInput, setNotesInput] = useState("");
   const [mobileTab, setMobileTab] = useState<MobileTab>("field");
   const { mobileLayout, setMobileLayout } = useSettingsStore();
   const [pendingInjuryPlayerId, setPendingInjuryPlayerId] = useState<
@@ -504,6 +507,19 @@ export function MatchLivePage(): React.ReactNode {
     executeMultipleSubstitutions(substitutions);
   }, [currentSuggestions, executeMultipleSubstitutions]);
 
+  // Open notes modal
+  const handleOpenNotes = useCallback(() => {
+    setNotesInput(match?.notes ?? "");
+    setShowNotesModal(true);
+    setShowMenu(false);
+  }, [match?.notes]);
+
+  // Save and close notes modal
+  const handleSaveNotes = useCallback(() => {
+    updateMatchNotes(notesInput);
+    setShowNotesModal(false);
+  }, [notesInput, updateMatchNotes]);
+
   // Switch to the other tab after selecting a player (for easier substitution flow)
   // Only works for host - viewers cannot interact with players
   const handleFieldPlayerTapWithTabSwitch = useCallback(
@@ -706,6 +722,21 @@ export function MatchLivePage(): React.ReactNode {
                   {isConnected
                     ? `${t("sync.connected")} (${peerCount + 1})`
                     : t("sync.title")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenNotes}
+                  className={cn(
+                    "flex min-h-12 w-full touch-manipulation items-center gap-2 rounded-md px-3 py-2",
+                    "text-sm font-medium text-foreground",
+                    "transition-colors hover:bg-accent",
+                  )}
+                >
+                  <span>📝</span>
+                  {t("match.live.menu.notes")}
+                  {match?.notes && (
+                    <span className="ml-auto text-xs text-primary">●</span>
+                  )}
                 </button>
                 <button
                   type="button"
@@ -1867,6 +1898,47 @@ export function MatchLivePage(): React.ReactNode {
             >
               {t("common.done")}
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Notes Modal */}
+      {showNotesModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="flex w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-card p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-foreground">
+              {t("match.live.menu.notes")}
+            </h3>
+            <textarea
+              value={notesInput}
+              onChange={(e) => setNotesInput(e.target.value)}
+              placeholder={t("match.summary.notes.matchPlaceholder")}
+              className={cn(
+                "w-full resize-none rounded-lg border border-border bg-background p-3",
+                "text-sm placeholder:text-muted-foreground",
+                "focus:outline-none focus:ring-2 focus:ring-primary/50",
+              )}
+              rows={5}
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <Button
+                size="xl"
+                variant="ghost"
+                className="flex-1 touch-manipulation"
+                onClick={() => setShowNotesModal(false)}
+              >
+                {t("common.cancel")}
+              </Button>
+              <Button
+                size="xl"
+                variant="default"
+                className="flex-1 touch-manipulation"
+                onClick={handleSaveNotes}
+              >
+                {t("common.save")}
+              </Button>
+            </div>
           </div>
         </div>
       )}

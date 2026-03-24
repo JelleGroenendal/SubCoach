@@ -347,45 +347,12 @@ export function HistoryDetailPage(): React.ReactNode {
       )}
 
       {/* Notes Section - only shown if there are notes */}
-      {(match.notes ||
-        match.roster.some((p) => p.notes && p.notes.length > 0)) && (
+      {match.notes && (
         <div className="rounded-xl border border-border bg-card p-4">
           <h2 className="mb-3 font-semibold">
             {t("match.summary.notes.title")}
           </h2>
-
-          {/* Match Notes */}
-          {match.notes && (
-            <div className="mb-4 rounded-lg bg-muted/50 p-3">
-              <p className="text-sm whitespace-pre-wrap">{match.notes}</p>
-            </div>
-          )}
-
-          {/* Player Notes */}
-          {match.roster.some((p) => p.notes && p.notes.length > 0) && (
-            <div className="space-y-2">
-              {match.roster
-                .filter((p) => p.notes && p.notes.length > 0)
-                .map((player) => (
-                  <div
-                    key={player.playerId}
-                    className="rounded-lg bg-muted/50 p-3"
-                  >
-                    <p className="text-sm font-medium">
-                      {player.number !== undefined && (
-                        <span className="mr-1 text-muted-foreground">
-                          #{player.number}
-                        </span>
-                      )}
-                      {player.name}
-                    </p>
-                    <p className="mt-1 text-sm whitespace-pre-wrap text-muted-foreground">
-                      {player.notes}
-                    </p>
-                  </div>
-                ))}
-            </div>
-          )}
+          <p className="text-sm whitespace-pre-wrap">{match.notes}</p>
         </div>
       )}
 

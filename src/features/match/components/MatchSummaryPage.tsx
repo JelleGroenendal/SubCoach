@@ -41,25 +41,8 @@ export function MatchSummaryPage(): React.ReactNode {
   const navigate = useNavigate();
   const match = useMatchStore((s) => s.match);
   const updateMatchNotes = useMatchStore((s) => s.updateMatchNotes);
-  const updatePlayerNotes = useMatchStore((s) => s.updatePlayerNotes);
 
   const [matchNotes, setMatchNotes] = useState(match?.notes ?? "");
-  const [expandedPlayerId, setExpandedPlayerId] = useState<string | null>(null);
-  const [playerNoteInputs, setPlayerNoteInputs] = useState<
-    Record<string, string>
-  >({});
-
-  // Initialize player notes from match data
-  const getPlayerNotes = useCallback(
-    (playerId: string) => {
-      if (playerNoteInputs[playerId] !== undefined) {
-        return playerNoteInputs[playerId];
-      }
-      const player = match?.roster.find((p) => p.playerId === playerId);
-      return player?.notes ?? "";
-    },
-    [playerNoteInputs, match?.roster],
-  );
 
   const handleMatchNotesChange = useCallback(
     (value: string) => {
@@ -67,14 +50,6 @@ export function MatchSummaryPage(): React.ReactNode {
       updateMatchNotes(value);
     },
     [updateMatchNotes],
-  );
-
-  const handlePlayerNotesChange = useCallback(
-    (playerId: string, value: string) => {
-      setPlayerNoteInputs((prev) => ({ ...prev, [playerId]: value }));
-      updatePlayerNotes(playerId, value);
-    },
-    [updatePlayerNotes],
   );
 
   const fairness = useMemo(() => {
@@ -254,8 +229,6 @@ export function MatchSummaryPage(): React.ReactNode {
       {/* Notes Section */}
       <div className="rounded-xl border border-border bg-card p-4">
         <h2 className="mb-3 font-semibold">{t("match.summary.notes.title")}</h2>
-
-        {/* Match Notes */}
         <textarea
           value={matchNotes}
           onChange={(e) => handleMatchNotesChange(e.target.value)}
@@ -267,80 +240,6 @@ export function MatchSummaryPage(): React.ReactNode {
           )}
           rows={3}
         />
-
-        {/* Player Notes */}
-        <div className="mt-4 space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">
-            {t("match.summary.notes.addPlayerNote")}
-          </p>
-          <div className="space-y-2">
-            {match.roster
-              .slice()
-              .sort((a, b) => b.totalPlayTimeSeconds - a.totalPlayTimeSeconds)
-              .map((player) => {
-                const isExpanded = expandedPlayerId === player.playerId;
-                const hasNotes = getPlayerNotes(player.playerId).length > 0;
-
-                return (
-                  <div key={player.playerId}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setExpandedPlayerId(isExpanded ? null : player.playerId)
-                      }
-                      className={cn(
-                        "flex w-full items-center justify-between rounded-lg p-2 text-left",
-                        "transition-colors hover:bg-muted",
-                        isExpanded && "bg-muted",
-                      )}
-                    >
-                      <span className="text-sm font-medium">
-                        {player.number !== undefined && (
-                          <span className="mr-1 text-muted-foreground">
-                            #{player.number}
-                          </span>
-                        )}
-                        {player.name}
-                        {hasNotes && !isExpanded && (
-                          <span className="ml-2 text-xs text-primary">
-                            (heeft notitie)
-                          </span>
-                        )}
-                      </span>
-                      <span className="text-muted-foreground">
-                        {isExpanded ? "▲" : "▼"}
-                      </span>
-                    </button>
-                    {isExpanded && (
-                      <div className="mt-1 px-2">
-                        <textarea
-                          value={getPlayerNotes(player.playerId)}
-                          onChange={(e) =>
-                            handlePlayerNotesChange(
-                              player.playerId,
-                              e.target.value,
-                            )
-                          }
-                          placeholder={t(
-                            "match.summary.notes.playerPlaceholder",
-                            {
-                              name: player.name,
-                            },
-                          )}
-                          className={cn(
-                            "w-full resize-none rounded-lg border border-border bg-background p-2",
-                            "text-sm placeholder:text-muted-foreground",
-                            "focus:outline-none focus:ring-2 focus:ring-primary/50",
-                          )}
-                          rows={2}
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-          </div>
-        </div>
       </div>
 
       {/* Done Button */}
