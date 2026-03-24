@@ -1596,30 +1596,28 @@ export function MatchLivePage(): React.ReactNode {
         <div className="flex min-h-12 items-center border-t border-border bg-muted/50 px-2 sm:hidden">
           {/* Undo button - only show when there's something to undo */}
           {lastAction && (
-            <>
-              <button
-                type="button"
-                onClick={undoLastAction}
-                className={cn(
-                  "flex min-h-12 flex-1 touch-manipulation items-center justify-center gap-2 px-3 py-2",
-                  "text-sm text-muted-foreground transition-colors hover:bg-muted",
-                )}
-              >
-                <span>↩</span>
-                <span>{t("match.live.undo.button")}</span>
-              </button>
-
-              {/* Divider */}
-              <div className="h-8 w-px bg-border" />
-            </>
+            <button
+              type="button"
+              onClick={undoLastAction}
+              className={cn(
+                "flex min-h-12 touch-manipulation items-center justify-center gap-2 px-3 py-2",
+                "text-sm text-muted-foreground transition-colors hover:bg-muted",
+              )}
+            >
+              <span>↩</span>
+              <span>{t("match.live.undo.button")}</span>
+            </button>
           )}
 
-          {/* Notes button */}
+          {/* Spacer */}
+          <div className="flex-1" />
+
+          {/* Notes button - always on the right */}
           <button
             type="button"
             onClick={handleOpenNotes}
             className={cn(
-              "flex min-h-12 flex-1 touch-manipulation items-center justify-center gap-2 px-3 py-2",
+              "flex min-h-12 touch-manipulation items-center justify-center gap-2 px-3 py-2",
               "text-sm transition-colors hover:bg-muted",
               match?.notes ? "text-primary" : "text-muted-foreground",
             )}
