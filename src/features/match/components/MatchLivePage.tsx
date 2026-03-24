@@ -53,6 +53,7 @@ export function MatchLivePage(): React.ReactNode {
     togglePlayerSelection,
     clearSelection,
     executeSubstitution,
+    executeMultipleSubstitutions,
     registerGoal,
     registerOpponentGoal,
     registerPenalty,
@@ -495,11 +496,13 @@ export function MatchLivePage(): React.ReactNode {
   // Quick substitute handler for all current suggestions
   const handleQuickSubstitute = useCallback(() => {
     if (currentSuggestions.length === 0) return;
-    // Execute all current suggestions
-    for (const suggestion of currentSuggestions) {
-      executeSubstitution(suggestion.playerInId, suggestion.playerOutId);
-    }
-  }, [currentSuggestions, executeSubstitution]);
+    // Execute all current suggestions at once (prevents recalculation between subs)
+    const substitutions = currentSuggestions.map((s) => ({
+      playerInId: s.playerInId,
+      playerOutId: s.playerOutId,
+    }));
+    executeMultipleSubstitutions(substitutions);
+  }, [currentSuggestions, executeMultipleSubstitutions]);
 
   // Switch to the other tab after selecting a player (for easier substitution flow)
   // Only works for host - viewers cannot interact with players

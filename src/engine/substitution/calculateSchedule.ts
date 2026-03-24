@@ -157,7 +157,8 @@ export function calculateSchedule(input: ScheduleInput): SubstitutionPlan {
           reason: "fixedInterval",
         });
 
-        // Preview the next substitution
+        // Check if a second substitution is ALSO due now
+        // This happens when interval time has accumulated (e.g., 2x interval passed)
         if (sortedField.length > 1 && sortedBench.length > 1) {
           const nextFieldOut = sortedField[1];
           const remainingBench = sortedBench.filter(
@@ -169,12 +170,29 @@ export function calculateSchedule(input: ScheduleInput): SubstitutionPlan {
             usePositionAwareSubstitutions,
           );
           if (nextFieldOut && nextBenchIn) {
-            suggestions.push({
-              timestamp: currentTimeSeconds + fixedIntervalSeconds,
-              playerInId: nextBenchIn.playerId,
-              playerOutId: nextFieldOut.playerId,
-              reason: "scheduled",
-            });
+            const nextDiff =
+              nextFieldOut.totalPlayTimeSeconds -
+              nextBenchIn.totalPlayTimeSeconds;
+            // If the second pair also has significant imbalance, suggest it as current too
+            if (
+              nextDiff >= fixedIntervalSeconds ||
+              (nearEndOfMatch && nextDiff > 60)
+            ) {
+              suggestions.push({
+                timestamp: currentTimeSeconds,
+                playerInId: nextBenchIn.playerId,
+                playerOutId: nextFieldOut.playerId,
+                reason: "fixedInterval",
+              });
+            } else {
+              // Otherwise show as scheduled/preview
+              suggestions.push({
+                timestamp: currentTimeSeconds + fixedIntervalSeconds,
+                playerInId: nextBenchIn.playerId,
+                playerOutId: nextFieldOut.playerId,
+                reason: "scheduled",
+              });
+            }
           }
         }
       }
@@ -208,35 +226,56 @@ export function calculateSchedule(input: ScheduleInput): SubstitutionPlan {
             playerOutId: playerOut.playerId,
             reason: "fairness",
           });
-        }
-      }
 
-      // Also generate the next few suggestions for visibility
-      // (who would sub after this one)
-      if (
-        suggestions.length > 0 &&
-        sortedField.length > 1 &&
-        sortedBench.length > 1
-      ) {
-        const nextFieldOut = sortedField[1];
-        // Filter out the player we just suggested, then find best match
-        const remainingBench = sortedBench.filter(
-          (p) => p.playerId !== playerIn.playerId,
-        );
-        const nextBenchIn = findBestBenchPlayer(
-          remainingBench,
-          nextFieldOut?.groupId,
-          usePositionAwareSubstitutions,
-        );
-        if (nextFieldOut && nextBenchIn) {
+          // Check if a second substitution is ALSO due now
+          // This happens when play time differences have accumulated
+          if (sortedField.length > 1 && sortedBench.length > 1) {
+            const nextFieldOut = sortedField[1];
+            const remainingBench = sortedBench.filter(
+              (p) => p.playerId !== playerIn.playerId,
+            );
+            const nextBenchIn = findBestBenchPlayer(
+              remainingBench,
+              nextFieldOut?.groupId,
+              usePositionAwareSubstitutions,
+            );
+            if (nextFieldOut && nextBenchIn) {
+              const nextDiff =
+                nextFieldOut.totalPlayTimeSeconds -
+                nextBenchIn.totalPlayTimeSeconds;
+              // If the second pair also exceeds threshold, it's also due NOW
+              if (
+                nextDiff >= threshold ||
+                (remainingSeconds < 120 && nextDiff > 30)
+              ) {
+                suggestions.push({
+                  timestamp: currentTimeSeconds,
+                  playerInId: nextBenchIn.playerId,
+                  playerOutId: nextFieldOut.playerId,
+                  reason: "fairness",
+                });
+              } else if (nextDiff > threshold / 2) {
+                // Otherwise show as scheduled/preview
+                suggestions.push({
+                  timestamp: currentTimeSeconds + rotationIntervalSeconds,
+                  playerInId: nextBenchIn.playerId,
+                  playerOutId: nextFieldOut.playerId,
+                  reason: "scheduled",
+                });
+              }
+            }
+          }
+        }
+      } else {
+        // No urgent sub needed, but still show the next scheduled sub for visibility
+        if (sortedField.length > 0 && sortedBench.length > 0) {
           const nextDiff =
-            nextFieldOut.totalPlayTimeSeconds -
-            nextBenchIn.totalPlayTimeSeconds;
+            playerOut.totalPlayTimeSeconds - playerIn.totalPlayTimeSeconds;
           if (nextDiff > threshold / 2) {
             suggestions.push({
               timestamp: currentTimeSeconds + rotationIntervalSeconds,
-              playerInId: nextBenchIn.playerId,
-              playerOutId: nextFieldOut.playerId,
+              playerInId: playerIn.playerId,
+              playerOutId: playerOut.playerId,
               reason: "scheduled",
             });
           }

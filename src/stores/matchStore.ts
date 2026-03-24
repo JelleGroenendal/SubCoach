@@ -69,6 +69,9 @@ interface MatchState {
   togglePlayerSelection: (playerId: string) => void;
   clearSelection: () => void;
   executeSubstitution: (playerInId: string, playerOutId: string) => void;
+  executeMultipleSubstitutions: (
+    substitutions: Array<{ playerInId: string; playerOutId: string }>,
+  ) => void;
   registerGoal: (playerId: string) => void;
   removeGoal: (playerId: string) => void;
   registerOpponentGoal: () => void;
@@ -354,6 +357,82 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       selectedPlayerIds: newSelection,
       substitutionPlan: plan,
       lastAction: { event, index: updated.events.length - 1 },
+      showUndo: true,
+    });
+    setTimeout(() => {
+      if (get().showUndo) set({ showUndo: false });
+    }, 5000);
+  },
+
+  executeMultipleSubstitutions: (substitutions) => {
+    const { teamId, match, isHost } = get();
+    if (!teamId || !match || !isHost || substitutions.length === 0) return;
+
+    // Apply all substitutions at once
+    let roster = [...match.roster];
+    const events: MatchEvent[] = [];
+
+    for (const { playerInId, playerOutId } of substitutions) {
+      const event: MatchEvent = {
+        type: "substitution",
+        timestamp: match.elapsedSeconds,
+        playerInId,
+        playerOutId,
+      };
+      events.push(event);
+
+      // Check if the outgoing player is the keeper - transfer the flag to incoming player
+      const outgoingPlayer = roster.find((p) => p.playerId === playerOutId);
+      const transferKeeper = outgoingPlayer?.isKeeper ?? false;
+
+      roster = roster.map((p) => {
+        if (p.playerId === playerOutId) {
+          const periods = p.periods.map((per, i) =>
+            i === p.periods.length - 1 && !per.outAt
+              ? { ...per, outAt: match.elapsedSeconds }
+              : per,
+          );
+          return { ...p, status: "bench" as const, periods, isKeeper: false };
+        }
+        if (p.playerId === playerInId) {
+          return {
+            ...p,
+            status: "field" as const,
+            periods: [...p.periods, { inAt: match.elapsedSeconds }],
+            isKeeper: transferKeeper ? true : p.isKeeper,
+          };
+        }
+        return p;
+      });
+    }
+
+    // Calculate current match time for tracking last substitution
+    const currentMatchTime =
+      (match.currentPeriod - 1) * match.periodDurationMinutes * 60 +
+      match.elapsedSeconds;
+
+    const updated: Match = {
+      ...match,
+      roster,
+      events: [...match.events, ...events],
+      lastSubstitutionTimeSeconds: currentMatchTime,
+    };
+    saveCurrentMatch(teamId, updated);
+    const plan = recalcSchedule(updated);
+
+    // Clear all selection
+    // Haptic feedback for substitution
+    vibrateSuccess();
+
+    // Use the first event for undo (could be improved to undo all)
+    const firstEvent = events[0];
+    set({
+      match: updated,
+      selectedPlayerIds: [],
+      substitutionPlan: plan,
+      lastAction: firstEvent
+        ? { event: firstEvent, index: updated.events.length - events.length }
+        : undefined,
       showUndo: true,
     });
     setTimeout(() => {
