@@ -28,6 +28,13 @@ export function getTeamInfo(teamId: string): Team | undefined {
       playersOnField: (info.get("playersOnField") as number) ?? 7,
       usePositionAwareSubstitutions:
         (info.get("usePositionAwareSubstitutions") as boolean) ?? false,
+      substitutionMode: info.get("substitutionMode") as
+        | "equal"
+        | "fixed"
+        | undefined,
+      fixedSubstitutionIntervalMinutes: info.get(
+        "fixedSubstitutionIntervalMinutes",
+      ) as number | undefined,
     },
     syncRoomCode: info.get("syncRoomCode") as string | undefined,
     createdAt: (info.get("createdAt") as number) ?? Date.now(),
@@ -58,6 +65,20 @@ export function saveTeamInfo(teamId: string, team: Team): void {
       "usePositionAwareSubstitutions",
       team.settings.usePositionAwareSubstitutions ?? false,
     );
+    // Save substitution mode settings
+    if (team.settings.substitutionMode) {
+      info.set("substitutionMode", team.settings.substitutionMode);
+    } else {
+      info.delete("substitutionMode");
+    }
+    if (team.settings.fixedSubstitutionIntervalMinutes !== undefined) {
+      info.set(
+        "fixedSubstitutionIntervalMinutes",
+        team.settings.fixedSubstitutionIntervalMinutes,
+      );
+    } else {
+      info.delete("fixedSubstitutionIntervalMinutes");
+    }
     if (team.syncRoomCode) {
       info.set("syncRoomCode", team.syncRoomCode);
     } else {

@@ -279,7 +279,7 @@
       "players": {
         "title": "Selectie",
         "fieldCount": "{{current}}/{{required}} op het veld ({{total}} beschikbaar)",
-        "instructions": "Tik om te wisselen tussen veld/bank. Lang indrukken of rechts-klik om afwezig te melden.",
+        "instructions": "Tik om te wisselen tussen veld/bank. Lang indrukken om afwezig/beschikbaar te markeren.",
         "togglePlayer": "Wissel {{name}} tussen veld/bank",
         "statusField": "Veld",
         "statusBench": "Bank",

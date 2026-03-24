@@ -799,7 +799,8 @@ export function TeamEditPage(): React.ReactNode {
                       player.id,
                       player.name,
                       player.number,
-                      player.positionIds,
+                      player.positionIds ??
+                        (player.positionId ? [player.positionId] : undefined),
                     )
                   }
                   className={cn(

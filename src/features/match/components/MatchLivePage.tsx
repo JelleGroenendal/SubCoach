@@ -1276,6 +1276,56 @@ export function MatchLivePage(): React.ReactNode {
                 );
               })}
 
+              {/* Future substitutions - shown after bench players, before out section */}
+              {futureSuggestions.length > 0 && (
+                <div
+                  className={cn(
+                    "mt-2 border-t border-border pt-3",
+                    mobileLayout === "stacked" && "col-span-3 sm:col-span-1",
+                  )}
+                >
+                  <h3 className="mb-2 text-xs font-medium text-muted-foreground">
+                    {t("match.live.suggestion.upcoming")}
+                  </h3>
+                  <div className="flex flex-col gap-1">
+                    {futureSuggestions.map((suggestion, index) => {
+                      const playerIn = match.roster.find(
+                        (p) => p.playerId === suggestion.playerInId,
+                      );
+                      const playerOut = match.roster.find(
+                        (p) => p.playerId === suggestion.playerOutId,
+                      );
+                      const playerInTime = playerIn
+                        ? Math.round(getPlayerPlayTime(playerIn) / 60)
+                        : 0;
+                      const playerOutTime = playerOut
+                        ? Math.round(getPlayerPlayTime(playerOut) / 60)
+                        : 0;
+
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2 text-sm"
+                        >
+                          <span>
+                            <span className="text-red-400">
+                              {playerOut?.name ?? "?"}
+                            </span>
+                            {" → "}
+                            <span className="text-green-400">
+                              {playerIn?.name ?? "?"}
+                            </span>
+                          </span>
+                          <span className="tabular-nums text-xs text-muted-foreground">
+                            {playerOutTime}m → {playerInTime}m
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Out players (injured/red card) - can still be selected for replacement */}
               {outPlayers.length > 0 && (
                 <>
@@ -1427,51 +1477,6 @@ export function MatchLivePage(): React.ReactNode {
                 <p className="py-4 text-center text-sm text-muted-foreground">
                   {t("match.live.bench.empty")}
                 </p>
-              )}
-
-              {/* Future substitutions - shown at bottom of bench */}
-              {futureSuggestions.length > 0 && (
-                <div className="mt-4 border-t border-border pt-3">
-                  <h3 className="mb-2 text-xs font-medium text-muted-foreground">
-                    {t("match.live.suggestion.upcoming")}
-                  </h3>
-                  <div className="flex flex-col gap-1">
-                    {futureSuggestions.map((suggestion, index) => {
-                      const playerIn = match.roster.find(
-                        (p) => p.playerId === suggestion.playerInId,
-                      );
-                      const playerOut = match.roster.find(
-                        (p) => p.playerId === suggestion.playerOutId,
-                      );
-                      const playerInTime = playerIn
-                        ? Math.round(getPlayerPlayTime(playerIn) / 60)
-                        : 0;
-                      const playerOutTime = playerOut
-                        ? Math.round(getPlayerPlayTime(playerOut) / 60)
-                        : 0;
-
-                      return (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between rounded-lg bg-muted/30 px-3 py-2 text-sm"
-                        >
-                          <span>
-                            <span className="text-red-400">
-                              {playerOut?.name ?? "?"}
-                            </span>
-                            {" → "}
-                            <span className="text-green-400">
-                              {playerIn?.name ?? "?"}
-                            </span>
-                          </span>
-                          <span className="tabular-nums text-xs text-muted-foreground">
-                            {playerOutTime}m → {playerInTime}m
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
               )}
             </div>
           </div>
@@ -1699,28 +1704,55 @@ export function MatchLivePage(): React.ReactNode {
 
                 {availableBench.length > 0 ? (
                   <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
-                    {availableBench.map((benchPlayer) => (
-                      <button
-                        key={benchPlayer.playerId}
-                        type="button"
-                        onClick={() =>
-                          completePendingReplacement(benchPlayer.playerId)
-                        }
-                        className={cn(
-                          "flex min-h-14 w-full touch-manipulation items-center gap-3 rounded-lg p-3",
-                          "bg-muted text-left transition-colors hover:bg-accent",
-                        )}
-                      >
-                        {benchPlayer.number !== undefined && (
-                          <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/20 text-sm font-bold text-primary">
-                            {benchPlayer.number}
-                          </span>
-                        )}
-                        <span className="font-medium text-foreground">
-                          {benchPlayer.name}
-                        </span>
-                      </button>
-                    ))}
+                    {availableBench.map((benchPlayer) => {
+                      const benchPlayerPosition = benchPlayer.positionId
+                        ? sportProfile?.players.positions?.find(
+                            (p) => p.id === benchPlayer.positionId,
+                          )
+                        : undefined;
+                      const benchPlayerPlayTime =
+                        getPlayerPlayTime(benchPlayer);
+
+                      return (
+                        <button
+                          key={benchPlayer.playerId}
+                          type="button"
+                          onClick={() =>
+                            completePendingReplacement(benchPlayer.playerId)
+                          }
+                          className={cn(
+                            "flex min-h-14 w-full touch-manipulation items-center gap-3 rounded-lg p-3",
+                            "bg-muted text-left transition-colors hover:bg-accent",
+                          )}
+                        >
+                          {benchPlayer.number !== undefined && (
+                            <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/20 text-sm font-bold text-primary">
+                              {benchPlayer.number}
+                            </span>
+                          )}
+                          <div className="flex flex-1 flex-col">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-medium text-foreground">
+                                {benchPlayer.name}
+                              </span>
+                              {benchPlayer.isKeeper && (
+                                <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
+                                  GK
+                                </span>
+                              )}
+                              {benchPlayerPosition && !benchPlayer.isKeeper && (
+                                <span className="rounded bg-muted-foreground/20 px-1 text-[10px] font-medium text-muted-foreground">
+                                  {t(benchPlayerPosition.abbreviation)}
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs tabular-nums text-muted-foreground">
+                              {formatTime(Math.floor(benchPlayerPlayTime))}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-center text-sm text-muted-foreground">

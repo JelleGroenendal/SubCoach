@@ -224,6 +224,11 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   startNextPeriod: () => {
     const { teamId, match, isHost } = get();
     if (!teamId || !match || !isHost) return;
+
+    // First, close all open periods from the previous period
+    // The previous period ended at periodDurationMinutes * 60 seconds
+    const previousPeriodEndTime = match.periodDurationMinutes * 60;
+
     const updated: Match = {
       ...match,
       status: "playing",
@@ -231,6 +236,13 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       elapsedSeconds: 0,
       events: [
         ...match.events,
+        // Add period end event for the previous period
+        {
+          type: "periodEnd",
+          timestamp: previousPeriodEndTime,
+          period: match.currentPeriod,
+        },
+        // Add period start event for the new period
         {
           type: "periodStart",
           timestamp: 0,
@@ -238,12 +250,26 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         },
       ],
     };
+
+    // Close open periods from previous period and add new period for field players
     updated.roster = updated.roster.map((p) => {
+      // Close any open periods (periods without outAt)
+      const closedPeriods = p.periods.map((per) => {
+        if (per.outAt === undefined) {
+          // Close with the previous period's end time
+          return { ...per, outAt: previousPeriodEndTime };
+        }
+        return per;
+      });
+
+      // For field players, add a new period starting at 0 for the new period
       if (p.status === "field") {
-        return { ...p, periods: [...p.periods, { inAt: 0 }] };
+        return { ...p, periods: [...closedPeriods, { inAt: 0 }] };
       }
-      return p;
+
+      return { ...p, periods: closedPeriods };
     });
+
     saveCurrentMatch(teamId, updated);
     const plan = recalcSchedule(updated);
     set({ match: updated, substitutionPlan: plan });

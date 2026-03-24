@@ -279,7 +279,7 @@
       "players": {
         "title": "Selection",
         "fieldCount": "{{current}}/{{required}} on field ({{total}} available)",
-        "instructions": "Tap to toggle field/bench. Long-press or right-click to mark unavailable.",
+        "instructions": "Tap to toggle field/bench. Long-press to mark unavailable/available.",
         "togglePlayer": "Toggle {{name}} between field/bench",
         "statusField": "Field",
         "statusBench": "Bench",
