@@ -418,7 +418,14 @@
       "goals": "Doelpunten",
       "substitutions": "Wissels",
       "penalties": "Straffen",
-      "done": "Klaar"
+      "done": "Klaar",
+      "notes": {
+        "title": "Notities",
+        "matchPlaceholder": "Notities over de wedstrijd (weer, scheidsrechter, tactiek...)",
+        "playerPlaceholder": "Notities over {{name}}...",
+        "addPlayerNote": "Notitie toevoegen",
+        "saved": "Opgeslagen"
+      }
     }
   },
   "history": {

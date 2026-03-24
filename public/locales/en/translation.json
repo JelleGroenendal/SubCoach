@@ -418,7 +418,14 @@
       "goals": "Goals",
       "substitutions": "Substitutions",
       "penalties": "Penalties",
-      "done": "Done"
+      "done": "Done",
+      "notes": {
+        "title": "Notes",
+        "matchPlaceholder": "Notes about the match (weather, referee, tactics...)",
+        "playerPlaceholder": "Notes about {{name}}...",
+        "addPlayerNote": "Add note",
+        "saved": "Saved"
+      }
     }
   },
   "history": {

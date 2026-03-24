@@ -30,6 +30,8 @@ export const MatchPlayerSchema = z.object({
   hasBeenSubstitutedOut: z.boolean().optional(),
   yellowCards: z.number().int().min(0).optional(),
   fouls: z.number().int().min(0).optional(),
+  /** Coach notes for this player in this match */
+  notes: z.string().max(500).optional(),
 });
 
 export const MatchSchema = z.object({
@@ -73,6 +75,9 @@ export const MatchSchema = z.object({
 
   createdAt: z.number(),
   finishedAt: z.number().optional(),
+
+  /** General match notes (weather, referee, tactics, etc.) */
+  notes: z.string().max(1000).optional(),
 });
 
 export type MatchStatus = z.infer<typeof MatchStatusSchema>;

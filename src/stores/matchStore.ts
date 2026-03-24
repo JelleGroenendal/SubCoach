@@ -99,6 +99,8 @@ interface MatchState {
   endMatch: () => void;
   autoSave: () => void;
   adjustScore: (side: "home" | "away", score: number) => void;
+  updateMatchNotes: (notes: string) => void;
+  updatePlayerNotes: (playerId: string, notes: string) => void;
 }
 
 export const useMatchStore = create<MatchState>((set, get) => ({
@@ -1126,6 +1128,33 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       [side === "home" ? "homeScore" : "awayScore"]: Math.max(0, score),
     };
     saveCurrentMatch(teamId, updated);
+    set({ match: updated });
+  },
+
+  updateMatchNotes: (notes) => {
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
+    const updated = { ...match, notes: notes || undefined };
+    saveCurrentMatch(teamId, updated);
+    // Also update in history if match is finished
+    if (match.status === "finished") {
+      saveMatch(teamId, match.id, updated);
+    }
+    set({ match: updated });
+  },
+
+  updatePlayerNotes: (playerId, notes) => {
+    const { teamId, match } = get();
+    if (!teamId || !match) return;
+    const roster = match.roster.map((p) =>
+      p.playerId === playerId ? { ...p, notes: notes || undefined } : p,
+    );
+    const updated = { ...match, roster };
+    saveCurrentMatch(teamId, updated);
+    // Also update in history if match is finished
+    if (match.status === "finished") {
+      saveMatch(teamId, match.id, updated);
+    }
     set({ match: updated });
   },
 }));
