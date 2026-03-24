@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
 import { Button } from "@/components/ui/button";
 import { getAllSportProfiles, getSportProfile } from "@/engine/sport-profiles";
-import { TeamSharePanel } from "./TeamSharePanel";
 import { TeamSyncSection } from "./TeamSyncSection";
 import type { Player } from "@/data/schemas";
 import type { Position } from "@/data/schemas/sportProfile";
@@ -46,7 +45,6 @@ export function TeamEditPage(): React.ReactNode {
     [],
   );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showSharePanel, setShowSharePanel] = useState(false);
   const [editingPlayerId, setEditingPlayerId] = useState<string | undefined>(
     undefined,
   );
@@ -915,31 +913,7 @@ export function TeamEditPage(): React.ReactNode {
         </div>
       </section>
 
-      {/* Share Team */}
-      <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
-        <h2 className="text-lg font-semibold">{t("teamShare.sectionTitle")}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t("teamShare.sectionDescription")}
-        </p>
-
-        {showSharePanel ? (
-          <TeamSharePanel
-            teamId={team.id}
-            onClose={() => setShowSharePanel(false)}
-          />
-        ) : (
-          <Button
-            size="xl"
-            variant="secondary"
-            className="touch-manipulation self-start"
-            onClick={() => setShowSharePanel(true)}
-          >
-            {t("teamShare.openPanel")}
-          </Button>
-        )}
-      </section>
-
-      {/* Persistent Sync */}
+      {/* Sync with other coaches */}
       <TeamSyncSection teamId={team.id} syncRoomCode={team.syncRoomCode} />
 
       {/* Danger Zone */}
