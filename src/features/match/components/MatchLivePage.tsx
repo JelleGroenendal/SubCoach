@@ -1593,26 +1593,26 @@ export function MatchLivePage(): React.ReactNode {
         )}
 
         {/* Bottom action bar - always visible on mobile */}
-        <div className="flex min-h-12 items-center justify-between border-t border-border bg-muted/50 px-2 sm:hidden">
-          {/* Undo button */}
-          <button
-            type="button"
-            onClick={undoLastAction}
-            disabled={!lastAction}
-            className={cn(
-              "flex min-h-12 flex-1 touch-manipulation items-center justify-center gap-2 px-3 py-2",
-              "text-sm transition-colors",
-              lastAction
-                ? "text-muted-foreground hover:bg-muted"
-                : "text-muted-foreground/30",
-            )}
-          >
-            <span>↩</span>
-            <span>{t("match.live.undo.button")}</span>
-          </button>
+        <div className="flex min-h-12 items-center border-t border-border bg-muted/50 px-2 sm:hidden">
+          {/* Undo button - only show when there's something to undo */}
+          {lastAction && (
+            <>
+              <button
+                type="button"
+                onClick={undoLastAction}
+                className={cn(
+                  "flex min-h-12 flex-1 touch-manipulation items-center justify-center gap-2 px-3 py-2",
+                  "text-sm text-muted-foreground transition-colors hover:bg-muted",
+                )}
+              >
+                <span>↩</span>
+                <span>{t("match.live.undo.button")}</span>
+              </button>
 
-          {/* Divider */}
-          <div className="h-8 w-px bg-border" />
+              {/* Divider */}
+              <div className="h-8 w-px bg-border" />
+            </>
+          )}
 
           {/* Notes button */}
           <button
