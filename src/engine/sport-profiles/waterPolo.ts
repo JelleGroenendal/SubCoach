@@ -25,6 +25,7 @@ export const waterPoloProfile: SportProfile = {
       { id: "defense", name: "sport.water-polo.group.defense" },
       { id: "attack", name: "sport.water-polo.group.attack" },
     ],
+    // Position order: back to front (goalie -> defense -> point -> wings -> center)
     positions: [
       {
         id: "goalie",
@@ -40,6 +41,12 @@ export const waterPoloProfile: SportProfile = {
         groupId: "defense",
       },
       {
+        id: "point",
+        name: "sport.water-polo.position.point",
+        abbreviation: "sport.water-polo.position.pointAbbr",
+        groupId: "attack",
+      },
+      {
         id: "wing",
         name: "sport.water-polo.position.wing",
         abbreviation: "sport.water-polo.position.wingAbbr",
@@ -49,12 +56,6 @@ export const waterPoloProfile: SportProfile = {
         id: "center",
         name: "sport.water-polo.position.center",
         abbreviation: "sport.water-polo.position.centerAbbr",
-        groupId: "attack",
-      },
-      {
-        id: "point",
-        name: "sport.water-polo.position.point",
-        abbreviation: "sport.water-polo.position.pointAbbr",
         groupId: "attack",
       },
     ],

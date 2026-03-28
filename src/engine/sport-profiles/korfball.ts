@@ -23,18 +23,19 @@ export const korfballProfile: SportProfile = {
       { id: "attack", name: "sport.korfball.group.attack" },
       { id: "defense", name: "sport.korfball.group.defense" },
     ],
+    // Position order: defense first (back to front)
     positions: [
-      {
-        id: "attack",
-        name: "sport.korfball.position.attack",
-        abbreviation: "sport.korfball.position.attackAbbr",
-        groupId: "attack",
-      },
       {
         id: "defense",
         name: "sport.korfball.position.defense",
         abbreviation: "sport.korfball.position.defenseAbbr",
         groupId: "defense",
+      },
+      {
+        id: "attack",
+        name: "sport.korfball.position.attack",
+        abbreviation: "sport.korfball.position.attackAbbr",
+        groupId: "attack",
       },
     ],
   },
