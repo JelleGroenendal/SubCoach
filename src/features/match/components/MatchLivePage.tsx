@@ -537,9 +537,17 @@ export function MatchLivePage(): React.ReactNode {
     (playerId: string) => {
       if (!isHost) return; // Viewers cannot interact
       const wasSelected = selectedPlayerIds.includes(playerId);
+
+      // If bench player is selected, this will execute a substitution - stay on field tab
+      if (hasBenchSelection) {
+        handleFieldPlayerTap(playerId);
+        // Already on field tab, no need to switch
+        return;
+      }
+
       handleFieldPlayerTap(playerId);
       // If we just selected (not deselected) and no bench selection, switch to bench tab
-      if (!wasSelected && !hasBenchSelection) {
+      if (!wasSelected) {
         setMobileTab("bench");
       }
     },
@@ -550,9 +558,17 @@ export function MatchLivePage(): React.ReactNode {
     (playerId: string) => {
       if (!isHost) return; // Viewers cannot interact
       const wasSelected = selectedPlayerIds.includes(playerId);
+
+      // If field player is selected, this will execute a substitution - go back to field tab
+      if (hasFieldSelection) {
+        handleBenchPlayerTap(playerId);
+        setMobileTab("field");
+        return;
+      }
+
       handleBenchPlayerTap(playerId);
       // If we just selected (not deselected) and no field selection, switch to field tab
-      if (!wasSelected && !hasFieldSelection) {
+      if (!wasSelected) {
         setMobileTab("field");
       }
     },
