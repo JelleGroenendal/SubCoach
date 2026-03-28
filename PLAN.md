@@ -37,7 +37,7 @@
 - [ ] Create basic App shell with router (empty pages for each route)
 - [ ] Create `public/locales/nl/translation.json` and `en/translation.json` skeletons
 - [ ] Create `public/manifest.json` with correct name, icons, theme
-- [ ] Add MIT LICENSE file
+- [x] Add LICENSE file (Proprietary)
 - [ ] Set up GitHub Actions CI (lint + test + build on PR)
 - [ ] Set up GitHub Actions deploy (build + deploy to GitHub Pages on main)
 - [ ] Verify: `npm run dev` shows an empty app with dark mode

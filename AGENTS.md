@@ -15,7 +15,7 @@
 - **Offline-first** - app must work without internet at all times
 - **Hosted on GitHub Pages** - static files only
 - **Zero cost** - no paid services, no usage limits, infinitely sustainable
-- **MIT licensed** - open source
+- **Proprietary** - all rights reserved
 
 ### Target Users
 
@@ -127,7 +127,7 @@ subcoach/
 ├── eslint.config.js
 ├── prettier.config.js
 ├── package.json
-├── LICENSE                 # MIT
+├── LICENSE                 # Proprietary
 └── README.md
 ```
 

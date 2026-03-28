@@ -50,4 +50,4 @@ npm run build
 
 ## License
 
-MIT
+Copyright (c) 2026 SubCoach. All Rights Reserved. See [LICENSE](LICENSE) for details.
