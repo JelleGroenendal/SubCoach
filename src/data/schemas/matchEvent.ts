@@ -5,6 +5,8 @@ export const SubstitutionEventSchema = z.object({
   timestamp: z.number(),
   playerInId: z.string(),
   playerOutId: z.string(),
+  /** Position ID that was transferred (for undo) */
+  positionId: z.string().optional(),
 });
 
 export const GoalEventSchema = z.object({

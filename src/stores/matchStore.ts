@@ -300,17 +300,20 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   executeSubstitution: (playerInId, playerOutId) => {
     const { teamId, match, isHost } = get();
     if (!teamId || !match || !isHost) return;
-    const event: MatchEvent = {
-      type: "substitution",
-      timestamp: match.elapsedSeconds,
-      playerInId,
-      playerOutId,
-    };
     // Check if the outgoing player is the keeper - transfer the flag to incoming player
     const outgoingPlayer = match.roster.find((p) => p.playerId === playerOutId);
     const transferKeeper = outgoingPlayer?.isKeeper ?? false;
     // Transfer the position slot from outgoing to incoming player
     const transferPositionId = outgoingPlayer?.positionId;
+
+    const event: MatchEvent = {
+      type: "substitution",
+      timestamp: match.elapsedSeconds,
+      playerInId,
+      playerOutId,
+      // Store position for undo
+      positionId: transferPositionId,
+    };
 
     const roster = match.roster.map((p) => {
       if (p.playerId === playerOutId) {
@@ -384,19 +387,21 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const events: MatchEvent[] = [];
 
     for (const { playerInId, playerOutId } of substitutions) {
-      const event: MatchEvent = {
-        type: "substitution",
-        timestamp: match.elapsedSeconds,
-        playerInId,
-        playerOutId,
-      };
-      events.push(event);
-
       // Check if the outgoing player is the keeper - transfer the flag to incoming player
       const outgoingPlayer = roster.find((p) => p.playerId === playerOutId);
       const transferKeeper = outgoingPlayer?.isKeeper ?? false;
       // Transfer the position slot from outgoing to incoming player
       const transferPositionId = outgoingPlayer?.positionId;
+
+      const event: MatchEvent = {
+        type: "substitution",
+        timestamp: match.elapsedSeconds,
+        playerInId,
+        playerOutId,
+        // Store position for undo
+        positionId: transferPositionId,
+      };
+      events.push(event);
 
       roster = roster.map((p) => {
         if (p.playerId === playerOutId) {
@@ -962,9 +967,11 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const updated = { ...match };
 
     if (event.type === "substitution") {
-      // Reverse the swap
+      // Reverse the swap - restore position to original player
+      const positionId = event.positionId;
       updated.roster = updated.roster.map((p) => {
         if (p.playerId === event.playerOutId) {
+          // Player who went out goes back to field with their original position
           const periods = [...p.periods];
           if (periods.length > 0) {
             const last = periods[periods.length - 1];
@@ -972,11 +979,17 @@ export const useMatchStore = create<MatchState>((set, get) => ({
               periods[periods.length - 1] = { inAt: last.inAt };
             }
           }
-          return { ...p, status: "field" as const, periods };
+          return { ...p, status: "field" as const, periods, positionId };
         }
         if (p.playerId === event.playerInId) {
+          // Player who came in goes back to bench, clear their position
           const periods = p.periods.slice(0, -1);
-          return { ...p, status: "bench" as const, periods };
+          return {
+            ...p,
+            status: "bench" as const,
+            periods,
+            positionId: undefined,
+          };
         }
         return p;
       });
