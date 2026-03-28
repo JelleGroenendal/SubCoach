@@ -331,7 +331,8 @@
         "title": "Field",
         "playerAction": "Action for {{name}}",
         "moreActions": "More actions for {{name}}",
-        "penaltyRemaining": "{{time}}"
+        "penaltyRemaining": "{{time}}",
+        "empty": "Empty"
       },
       "bench": {
         "title": "Bench",

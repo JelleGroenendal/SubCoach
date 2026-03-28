@@ -326,7 +326,8 @@
         "title": "Veld",
         "playerAction": "Actie voor {{name}}",
         "moreActions": "Meer acties voor {{name}}",
-        "penaltyRemaining": "{{time}}"
+        "penaltyRemaining": "{{time}}",
+        "empty": "Leeg"
       },
       "bench": {
         "title": "Bank",

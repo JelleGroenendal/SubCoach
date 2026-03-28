@@ -917,7 +917,7 @@ export function MatchLivePage(): React.ReactNode {
           mobileLayout === "stacked" && "flex-col overflow-y-auto sm:flex-row",
         )}
       >
-        {/* Field Players */}
+        {/* Field Players - Position Slot Based */}
         <div
           className={cn(
             "flex flex-col border-r border-border",
@@ -937,189 +937,230 @@ export function MatchLivePage(): React.ReactNode {
           </div>
           <div className="flex-1 overflow-y-auto p-2">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {fieldPlayers.map((player) => {
-                const isSelected = selectedPlayerIds.includes(player.playerId);
-                const isSuggestedOut = suggestedOutIds.has(player.playerId);
-                const playTimeSeconds = getPlayerPlayTime(player);
+              {/* Position slots - fixed order, players fill slots */}
+              {(sportProfile?.players.positions ?? [])
+                .slice(0, match.playersOnField)
+                .map((position) => {
+                  // Find player assigned to this position slot
+                  const player = fieldPlayers.find(
+                    (p) => p.positionId === position.id,
+                  );
+
+                  // Empty slot - no player assigned
+                  if (!player) {
+                    return (
+                      <div
+                        key={position.id}
+                        className={cn(
+                          "flex min-h-24 w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border bg-background/50 sm:min-h-20 sm:rounded-lg",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "rounded px-1.5 py-0.5 text-xs font-bold",
+                            position.isKeeper
+                              ? "bg-amber-500/50 text-amber-200"
+                              : "bg-muted text-muted-foreground",
+                          )}
+                        >
+                          {position.isKeeper ? "GK" : t(position.abbreviation)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {t("match.live.field.empty")}
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  // Filled slot - render player card
+                  const isSelected = selectedPlayerIds.includes(
+                    player.playerId,
+                  );
+                  const isSuggestedOut = suggestedOutIds.has(player.playerId);
+                  const playTimeSeconds = getPlayerPlayTime(player);
+
+                  return (
+                    <div
+                      key={position.id}
+                      className={cn(
+                        "flex min-h-24 w-full flex-col rounded-xl sm:min-h-20 sm:rounded-lg",
+                        "bg-field text-white",
+                        "overflow-hidden",
+                        isSelected && "ring-4 ring-orange-400",
+                        isSuggestedOut && !isSelected && "ring-4 ring-red-500",
+                      )}
+                    >
+                      {/* Main tap area - for substitution/goal */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleFieldPlayerTapWithTabSwitch(player.playerId)
+                        }
+                        className={cn(
+                          "flex flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 p-1.5",
+                          "text-center transition-all select-none",
+                        )}
+                        aria-label={player.name}
+                      >
+                        <div className="flex items-center gap-1">
+                          {player.number !== undefined && (
+                            <span className="text-xs font-bold opacity-70">
+                              #{player.number}
+                            </span>
+                          )}
+                          {player.isKeeper && (
+                            <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
+                              GK
+                            </span>
+                          )}
+                          {position && !player.isKeeper && (
+                            <span className="rounded bg-white/20 px-1 text-[10px] font-medium">
+                              {t(position.abbreviation)}
+                            </span>
+                          )}
+                          {(player.yellowCards ?? 0) > 0 && (
+                            <span className="text-xs">
+                              {"🟨".repeat(
+                                Math.min(player.yellowCards ?? 0, 2),
+                              )}
+                            </span>
+                          )}
+                          {player.goals > 0 && (
+                            <span className="text-xs">
+                              {"⚽".repeat(Math.min(player.goals, 5))}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-sm font-semibold leading-tight sm:text-base">
+                          {player.name}
+                        </span>
+                        {showFairnessScore && (
+                          <span className="text-[10px] tabular-nums opacity-70 sm:text-xs">
+                            {formatTime(Math.floor(playTimeSeconds))}
+                          </span>
+                        )}
+                      </button>
+                      {/* Quick action buttons - dynamic based on sport profile */}
+                      {/* Only show for host (match controller) */}
+                      {isHost && (
+                        <div className="flex border-t border-white/20">
+                          {/* Time penalty buttons - show one button per penalty type */}
+                          {sportProfile?.penalties.timePenalties &&
+                            sportProfile.penalties.timePenalties.map(
+                              (penalty) => (
+                                <button
+                                  key={penalty.name}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    registerPenalty(
+                                      player.playerId,
+                                      penalty.durationSeconds,
+                                      penalty.teamPlaysShort,
+                                    );
+                                  }}
+                                  className={cn(
+                                    "flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium transition-colors hover:bg-amber-900/50 sm:text-xs",
+                                    penalty.teamPlaysShort
+                                      ? "text-amber-300"
+                                      : "text-orange-300", // Different color for misconduct (no power play)
+                                  )}
+                                  aria-label={t("match.live.actions.penalty")}
+                                >
+                                  {Math.floor(penalty.durationSeconds / 60)}m
+                                </button>
+                              ),
+                            )}
+                          {/* Yellow card button - show if sport has yellow cards */}
+                          {sportProfile?.penalties.cards?.includes(
+                            "yellow",
+                          ) && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                registerYellowCard(
+                                  player.playerId,
+                                  sportProfile.penalties.secondYellowIsRed ??
+                                    false,
+                                  defaultPenaltyDuration,
+                                );
+                              }}
+                              className={cn(
+                                "flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium text-yellow-400 transition-colors hover:bg-yellow-900/50 sm:text-xs",
+                                (player.yellowCards ?? 0) > 0 &&
+                                  "bg-yellow-900/30",
+                              )}
+                              aria-label={t("match.live.actions.yellowCard")}
+                            >
+                              🟨
+                              {(player.yellowCards ?? 0) > 0 && (
+                                <span className="ml-0.5">
+                                  {player.yellowCards}
+                                </span>
+                              )}
+                            </button>
+                          )}
+                          {/* Red card button - show if sport has red cards */}
+                          {sportProfile?.penalties.cards?.includes("red") && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                registerRedCard(
+                                  player.playerId,
+                                  defaultPenaltyDuration,
+                                );
+                              }}
+                              className="flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium text-red-400 transition-colors hover:bg-red-900/50 sm:text-xs"
+                              aria-label={t("match.live.actions.redCard")}
+                            >
+                              🟥
+                            </button>
+                          )}
+                          {/* Goal button - always shown for field players */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              registerGoal(player.playerId);
+                            }}
+                            className="flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium text-green-300 transition-colors hover:bg-green-900/50 sm:text-xs"
+                            aria-label={t("match.live.actions.goal")}
+                          >
+                            ⚽
+                            {player.goals > 0 && (
+                              <span className="ml-0.5">{player.goals}</span>
+                            )}
+                          </button>
+                          {/* Injury button - always shown */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPendingInjuryPlayerId(player.playerId);
+                            }}
+                            className="flex-1 touch-manipulation py-1.5 text-[10px] font-medium text-orange-300 transition-colors hover:bg-orange-900/50 sm:text-xs"
+                            aria-label={t("match.live.actions.injury")}
+                          >
+                            🤕
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+              {/* Penalty players - shown separately after position slots */}
+              {penaltyPlayers.map((player) => {
+                const penalty = activePenalties.find(
+                  (p) => p.playerId === player.playerId,
+                );
                 const playerPosition = player.positionId
                   ? sportProfile?.players.positions?.find(
                       (p) => p.id === player.positionId,
                     )
                   : undefined;
-
-                return (
-                  <div
-                    key={player.playerId}
-                    className={cn(
-                      "flex min-h-24 w-full flex-col rounded-xl sm:min-h-20 sm:rounded-lg",
-                      "bg-field text-white",
-                      "overflow-hidden",
-                      isSelected && "ring-4 ring-orange-400",
-                      isSuggestedOut && !isSelected && "ring-4 ring-red-500",
-                    )}
-                  >
-                    {/* Main tap area - for substitution/goal */}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleFieldPlayerTapWithTabSwitch(player.playerId)
-                      }
-                      className={cn(
-                        "flex flex-1 touch-manipulation flex-col items-center justify-center gap-0.5 p-1.5",
-                        "text-center transition-all select-none",
-                      )}
-                      aria-label={player.name}
-                    >
-                      <div className="flex items-center gap-1">
-                        {player.number !== undefined && (
-                          <span className="text-xs font-bold opacity-70">
-                            #{player.number}
-                          </span>
-                        )}
-                        {player.isKeeper && (
-                          <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
-                            GK
-                          </span>
-                        )}
-                        {playerPosition && !player.isKeeper && (
-                          <span className="rounded bg-white/20 px-1 text-[10px] font-medium">
-                            {t(playerPosition.abbreviation)}
-                          </span>
-                        )}
-                        {(player.yellowCards ?? 0) > 0 && (
-                          <span className="text-xs">
-                            {"🟨".repeat(Math.min(player.yellowCards ?? 0, 2))}
-                          </span>
-                        )}
-                        {player.goals > 0 && (
-                          <span className="text-xs">
-                            {"⚽".repeat(Math.min(player.goals, 5))}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-sm font-semibold leading-tight sm:text-base">
-                        {player.name}
-                      </span>
-                      {showFairnessScore && (
-                        <span className="text-[10px] tabular-nums opacity-70 sm:text-xs">
-                          {formatTime(Math.floor(playTimeSeconds))}
-                        </span>
-                      )}
-                    </button>
-                    {/* Quick action buttons - dynamic based on sport profile */}
-                    {/* Only show for host (match controller) */}
-                    {isHost && (
-                      <div className="flex border-t border-white/20">
-                        {/* Time penalty buttons - show one button per penalty type */}
-                        {sportProfile?.penalties.timePenalties &&
-                          sportProfile.penalties.timePenalties.map(
-                            (penalty) => (
-                              <button
-                                key={penalty.name}
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  registerPenalty(
-                                    player.playerId,
-                                    penalty.durationSeconds,
-                                    penalty.teamPlaysShort,
-                                  );
-                                }}
-                                className={cn(
-                                  "flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium transition-colors hover:bg-amber-900/50 sm:text-xs",
-                                  penalty.teamPlaysShort
-                                    ? "text-amber-300"
-                                    : "text-orange-300", // Different color for misconduct (no power play)
-                                )}
-                                aria-label={t("match.live.actions.penalty")}
-                              >
-                                {Math.floor(penalty.durationSeconds / 60)}m
-                              </button>
-                            ),
-                          )}
-                        {/* Yellow card button - show if sport has yellow cards */}
-                        {sportProfile?.penalties.cards?.includes("yellow") && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              registerYellowCard(
-                                player.playerId,
-                                sportProfile.penalties.secondYellowIsRed ??
-                                  false,
-                                defaultPenaltyDuration,
-                              );
-                            }}
-                            className={cn(
-                              "flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium text-yellow-400 transition-colors hover:bg-yellow-900/50 sm:text-xs",
-                              (player.yellowCards ?? 0) > 0 &&
-                                "bg-yellow-900/30",
-                            )}
-                            aria-label={t("match.live.actions.yellowCard")}
-                          >
-                            🟨
-                            {(player.yellowCards ?? 0) > 0 && (
-                              <span className="ml-0.5">
-                                {player.yellowCards}
-                              </span>
-                            )}
-                          </button>
-                        )}
-                        {/* Red card button - show if sport has red cards */}
-                        {sportProfile?.penalties.cards?.includes("red") && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              registerRedCard(
-                                player.playerId,
-                                defaultPenaltyDuration,
-                              );
-                            }}
-                            className="flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium text-red-400 transition-colors hover:bg-red-900/50 sm:text-xs"
-                            aria-label={t("match.live.actions.redCard")}
-                          >
-                            🟥
-                          </button>
-                        )}
-                        {/* Goal button - always shown for field players */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            registerGoal(player.playerId);
-                          }}
-                          className="flex-1 touch-manipulation border-r border-white/20 py-1.5 text-[10px] font-medium text-green-300 transition-colors hover:bg-green-900/50 sm:text-xs"
-                          aria-label={t("match.live.actions.goal")}
-                        >
-                          ⚽
-                          {player.goals > 0 && (
-                            <span className="ml-0.5">{player.goals}</span>
-                          )}
-                        </button>
-                        {/* Injury button - always shown */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPendingInjuryPlayerId(player.playerId);
-                          }}
-                          className="flex-1 touch-manipulation py-1.5 text-[10px] font-medium text-orange-300 transition-colors hover:bg-orange-900/50 sm:text-xs"
-                          aria-label={t("match.live.actions.injury")}
-                        >
-                          🤕
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* Penalty players */}
-              {penaltyPlayers.map((player) => {
-                const penalty = activePenalties.find(
-                  (p) => p.playerId === player.playerId,
-                );
                 return (
                   <div
                     key={player.playerId}
@@ -1128,11 +1169,18 @@ export function MatchLivePage(): React.ReactNode {
                       "bg-penalty text-white opacity-80",
                     )}
                   >
-                    {player.number !== undefined && (
-                      <span className="text-xs font-bold opacity-70">
-                        #{player.number}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1">
+                      {player.number !== undefined && (
+                        <span className="text-xs font-bold opacity-70">
+                          #{player.number}
+                        </span>
+                      )}
+                      {playerPosition && (
+                        <span className="rounded bg-white/20 px-1 text-[10px] font-medium">
+                          {t(playerPosition.abbreviation)}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-base font-semibold leading-tight">
                       {player.name}
                     </span>

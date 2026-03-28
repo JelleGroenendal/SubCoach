@@ -309,6 +309,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     // Check if the outgoing player is the keeper - transfer the flag to incoming player
     const outgoingPlayer = match.roster.find((p) => p.playerId === playerOutId);
     const transferKeeper = outgoingPlayer?.isKeeper ?? false;
+    // Transfer the position slot from outgoing to incoming player
+    const transferPositionId = outgoingPlayer?.positionId;
 
     const roster = match.roster.map((p) => {
       if (p.playerId === playerOutId) {
@@ -317,8 +319,14 @@ export const useMatchStore = create<MatchState>((set, get) => ({
             ? { ...per, outAt: match.elapsedSeconds }
             : per,
         );
-        // Remove keeper flag when substituted out
-        return { ...p, status: "bench" as const, periods, isKeeper: false };
+        // Remove keeper flag and clear position when substituted out
+        return {
+          ...p,
+          status: "bench" as const,
+          periods,
+          isKeeper: false,
+          positionId: undefined,
+        };
       }
       if (p.playerId === playerInId) {
         return {
@@ -327,6 +335,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
           periods: [...p.periods, { inAt: match.elapsedSeconds }],
           // Transfer keeper flag if the outgoing player was keeper
           isKeeper: transferKeeper ? true : p.isKeeper,
+          // Transfer position slot from outgoing player
+          positionId: transferPositionId,
         };
       }
       return p;
@@ -385,6 +395,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       // Check if the outgoing player is the keeper - transfer the flag to incoming player
       const outgoingPlayer = roster.find((p) => p.playerId === playerOutId);
       const transferKeeper = outgoingPlayer?.isKeeper ?? false;
+      // Transfer the position slot from outgoing to incoming player
+      const transferPositionId = outgoingPlayer?.positionId;
 
       roster = roster.map((p) => {
         if (p.playerId === playerOutId) {
@@ -393,7 +405,14 @@ export const useMatchStore = create<MatchState>((set, get) => ({
               ? { ...per, outAt: match.elapsedSeconds }
               : per,
           );
-          return { ...p, status: "bench" as const, periods, isKeeper: false };
+          // Clear position when going to bench
+          return {
+            ...p,
+            status: "bench" as const,
+            periods,
+            isKeeper: false,
+            positionId: undefined,
+          };
         }
         if (p.playerId === playerInId) {
           return {
@@ -401,6 +420,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
             status: "field" as const,
             periods: [...p.periods, { inAt: match.elapsedSeconds }],
             isKeeper: transferKeeper ? true : p.isKeeper,
+            // Transfer position slot from outgoing player
+            positionId: transferPositionId,
           };
         }
         return p;
