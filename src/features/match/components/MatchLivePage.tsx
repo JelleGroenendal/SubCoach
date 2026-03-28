@@ -81,7 +81,12 @@ export function MatchLivePage(): React.ReactNode {
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [notesInput, setNotesInput] = useState("");
   const [mobileTab, setMobileTab] = useState<MobileTab>("field");
-  const { mobileLayout, setMobileLayout } = useSettingsStore();
+  const {
+    mobileLayout,
+    setMobileLayout,
+    showFairnessScore,
+    showSubstitutionSuggestions,
+  } = useSettingsStore();
   const [pendingInjuryPlayerId, setPendingInjuryPlayerId] = useState<
     string | null
   >(null);
@@ -291,14 +296,20 @@ export function MatchLivePage(): React.ReactNode {
     return substitutionPlan.suggestions.filter((s) => s.reason === "scheduled");
   }, [substitutionPlan]);
 
-  // Sets for quick lookup when marking players
+  // Sets for quick lookup when marking players (only when suggestions are enabled)
   const suggestedOutIds = useMemo(
-    () => new Set(currentSuggestions.map((s) => s.playerOutId)),
-    [currentSuggestions],
+    () =>
+      showSubstitutionSuggestions
+        ? new Set(currentSuggestions.map((s) => s.playerOutId))
+        : new Set<string>(),
+    [currentSuggestions, showSubstitutionSuggestions],
   );
   const suggestedInIds = useMemo(
-    () => new Set(currentSuggestions.map((s) => s.playerInId)),
-    [currentSuggestions],
+    () =>
+      showSubstitutionSuggestions
+        ? new Set(currentSuggestions.map((s) => s.playerInId))
+        : new Set<string>(),
+    [currentSuggestions, showSubstitutionSuggestions],
   );
 
   // Keep nextSuggestion for haptic feedback (first suggestion only)
@@ -989,9 +1000,11 @@ export function MatchLivePage(): React.ReactNode {
                       <span className="text-sm font-semibold leading-tight sm:text-base">
                         {player.name}
                       </span>
-                      <span className="text-[10px] tabular-nums opacity-70 sm:text-xs">
-                        {formatTime(Math.floor(playTimeSeconds))}
-                      </span>
+                      {showFairnessScore && (
+                        <span className="text-[10px] tabular-nums opacity-70 sm:text-xs">
+                          {formatTime(Math.floor(playTimeSeconds))}
+                        </span>
+                      )}
                     </button>
                     {/* Quick action buttons - dynamic based on sport profile */}
                     {/* Only show for host (match controller) */}
@@ -1223,9 +1236,11 @@ export function MatchLivePage(): React.ReactNode {
                         <span className="text-sm font-semibold leading-tight sm:hidden">
                           {player.name}
                         </span>
-                        <span className="text-[10px] tabular-nums opacity-70 sm:hidden">
-                          {formatTime(Math.floor(playTimeSeconds))}
-                        </span>
+                        {showFairnessScore && (
+                          <span className="text-[10px] tabular-nums opacity-70 sm:hidden">
+                            {formatTime(Math.floor(playTimeSeconds))}
+                          </span>
+                        )}
                         {/* Desktop: horizontal layout (same as before) */}
                         <span className="hidden h-8 w-8 items-center justify-center rounded-md bg-muted text-sm font-bold text-muted-foreground sm:flex">
                           {player.number}
@@ -1246,9 +1261,11 @@ export function MatchLivePage(): React.ReactNode {
                               </span>
                             )}
                           </div>
-                          <span className="text-xs tabular-nums text-muted-foreground">
-                            {formatTime(Math.floor(playTimeSeconds))}
-                          </span>
+                          {showFairnessScore && (
+                            <span className="text-xs tabular-nums text-muted-foreground">
+                              {formatTime(Math.floor(playTimeSeconds))}
+                            </span>
+                          )}
                         </div>
                         {player.goals > 0 && (
                           <span className="hidden text-xs text-muted-foreground sm:block">
@@ -1280,9 +1297,11 @@ export function MatchLivePage(): React.ReactNode {
                               </span>
                             )}
                           </div>
-                          <span className="text-xs tabular-nums text-muted-foreground">
-                            {formatTime(Math.floor(playTimeSeconds))}
-                          </span>
+                          {showFairnessScore && (
+                            <span className="text-xs tabular-nums text-muted-foreground">
+                              {formatTime(Math.floor(playTimeSeconds))}
+                            </span>
+                          )}
                         </div>
                         {player.goals > 0 && (
                           <span className="text-xs text-muted-foreground">
@@ -1296,7 +1315,7 @@ export function MatchLivePage(): React.ReactNode {
               })}
 
               {/* Future substitutions - shown after bench players, before out section */}
-              {futureSuggestions.length > 0 && (
+              {showSubstitutionSuggestions && futureSuggestions.length > 0 && (
                 <div
                   className={cn(
                     "mt-2 border-t border-border pt-3",
@@ -1528,58 +1547,60 @@ export function MatchLivePage(): React.ReactNode {
         )}
 
         {/* Quick substitute button - shows all current suggestions */}
-        {currentSuggestions.length > 0 && selectedPlayerIds.length === 0 && (
-          <button
-            type="button"
-            onClick={handleQuickSubstitute}
-            className={cn(
-              "flex w-full touch-manipulation items-center justify-between gap-2 border-b border-border bg-amber-900/20 px-3 py-2",
-              "transition-colors hover:bg-amber-900/30",
-            )}
-          >
-            <div className="flex flex-col items-start gap-1">
-              {currentSuggestions.map((suggestion, index) => {
-                const playerIn = match.roster.find(
-                  (p) => p.playerId === suggestion.playerInId,
-                );
-                const playerOut = match.roster.find(
-                  (p) => p.playerId === suggestion.playerOutId,
-                );
-                const playerInTime = playerIn
-                  ? Math.round(getPlayerPlayTime(playerIn) / 60)
-                  : 0;
-                const playerOutTime = playerOut
-                  ? Math.round(getPlayerPlayTime(playerOut) / 60)
-                  : 0;
+        {showSubstitutionSuggestions &&
+          currentSuggestions.length > 0 &&
+          selectedPlayerIds.length === 0 && (
+            <button
+              type="button"
+              onClick={handleQuickSubstitute}
+              className={cn(
+                "flex w-full touch-manipulation items-center justify-between gap-2 border-b border-border bg-amber-900/20 px-3 py-2",
+                "transition-colors hover:bg-amber-900/30",
+              )}
+            >
+              <div className="flex flex-col items-start gap-1">
+                {currentSuggestions.map((suggestion, index) => {
+                  const playerIn = match.roster.find(
+                    (p) => p.playerId === suggestion.playerInId,
+                  );
+                  const playerOut = match.roster.find(
+                    (p) => p.playerId === suggestion.playerOutId,
+                  );
+                  const playerInTime = playerIn
+                    ? Math.round(getPlayerPlayTime(playerIn) / 60)
+                    : 0;
+                  const playerOutTime = playerOut
+                    ? Math.round(getPlayerPlayTime(playerOut) / 60)
+                    : 0;
 
-                return (
-                  <div
-                    key={index}
-                    className="flex flex-col items-start gap-0.5"
-                  >
-                    <span className="text-sm font-medium text-amber-300">
-                      <span className="text-red-400">
-                        {playerOut?.name ?? "?"}
+                  return (
+                    <div
+                      key={index}
+                      className="flex flex-col items-start gap-0.5"
+                    >
+                      <span className="text-sm font-medium text-amber-300">
+                        <span className="text-red-400">
+                          {playerOut?.name ?? "?"}
+                        </span>
+                        {" → "}
+                        <span className="text-green-400">
+                          {playerIn?.name ?? "?"}
+                        </span>
                       </span>
-                      {" → "}
-                      <span className="text-green-400">
-                        {playerIn?.name ?? "?"}
+                      <span className="text-xs text-amber-400/70">
+                        {playerOutTime} min → {playerInTime} min
                       </span>
-                    </span>
-                    <span className="text-xs text-amber-400/70">
-                      {playerOutTime} min → {playerInTime} min
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            <span className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white">
-              {currentSuggestions.length > 1
-                ? t("match.live.suggestion.executeAll")
-                : t("match.live.suggestion.execute")}
-            </span>
-          </button>
-        )}
+                    </div>
+                  );
+                })}
+              </div>
+              <span className="rounded-md bg-amber-600 px-3 py-1.5 text-xs font-semibold whitespace-nowrap text-white">
+                {currentSuggestions.length > 1
+                  ? t("match.live.suggestion.executeAll")
+                  : t("match.live.suggestion.execute")}
+              </span>
+            </button>
+          )}
 
         {/* Warnings */}
         {substitutionPlan.warnings.length > 0 && (

@@ -587,6 +587,12 @@
       "tabs": "Tabbladen",
       "stacked": "Gestapeld"
     },
+    "matchDisplay": {
+      "title": "Wedstrijdinformatie",
+      "description": "Kies welke informatie je tijdens de wedstrijd wilt zien.",
+      "fairnessScore": "Eerlijkheidsscore tonen",
+      "substitutionSuggestions": "Wisselsuggesties tonen"
+    },
     "pwa": {
       "title": "App installeren",
       "description": "Installeer SubCoach op je apparaat voor snelle toegang.",

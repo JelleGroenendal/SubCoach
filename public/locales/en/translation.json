@@ -592,6 +592,12 @@
       "tabs": "Tabs",
       "stacked": "Stacked"
     },
+    "matchDisplay": {
+      "title": "Match Information",
+      "description": "Choose what information to show during a match.",
+      "fairnessScore": "Show fairness score",
+      "substitutionSuggestions": "Show substitution suggestions"
+    },
     "pwa": {
       "title": "Install App",
       "description": "Install SubCoach on your device for quick access.",

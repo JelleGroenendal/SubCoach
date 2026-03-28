@@ -18,7 +18,14 @@ export function SettingsPage(): React.ReactNode {
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
   const { isInstalled, isInstallable, install, clearDismissed } =
     usePWAInstall();
-  const { mobileLayout, setMobileLayout } = useSettingsStore();
+  const {
+    mobileLayout,
+    setMobileLayout,
+    showFairnessScore,
+    setShowFairnessScore,
+    showSubstitutionSuggestions,
+    setShowSubstitutionSuggestions,
+  } = useSettingsStore();
 
   const handleToggleTheme = useCallback(() => {
     const newTheme = toggleThemeUtil();
@@ -179,6 +186,65 @@ export function SettingsPage(): React.ReactNode {
           >
             {t("settings.mobileLayout.stacked")}
           </button>
+        </div>
+      </div>
+
+      {/* Match Display Options */}
+      <div className="rounded-xl border border-border bg-card p-4">
+        <h2 className="font-semibold">{t("settings.matchDisplay.title")}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t("settings.matchDisplay.description")}
+        </p>
+        <div className="mt-4 space-y-3">
+          {/* Fairness Score Toggle */}
+          <label className="flex items-center justify-between">
+            <span className="text-sm">
+              {t("settings.matchDisplay.fairnessScore")}
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showFairnessScore}
+              onClick={() => setShowFairnessScore(!showFairnessScore)}
+              className={cn(
+                "relative h-7 w-12 rounded-full transition-colors touch-manipulation",
+                showFairnessScore ? "bg-primary" : "bg-muted",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white transition-transform",
+                  showFairnessScore && "translate-x-5",
+                )}
+              />
+            </button>
+          </label>
+
+          {/* Substitution Suggestions Toggle */}
+          <label className="flex items-center justify-between">
+            <span className="text-sm">
+              {t("settings.matchDisplay.substitutionSuggestions")}
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showSubstitutionSuggestions}
+              onClick={() =>
+                setShowSubstitutionSuggestions(!showSubstitutionSuggestions)
+              }
+              className={cn(
+                "relative h-7 w-12 rounded-full transition-colors touch-manipulation",
+                showSubstitutionSuggestions ? "bg-primary" : "bg-muted",
+              )}
+            >
+              <span
+                className={cn(
+                  "absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white transition-transform",
+                  showSubstitutionSuggestions && "translate-x-5",
+                )}
+              />
+            </button>
+          </label>
         </div>
       </div>
 
