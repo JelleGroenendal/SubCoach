@@ -36,9 +36,30 @@ type PlayerSelection = {
 function buildInitialSelections(
   players: Player[],
   playersOnField: number,
+  positions: Position[],
 ): PlayerSelection[] {
   const activePlayers = players.filter((p) => p.active);
-  return activePlayers.map((p, index) => ({
+
+  // Build position order map for sorting
+  const positionOrder: Record<string, number> = {};
+  positions.forEach((pos, index) => {
+    positionOrder[pos.id] = index;
+  });
+
+  // Sort players by position order (players with positions first, then by position order)
+  // Players without positions go to the end
+  const sortedPlayers = [...activePlayers].sort((a, b) => {
+    const aPositionId = a.positionId ?? a.positionIds?.[0];
+    const bPositionId = b.positionId ?? b.positionIds?.[0];
+
+    const aOrder = aPositionId ? (positionOrder[aPositionId] ?? 999) : 999;
+    const bOrder = bPositionId ? (positionOrder[bPositionId] ?? 999) : 999;
+
+    return aOrder - bOrder;
+  });
+
+  // Assign first N players to field (sorted by position), rest to bench
+  return sortedPlayers.map((p, index) => ({
     playerId: p.id,
     name: p.name,
     number: p.number,
@@ -170,7 +191,7 @@ function MatchSetupForm({
   const [periodCount, setPeriodCount] = useState(settings.periodCount);
   const [playersOnField, setPlayersOnField] = useState(settings.playersOnField);
   const [selections, setSelections] = useState<PlayerSelection[]>(() =>
-    buildInitialSelections(players, settings.playersOnField),
+    buildInitialSelections(players, settings.playersOnField, positions),
   );
   const [selectedKeeperId, setSelectedKeeperId] = useState<string | undefined>(
     () => {
