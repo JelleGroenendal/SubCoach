@@ -19,6 +19,8 @@ export const handballProfile: SportProfile = {
       { id: "defense", name: "sport.handball.group.defense" },
       { id: "attack", name: "sport.handball.group.attack" },
     ],
+    // Position order: back to front (keeper -> center -> backs -> corners -> pivot)
+    // Visual order on field: keeper at top, then MO, then LO/RO, then LH/RH, pivot at bottom
     positions: [
       {
         id: "keeper",
@@ -28,9 +30,9 @@ export const handballProfile: SportProfile = {
         groupId: "keeper",
       },
       {
-        id: "leftcorner",
-        name: "sport.handball.position.leftCorner",
-        abbreviation: "sport.handball.position.leftCornerAbbr",
+        id: "center",
+        name: "sport.handball.position.center",
+        abbreviation: "sport.handball.position.centerAbbr",
         groupId: "attack",
       },
       {
@@ -40,15 +42,15 @@ export const handballProfile: SportProfile = {
         groupId: "attack",
       },
       {
-        id: "center",
-        name: "sport.handball.position.center",
-        abbreviation: "sport.handball.position.centerAbbr",
-        groupId: "attack",
-      },
-      {
         id: "rightback",
         name: "sport.handball.position.rightBack",
         abbreviation: "sport.handball.position.rightBackAbbr",
+        groupId: "attack",
+      },
+      {
+        id: "leftcorner",
+        name: "sport.handball.position.leftCorner",
+        abbreviation: "sport.handball.position.leftCornerAbbr",
         groupId: "attack",
       },
       {
