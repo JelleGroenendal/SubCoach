@@ -28,6 +28,8 @@ export const PenaltyEventSchema = z.object({
   penaltyId: z.string(),
   /** If false, player sits out but team can substitute (e.g., 10-min misconduct in hockey) */
   teamPlaysShort: z.boolean().optional(), // defaults to true for backward compatibility
+  /** Position ID for undo */
+  positionId: z.string().optional(),
 });
 
 export const PenaltyEndEventSchema = z.object({
@@ -47,12 +49,16 @@ export const RedCardEventSchema = z.object({
   timestamp: z.number(),
   playerId: z.string(),
   wasSecondYellow: z.boolean().optional(),
+  /** Position ID for undo */
+  positionId: z.string().optional(),
 });
 
 export const InjuryEventSchema = z.object({
   type: z.literal("injury"),
   timestamp: z.number(),
   playerId: z.string(),
+  /** Position ID for undo */
+  positionId: z.string().optional(),
 });
 
 export const InjuryRecoveryEventSchema = z.object({

@@ -563,6 +563,11 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   registerPenalty: (playerId, durationSeconds, teamPlaysShort = true) => {
     const { teamId, match, isHost } = get();
     if (!teamId || !match || !isHost) return;
+
+    // Get player's current position for undo
+    const player = match.roster.find((p) => p.playerId === playerId);
+    const positionId = player?.positionId;
+
     const penaltyId = crypto.randomUUID();
     const event: MatchEvent = {
       type: "penalty",
@@ -571,6 +576,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       durationSeconds,
       penaltyId,
       teamPlaysShort,
+      positionId,
     };
 
     // If teamPlaysShort is false (e.g., misconduct), player sits out but team can substitute
@@ -640,11 +646,12 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       penaltyId,
     };
 
-    // For regular penalty: player goes to bench
+    // For regular penalty: player goes to bench (clear position so slot can be filled)
     // For red card penalty: player stays out, but team can bring someone else in
     const roster = match.roster.map((p) => {
       if (p.playerId === playerId && p.status === "penalty") {
-        return { ...p, status: "bench" as const };
+        // Clear position when going to bench after penalty
+        return { ...p, status: "bench" as const, positionId: undefined };
       }
       // Red card player stays at redCard status
       return p;
@@ -687,6 +694,9 @@ export const useMatchStore = create<MatchState>((set, get) => ({
 
     // Check if this is a second yellow (becomes red)
     if (secondYellowIsRed && newYellowCards >= 2) {
+      // Get player's current position for undo
+      const positionId = player.positionId;
+
       // This triggers a red card
       const yellowEvent: MatchEvent = {
         type: "yellowCard",
@@ -698,6 +708,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         timestamp: match.elapsedSeconds,
         playerId,
         wasSecondYellow: true,
+        positionId,
       };
       // Start penalty for numerical disadvantage
       const penaltyId = crypto.randomUUID();
@@ -707,6 +718,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         playerId,
         durationSeconds: penaltyDurationSeconds,
         penaltyId,
+        positionId,
       };
       const roster = match.roster.map((p) => {
         if (p.playerId === playerId) {
@@ -715,11 +727,13 @@ export const useMatchStore = create<MatchState>((set, get) => ({
               ? { ...per, outAt: match.elapsedSeconds }
               : per,
           );
+          // Clear position - player is out of match
           return {
             ...p,
             status: "redCard" as const,
             periods,
             yellowCards: newYellowCards,
+            positionId: undefined,
           };
         }
         return p;
@@ -776,10 +790,16 @@ export const useMatchStore = create<MatchState>((set, get) => ({
   registerRedCard: (playerId, penaltyDurationSeconds = 120) => {
     const { teamId, match, isHost } = get();
     if (!teamId || !match || !isHost) return;
+
+    // Get player's current position for undo
+    const player = match.roster.find((p) => p.playerId === playerId);
+    const positionId = player?.positionId;
+
     const event: MatchEvent = {
       type: "redCard",
       timestamp: match.elapsedSeconds,
       playerId,
+      positionId,
     };
     // Also start a penalty for numerical disadvantage (duration from sport profile)
     const penaltyId = crypto.randomUUID();
@@ -797,7 +817,13 @@ export const useMatchStore = create<MatchState>((set, get) => ({
             ? { ...per, outAt: match.elapsedSeconds }
             : per,
         );
-        return { ...p, status: "redCard" as const, periods };
+        // Clear position - player is out of match
+        return {
+          ...p,
+          status: "redCard" as const,
+          periods,
+          positionId: undefined,
+        };
       }
       return p;
     });
@@ -832,10 +858,15 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const allowsReplacement =
       sportProfile?.substitutions.injuryAllowsReplacement ?? true;
 
+    // Get player's current position for undo
+    const player = match.roster.find((p) => p.playerId === playerId);
+    const positionId = player?.positionId;
+
     const event: MatchEvent = {
       type: "injury",
       timestamp: match.elapsedSeconds,
       playerId,
+      positionId,
     };
     const roster = match.roster.map((p) => {
       if (p.playerId === playerId) {
@@ -886,7 +917,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     };
     const roster = match.roster.map((p) => {
       if (p.playerId === playerId && p.status === "injured") {
-        return { ...p, status: "bench" as const };
+        // Clear position when going to bench after injury
+        return { ...p, status: "bench" as const, positionId: undefined };
       }
       return p;
     });
@@ -912,6 +944,12 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     const { teamId, match, pendingReplacement, isHost } = get();
     if (!teamId || !match || !pendingReplacement || !isHost) return;
 
+    // Find the player being replaced to get their position
+    const replacedPlayer = match.roster.find(
+      (p) => p.playerId === pendingReplacement.playerId,
+    );
+    const positionId = replacedPlayer?.positionId;
+
     // Bring the selected bench player onto the field
     const event: MatchEvent = {
       type: "substitution",
@@ -920,16 +958,23 @@ export const useMatchStore = create<MatchState>((set, get) => ({
       // For injury/penalty replacement, there's no player "out" - just someone coming in
       // We use a special marker to indicate this is a replacement, not a swap
       playerOutId: pendingReplacement.playerId,
+      // Store position for undo
+      positionId,
     };
 
     const roster = match.roster.map((p) => {
       if (p.playerId === playerInId && p.status === "bench") {
-        // Bring player onto field
+        // Bring player onto field with the replaced player's position
         return {
           ...p,
           status: "field" as const,
           periods: [...p.periods, { inAt: match.elapsedSeconds }],
+          positionId,
         };
+      }
+      // Clear position from replaced player
+      if (p.playerId === pendingReplacement.playerId) {
+        return { ...p, positionId: undefined };
       }
       return p;
     });
@@ -1003,6 +1048,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
     } else if (event.type === "opponentGoal") {
       updated.awayScore = Math.max(0, updated.awayScore - 1);
     } else if (event.type === "penalty") {
+      // Restore position when undoing penalty
+      const positionId = event.positionId;
       updated.roster = updated.roster.map((p) => {
         if (p.playerId === event.playerId && p.status === "penalty") {
           const periods = [...p.periods];
@@ -1012,11 +1059,13 @@ export const useMatchStore = create<MatchState>((set, get) => ({
               periods[periods.length - 1] = { inAt: last.inAt };
             }
           }
-          return { ...p, status: "field" as const, periods };
+          return { ...p, status: "field" as const, periods, positionId };
         }
         return p;
       });
     } else if (event.type === "redCard") {
+      // Restore position when undoing red card
+      const positionId = event.positionId;
       updated.roster = updated.roster.map((p) => {
         if (p.playerId === event.playerId && p.status === "redCard") {
           const periods = [...p.periods];
@@ -1026,7 +1075,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
               periods[periods.length - 1] = { inAt: last.inAt };
             }
           }
-          return { ...p, status: "field" as const, periods };
+          return { ...p, status: "field" as const, periods, positionId };
         }
         return p;
       });
@@ -1035,6 +1084,8 @@ export const useMatchStore = create<MatchState>((set, get) => ({
         (_, i) => i < lastAction.index || i > lastAction.index + 1,
       );
     } else if (event.type === "injury") {
+      // Restore position when undoing injury
+      const positionId = event.positionId;
       updated.roster = updated.roster.map((p) => {
         if (p.playerId === event.playerId && p.status === "injured") {
           const periods = [...p.periods];
@@ -1044,7 +1095,7 @@ export const useMatchStore = create<MatchState>((set, get) => ({
               periods[periods.length - 1] = { inAt: last.inAt };
             }
           }
-          return { ...p, status: "field" as const, periods };
+          return { ...p, status: "field" as const, periods, positionId };
         }
         return p;
       });
