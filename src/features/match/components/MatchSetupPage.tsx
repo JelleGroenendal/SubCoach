@@ -198,8 +198,9 @@ function MatchSetupForm({
       // Pre-select keeper if a player has a keeper position
       const activePlayers = players.filter((p) => p.active);
       for (const player of activePlayers) {
-        if (player.positionId) {
-          const pos = positions.find((p) => p.id === player.positionId);
+        const playerPositionId = player.positionId ?? player.positionIds?.[0];
+        if (playerPositionId) {
+          const pos = positions.find((p) => p.id === playerPositionId);
           if (pos?.isKeeper) {
             return player.id;
           }
@@ -212,6 +213,7 @@ function MatchSetupForm({
     undefined,
   );
   const longPressTriggeredRef = useRef(false);
+  const isTouchDeviceRef = useRef(false);
 
   const fieldCount = useMemo(
     () => selections.filter((s) => s.assignment === "field").length,
@@ -283,8 +285,11 @@ function MatchSetupForm({
   );
 
   // Long press handling - works with both mouse and touch
-  const handlePressStart = useCallback(
-    (playerId: string, e: React.PointerEvent | React.TouchEvent) => {
+  // We track if a touch event started, so we can ignore the subsequent mouse events
+  const handleTouchStart = useCallback(
+    (playerId: string, e: React.TouchEvent) => {
+      // Mark that we're handling a touch interaction
+      isTouchDeviceRef.current = true;
       // Prevent text selection on long press
       e.preventDefault();
       longPressTriggeredRef.current = false;
@@ -295,13 +300,49 @@ function MatchSetupForm({
         if ("vibrate" in navigator) {
           navigator.vibrate(50);
         }
-      }, 500); // Reduced from 600ms for better responsiveness
+      }, 500);
     },
     [handleToggleUnavailable],
   );
 
-  const handlePressEnd = useCallback(
+  const handleTouchEnd = useCallback(
     (playerId: string) => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = undefined;
+      }
+      if (!longPressTriggeredRef.current) {
+        handleToggleAssignment(playerId);
+      }
+    },
+    [handleToggleAssignment],
+  );
+
+  const handleMouseDown = useCallback(
+    (playerId: string, e: React.MouseEvent) => {
+      // Ignore mouse events if we just handled a touch event
+      if (isTouchDeviceRef.current) {
+        return;
+      }
+      e.preventDefault();
+      longPressTriggeredRef.current = false;
+      longPressTimerRef.current = setTimeout(() => {
+        longPressTriggeredRef.current = true;
+        handleToggleUnavailable(playerId);
+        if ("vibrate" in navigator) {
+          navigator.vibrate(50);
+        }
+      }, 500);
+    },
+    [handleToggleUnavailable],
+  );
+
+  const handleMouseUp = useCallback(
+    (playerId: string) => {
+      // Ignore mouse events if we just handled a touch event
+      if (isTouchDeviceRef.current) {
+        return;
+      }
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = undefined;
@@ -326,12 +367,10 @@ function MatchSetupForm({
     const roster: MatchPlayer[] = selections
       .filter((s) => s.assignment !== "unavailable")
       .map((s) => {
-        // Use selectedKeeperId if set, otherwise fall back to position-based detection
-        const isKeeper =
-          selectedKeeperId === s.playerId ||
-          (selectedKeeperId === undefined &&
-            s.positionId !== undefined &&
-            (positions.find((p) => p.id === s.positionId)?.isKeeper ?? false));
+        // Only the explicitly selected keeper is marked as keeper
+        // If no keeper is selected, we don't auto-assign based on position
+        // (the keeper section UI already shows a warning when no keeper is selected)
+        const isKeeper = selectedKeeperId === s.playerId;
 
         return {
           playerId: s.playerId,
@@ -555,16 +594,11 @@ function MatchSetupForm({
               <button
                 key={selection.playerId}
                 type="button"
-                onTouchStart={(e) => handlePressStart(selection.playerId, e)}
-                onTouchEnd={() => handlePressEnd(selection.playerId)}
+                onTouchStart={(e) => handleTouchStart(selection.playerId, e)}
+                onTouchEnd={() => handleTouchEnd(selection.playerId)}
                 onTouchCancel={handlePressCancel}
-                onMouseDown={(e) =>
-                  handlePressStart(
-                    selection.playerId,
-                    e as unknown as React.PointerEvent,
-                  )
-                }
-                onMouseUp={() => handlePressEnd(selection.playerId)}
+                onMouseDown={(e) => handleMouseDown(selection.playerId, e)}
+                onMouseUp={() => handleMouseUp(selection.playerId)}
                 onMouseLeave={handlePressCancel}
                 onContextMenu={(e) => {
                   e.preventDefault();
