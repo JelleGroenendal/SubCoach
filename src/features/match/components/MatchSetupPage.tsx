@@ -97,8 +97,8 @@ function buildInitialSelections(
     }
   }
 
-  // Build selections maintaining the sorted order for display
-  return sortedPlayers.map((p) => ({
+  // Build selections
+  const selections = sortedPlayers.map((p) => ({
     playerId: p.id,
     name: p.name,
     number: p.number,
@@ -108,6 +108,23 @@ function buildInitialSelections(
       ? ("field" as const)
       : ("bench" as const),
   }));
+
+  // Sort by assigned position order (field players first, sorted by position)
+  // Then bench players (sorted by preferred position)
+  return selections.sort((a, b) => {
+    // Field players come first
+    if (a.assignment === "field" && b.assignment !== "field") return -1;
+    if (a.assignment !== "field" && b.assignment === "field") return 1;
+
+    // Within same group, sort by position
+    const aPositionId = a.assignedPositionId ?? a.preferredPositionId;
+    const bPositionId = b.assignedPositionId ?? b.preferredPositionId;
+
+    const aOrder = aPositionId ? (positionOrder[aPositionId] ?? 999) : 999;
+    const bOrder = bPositionId ? (positionOrder[bPositionId] ?? 999) : 999;
+
+    return aOrder - bOrder;
+  });
 }
 
 export function MatchSetupPage(): React.ReactNode {
@@ -273,7 +290,16 @@ function MatchSetupForm({
   const canStart =
     fieldCount === requiredOnField && opponentName.trim().length > 0;
 
-  // Helper function to reassign positions to field players
+  // Build position order map for sorting
+  const positionOrder = useMemo(() => {
+    const order: Record<string, number> = {};
+    positions.forEach((pos, index) => {
+      order[pos.id] = index;
+    });
+    return order;
+  }, [positions]);
+
+  // Helper function to reassign positions to field players and sort by position
   const reassignPositions = useCallback(
     (selections: PlayerSelection[]): PlayerSelection[] => {
       const fieldPositions = positions.slice(0, requiredOnField);
@@ -306,15 +332,31 @@ function MatchSetupForm({
       }
 
       // Update selections with new assignments
-      return selections.map((s) => ({
+      const updated = selections.map((s) => ({
         ...s,
         assignedPositionId:
           s.assignment === "field"
             ? playerAssignments.get(s.playerId)
             : undefined,
       }));
+
+      // Sort by position order (field players first, then bench)
+      return updated.sort((a, b) => {
+        // Field players come first
+        if (a.assignment === "field" && b.assignment !== "field") return -1;
+        if (a.assignment !== "field" && b.assignment === "field") return 1;
+
+        // Within same group, sort by position
+        const aPositionId = a.assignedPositionId ?? a.preferredPositionId;
+        const bPositionId = b.assignedPositionId ?? b.preferredPositionId;
+
+        const aOrder = aPositionId ? (positionOrder[aPositionId] ?? 999) : 999;
+        const bOrder = bPositionId ? (positionOrder[bPositionId] ?? 999) : 999;
+
+        return aOrder - bOrder;
+      });
     },
-    [positions, requiredOnField],
+    [positions, requiredOnField, positionOrder],
   );
 
   const handleToggleAssignment = useCallback(
