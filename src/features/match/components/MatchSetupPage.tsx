@@ -235,12 +235,6 @@ function MatchSetupForm({
     [sportProfile],
   );
 
-  // Check if this sport has a keeper position
-  const sportHasKeeper = useMemo(
-    () => positions.some((p) => p.isKeeper),
-    [positions],
-  );
-
   // State initialized directly from team (no effects needed)
   const [opponentName, setOpponentName] = useState("");
   const [periodDuration, setPeriodDuration] = useState(
@@ -251,22 +245,7 @@ function MatchSetupForm({
   const [selections, setSelections] = useState<PlayerSelection[]>(() =>
     buildInitialSelections(players, settings.playersOnField, positions),
   );
-  const [selectedKeeperId, setSelectedKeeperId] = useState<string | undefined>(
-    () => {
-      // Pre-select keeper if a player has a keeper position
-      const activePlayers = players.filter((p) => p.active);
-      for (const player of activePlayers) {
-        const playerPositionId = player.positionId ?? player.positionIds?.[0];
-        if (playerPositionId) {
-          const pos = positions.find((p) => p.id === playerPositionId);
-          if (pos?.isKeeper) {
-            return player.id;
-          }
-        }
-      }
-      return undefined;
-    },
-  );
+
   // Swipe handling refs
   const touchStartRef = useRef<{
     x: number;
@@ -396,28 +375,14 @@ function MatchSetupForm({
         // Reassign positions to all field players
         updated = reassignPositions(updated);
 
-        // Clear keeper selection if keeper moved off field
-        const playerSelection = updated.find((s) => s.playerId === playerId);
-        if (
-          selectedKeeperId === playerId &&
-          playerSelection?.assignment !== "field"
-        ) {
-          setSelectedKeeperId(undefined);
-        }
-
         return updated;
       });
     },
-    [requiredOnField, selectedKeeperId, reassignPositions],
+    [requiredOnField, reassignPositions],
   );
 
   const handleToggleUnavailable = useCallback(
     (playerId: string) => {
-      // Clear keeper selection if this player becomes unavailable
-      if (selectedKeeperId === playerId) {
-        setSelectedKeeperId(undefined);
-      }
-
       setSelections((prev) => {
         let updated = prev.map((s) => {
           if (s.playerId !== playerId) return s;
@@ -445,7 +410,7 @@ function MatchSetupForm({
         return updated;
       });
     },
-    [selectedKeeperId, reassignPositions],
+    [reassignPositions],
   );
 
   // Swipe handling for mobile - swipe left/right to toggle unavailable
@@ -505,26 +470,48 @@ function MatchSetupForm({
   const handleStart = useCallback(() => {
     if (!canStart) return;
 
-    const roster: MatchPlayer[] = selections
-      .filter((s) => s.assignment !== "unavailable")
-      .map((s) => {
-        // Only the explicitly selected keeper is marked as keeper
-        // If no keeper is selected, we don't auto-assign based on position
-        // (the keeper section UI already shows a warning when no keeper is selected)
-        const isKeeper = selectedKeeperId === s.playerId;
+    const availableSelections = selections.filter(
+      (s) => s.assignment !== "unavailable",
+    );
 
-        return {
-          playerId: s.playerId,
-          name: s.name,
-          number: s.number,
-          positionId: s.assignedPositionId ?? s.preferredPositionId,
-          status: s.assignment as "field" | "bench",
-          totalPlayTimeSeconds: 0,
-          goals: 0,
-          periods: [],
-          isKeeper,
-        };
-      });
+    // Determine keeper automatically:
+    // 1. If a field player has keeper position assigned, they are the keeper
+    // 2. Otherwise, first field player becomes keeper
+    const fieldSelections = availableSelections.filter(
+      (s) => s.assignment === "field",
+    );
+    let keeperId: string | undefined;
+
+    // Check if any field player has a keeper position
+    for (const selection of fieldSelections) {
+      const positionId =
+        selection.assignedPositionId ?? selection.preferredPositionId;
+      if (positionId) {
+        const pos = positions.find((p) => p.id === positionId);
+        if (pos?.isKeeper) {
+          keeperId = selection.playerId;
+          break;
+        }
+      }
+    }
+
+    // If no keeper position found, first field player becomes keeper
+    if (!keeperId && fieldSelections.length > 0 && fieldSelections[0]) {
+      keeperId = fieldSelections[0].playerId;
+    }
+
+    // Build roster with isKeeper flag
+    const roster: MatchPlayer[] = availableSelections.map((s) => ({
+      playerId: s.playerId,
+      name: s.name,
+      number: s.number,
+      positionId: s.assignedPositionId ?? s.preferredPositionId,
+      status: s.assignment as "field" | "bench",
+      totalPlayTimeSeconds: 0,
+      goals: 0,
+      periods: [],
+      isKeeper: s.playerId === keeperId,
+    }));
 
     createMatch({
       teamId,
@@ -544,7 +531,6 @@ function MatchSetupForm({
     canStart,
     selections,
     positions,
-    selectedKeeperId,
     opponentName,
     periodDuration,
     periodCount,
@@ -808,65 +794,6 @@ function MatchSetupForm({
           })}
         </div>
       </section>
-
-      {/* Keeper Selection - only for sports with keepers */}
-      {sportHasKeeper && (
-        <section className="flex flex-col gap-3 rounded-xl border border-border bg-card p-5">
-          <div className="flex items-center gap-2">
-            <span className="rounded bg-amber-500 px-1.5 py-0.5 text-xs font-bold text-black">
-              GK
-            </span>
-            <h2 className="text-lg font-semibold">
-              {t("match.setup.keeper.title")}
-            </h2>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {t("match.setup.keeper.description")}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {selections
-              .filter((s) => s.assignment === "field")
-              .map((selection) => {
-                const isSelected = selectedKeeperId === selection.playerId;
-                return (
-                  <button
-                    key={selection.playerId}
-                    type="button"
-                    onClick={() =>
-                      setSelectedKeeperId(
-                        isSelected ? undefined : selection.playerId,
-                      )
-                    }
-                    className={cn(
-                      "flex min-h-12 touch-manipulation items-center gap-2 rounded-lg border-2 px-4 py-2",
-                      "text-sm font-medium transition-colors",
-                      isSelected
-                        ? "border-amber-500 bg-amber-500/20 text-amber-300"
-                        : "border-border bg-background text-foreground hover:border-amber-500/50",
-                    )}
-                  >
-                    {selection.number !== undefined && (
-                      <span className="font-bold opacity-70">
-                        #{selection.number}
-                      </span>
-                    )}
-                    <span>{selection.name}</span>
-                    {isSelected && (
-                      <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
-                        GK
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-          </div>
-          {selectedKeeperId === undefined && (
-            <p className="text-xs text-amber-400">
-              {t("match.setup.keeper.noSelection")}
-            </p>
-          )}
-        </section>
-      )}
 
       {/* Start Button */}
       <div className="flex justify-center pb-8">
