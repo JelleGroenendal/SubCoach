@@ -42,7 +42,7 @@ function buildInitialSelections(
     playerId: p.id,
     name: p.name,
     number: p.number,
-    positionId: p.positionId,
+    positionId: p.positionId ?? p.positionIds?.[0],
     assignment:
       index < playersOnField ? ("field" as const) : ("bench" as const),
   }));
