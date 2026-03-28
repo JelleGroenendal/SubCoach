@@ -253,6 +253,7 @@ function MatchSetupForm({
     playerId: string;
   } | null>(null);
   const swipeThreshold = 50; // Minimum swipe distance in pixels
+  const touchHandledRef = useRef(false); // Track if touch event handled the action
 
   const fieldCount = useMemo(
     () => selections.filter((s) => s.assignment === "field").length,
@@ -423,6 +424,7 @@ function MatchSetupForm({
           y: touch.clientY,
           playerId,
         };
+        touchHandledRef.current = false;
       }
     },
     [],
@@ -446,6 +448,9 @@ function MatchSetupForm({
 
       const deltaX = touch.clientX - touchStartRef.current.x;
       const deltaY = touch.clientY - touchStartRef.current.y;
+
+      // Mark that we handled this touch interaction
+      touchHandledRef.current = true;
 
       // Check if it's a horizontal swipe (more horizontal than vertical)
       if (
@@ -731,10 +736,12 @@ function MatchSetupForm({
                 onTouchEnd={(e) => handleTouchEnd(selection.playerId, e)}
                 onClick={() => {
                   // Only handle click on non-touch devices
-                  // Touch devices use touchEnd
-                  if (!touchStartRef.current) {
-                    handleToggleAssignment(selection.playerId);
+                  // Touch devices use touchEnd - check if touch already handled this
+                  if (touchHandledRef.current) {
+                    touchHandledRef.current = false;
+                    return;
                   }
+                  handleToggleAssignment(selection.playerId);
                 }}
                 onContextMenu={(e) => {
                   e.preventDefault();
