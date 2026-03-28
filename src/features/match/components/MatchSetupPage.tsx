@@ -245,6 +245,8 @@ function MatchSetupForm({
   const [selections, setSelections] = useState<PlayerSelection[]>(() =>
     buildInitialSelections(players, settings.playersOnField, positions),
   );
+  // Which position slot is selected (to fill with a bench player)
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
 
   // Swipe handling refs
   const touchStartRef = useRef<{
@@ -279,55 +281,6 @@ function MatchSetupForm({
     return order;
   }, [positions]);
 
-  // Helper function to assign a position to a new field player (keeps existing assignments)
-  const assignPositionToPlayer = useCallback(
-    (selections: PlayerSelection[], playerId: string): PlayerSelection[] => {
-      const fieldPositions = positions.slice(0, requiredOnField);
-
-      // Get currently used positions (from other field players)
-      const usedPositions = new Set<string>();
-      for (const s of selections) {
-        if (
-          s.assignment === "field" &&
-          s.assignedPositionId &&
-          s.playerId !== playerId
-        ) {
-          usedPositions.add(s.assignedPositionId);
-        }
-      }
-
-      // Find the player we're assigning
-      const player = selections.find((s) => s.playerId === playerId);
-      if (!player) return selections;
-
-      // Try to assign preferred position first
-      let assignedPosition: string | undefined;
-      if (
-        player.preferredPositionId &&
-        !usedPositions.has(player.preferredPositionId) &&
-        fieldPositions.some((p) => p.id === player.preferredPositionId)
-      ) {
-        assignedPosition = player.preferredPositionId;
-      } else {
-        // Find first available position
-        for (const pos of fieldPositions) {
-          if (!usedPositions.has(pos.id)) {
-            assignedPosition = pos.id;
-            break;
-          }
-        }
-      }
-
-      // Update only this player's position
-      return selections.map((s) =>
-        s.playerId === playerId
-          ? { ...s, assignedPositionId: assignedPosition }
-          : s,
-      );
-    },
-    [positions, requiredOnField],
-  );
-
   // Helper function to sort selections by position order
   const sortByPosition = useCallback(
     (selections: PlayerSelection[]): PlayerSelection[] => {
@@ -349,48 +302,60 @@ function MatchSetupForm({
     [positionOrder],
   );
 
-  const handleToggleAssignment = useCallback(
-    (playerId: string) => {
-      setSelections((prev) => {
-        const player = prev.find((s) => s.playerId === playerId);
-        if (!player || player.assignment === "unavailable") return prev;
+  // Click on a position slot
+  const handleSlotClick = useCallback(
+    (positionId: string) => {
+      // Find player in this slot
+      const playerInSlot = selections.find(
+        (s) => s.assignment === "field" && s.assignedPositionId === positionId,
+      );
 
-        let updated: PlayerSelection[];
-
-        if (player.assignment === "field") {
-          // Moving to bench - just clear this player's assignment, keep others
-          updated = prev.map((s) =>
-            s.playerId === playerId
-              ? {
-                  ...s,
-                  assignment: "bench" as const,
-                  assignedPositionId: undefined,
-                }
-              : s,
-          );
-        } else {
-          // Moving to field - check if there's room
-          const currentFieldCount = prev.filter(
-            (ps) => ps.assignment === "field",
-          ).length;
-          if (currentFieldCount >= requiredOnField) {
-            return prev; // No room on field
-          }
-          // Set as field player first
-          updated = prev.map((s) =>
-            s.playerId === playerId
-              ? { ...s, assignment: "field" as const }
-              : s,
-          );
-          // Assign position only to the new field player
-          updated = assignPositionToPlayer(updated, playerId);
-        }
-
-        // Sort for display
-        return sortByPosition(updated);
-      });
+      if (playerInSlot) {
+        // Slot is filled - remove player from field
+        setSelections((prev) =>
+          sortByPosition(
+            prev.map((s) =>
+              s.playerId === playerInSlot.playerId
+                ? {
+                    ...s,
+                    assignment: "bench" as const,
+                    assignedPositionId: undefined,
+                  }
+                : s,
+            ),
+          ),
+        );
+        setSelectedSlotId(null);
+      } else {
+        // Slot is empty - select it to fill with a bench player
+        setSelectedSlotId((prev) => (prev === positionId ? null : positionId));
+      }
     },
-    [requiredOnField, assignPositionToPlayer, sortByPosition],
+    [selections, sortByPosition],
+  );
+
+  // Click on a bench player
+  const handleBenchPlayerClick = useCallback(
+    (playerId: string) => {
+      if (selectedSlotId) {
+        // Fill the selected slot with this player
+        setSelections((prev) =>
+          sortByPosition(
+            prev.map((s) =>
+              s.playerId === playerId
+                ? {
+                    ...s,
+                    assignment: "field" as const,
+                    assignedPositionId: selectedSlotId,
+                  }
+                : s,
+            ),
+          ),
+        );
+        setSelectedSlotId(null);
+      }
+    },
+    [selectedSlotId, sortByPosition],
   );
 
   const handleToggleUnavailable = useCallback(
@@ -468,13 +433,23 @@ function MatchSetupForm({
           navigator.vibrate(50);
         }
       } else if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) {
-        // Tap detected (minimal movement) - toggle field/bench
-        handleToggleAssignment(playerId);
+        // Tap detected (minimal movement) - handled by onClick for bench players
+        // For bench players, if a slot is selected, fill it
+        const player = selections.find((s) => s.playerId === playerId);
+        if (player?.assignment === "bench" && selectedSlotId) {
+          handleBenchPlayerClick(playerId);
+        }
       }
 
       touchStartRef.current = null;
     },
-    [handleToggleUnavailable, handleToggleAssignment, swipeThreshold],
+    [
+      handleToggleUnavailable,
+      handleBenchPlayerClick,
+      selections,
+      selectedSlotId,
+      swipeThreshold,
+    ],
   );
 
   const handleStart = useCallback(() => {
@@ -695,11 +670,11 @@ function MatchSetupForm({
         </div>
       </section>
 
-      {/* Player Selection */}
+      {/* Position Slots (Field) */}
       <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">
-            {t("match.setup.players.title")}
+            {t("match.setup.field.title")}
           </h2>
           <span
             className={cn(
@@ -718,92 +693,156 @@ function MatchSetupForm({
         </div>
 
         <p className="text-sm text-muted-foreground">
-          {t("match.setup.players.instructions")}
+          {t("match.setup.field.instructions")}
         </p>
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {selections.map((selection) => {
-            // For field players, show the assigned position (the field slot they fill)
-            // For bench players, show their preferred position
-            const displayPositionId =
-              selection.assignment === "field"
-                ? selection.assignedPositionId
-                : selection.preferredPositionId;
-            const displayPosition = displayPositionId
-              ? positions.find((p) => p.id === displayPositionId)
-              : undefined;
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+          {positions.slice(0, playersOnField).map((position) => {
+            const playerInSlot = selections.find(
+              (s) =>
+                s.assignment === "field" &&
+                s.assignedPositionId === position.id,
+            );
+            const isSelected = selectedSlotId === position.id;
+            const isEmpty = !playerInSlot;
 
             return (
               <button
-                key={selection.playerId}
+                key={position.id}
                 type="button"
-                onTouchStart={(e) => handleTouchStart(selection.playerId, e)}
-                onTouchEnd={(e) => handleTouchEnd(selection.playerId, e)}
-                onClick={() => {
-                  // Only handle click on non-touch devices
-                  // Touch devices use touchEnd - check if touch already handled this
-                  if (touchHandledRef.current) {
-                    touchHandledRef.current = false;
-                    return;
-                  }
-                  handleToggleAssignment(selection.playerId);
-                }}
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  handleToggleUnavailable(selection.playerId);
-                }}
+                onClick={() => handleSlotClick(position.id)}
                 className={cn(
-                  "flex min-h-16 touch-manipulation flex-col items-center justify-center gap-1 rounded-lg border-2 p-3",
+                  "flex min-h-20 touch-manipulation flex-col items-center justify-center gap-1 rounded-lg border-2 p-2",
                   "text-center transition-colors select-none",
-                  selection.assignment === "field" &&
-                    "border-green-500 bg-field text-white",
-                  selection.assignment === "bench" &&
-                    "border-border bg-bench text-foreground",
-                  selection.assignment === "unavailable" &&
-                    "border-border bg-background text-muted-foreground opacity-40 line-through",
+                  isEmpty &&
+                    !isSelected &&
+                    "border-dashed border-border bg-background",
+                  isEmpty && isSelected && "border-primary bg-primary/10",
+                  !isEmpty && "border-green-500 bg-field text-white",
                 )}
-                aria-label={t("match.setup.players.togglePlayer", {
-                  name: selection.name,
-                })}
+                aria-label={t(position.name)}
               >
-                <div className="flex items-center gap-1">
-                  {selection.number !== undefined && (
-                    <span className="text-xs font-bold opacity-70">
-                      #{selection.number}
-                    </span>
+                <span
+                  className={cn(
+                    "rounded px-1.5 py-0.5 text-xs font-bold",
+                    position.isKeeper && "bg-amber-500 text-black",
+                    !position.isKeeper &&
+                      isEmpty &&
+                      "bg-muted text-muted-foreground",
+                    !position.isKeeper && !isEmpty && "bg-white/20",
                   )}
-                  {displayPosition?.isKeeper && (
-                    <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
-                      GK
-                    </span>
-                  )}
-                  {displayPosition && !displayPosition.isKeeper && (
-                    <span
-                      className={cn(
-                        "rounded px-1 text-[10px] font-medium",
-                        selection.assignment === "field"
-                          ? "bg-white/20"
-                          : "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      {t(displayPosition.abbreviation)}
-                    </span>
-                  )}
-                </div>
-                <span className="text-sm font-medium leading-tight">
-                  {selection.name}
+                >
+                  {position.isKeeper ? "GK" : t(position.abbreviation)}
                 </span>
-                <span className="text-xs opacity-70">
-                  {selection.assignment === "field" &&
-                    t("match.setup.players.statusField")}
-                  {selection.assignment === "bench" &&
-                    t("match.setup.players.statusBench")}
-                  {selection.assignment === "unavailable" &&
-                    t("match.setup.players.statusUnavailable")}
-                </span>
+                {playerInSlot ? (
+                  <>
+                    {playerInSlot.number !== undefined && (
+                      <span className="text-xs font-bold opacity-70">
+                        #{playerInSlot.number}
+                      </span>
+                    )}
+                    <span className="text-sm font-medium leading-tight">
+                      {playerInSlot.name}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-xs text-muted-foreground">
+                    {isSelected
+                      ? t("match.setup.field.selectPlayer")
+                      : t("match.setup.field.empty")}
+                  </span>
+                )}
               </button>
             );
           })}
+        </div>
+      </section>
+
+      {/* Bench Players */}
+      <section className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5">
+        <h2 className="text-lg font-semibold">
+          {t("match.setup.bench.title")}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {t("match.setup.bench.instructions")}
+        </p>
+
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {selections
+            .filter((s) => s.assignment !== "field")
+            .map((selection) => {
+              const preferredPosition = selection.preferredPositionId
+                ? positions.find((p) => p.id === selection.preferredPositionId)
+                : undefined;
+              const canSelect =
+                selectedSlotId && selection.assignment === "bench";
+
+              return (
+                <button
+                  key={selection.playerId}
+                  type="button"
+                  onTouchStart={(e) => handleTouchStart(selection.playerId, e)}
+                  onTouchEnd={(e) => handleTouchEnd(selection.playerId, e)}
+                  onClick={() => {
+                    if (touchHandledRef.current) {
+                      touchHandledRef.current = false;
+                      return;
+                    }
+                    if (canSelect) {
+                      handleBenchPlayerClick(selection.playerId);
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    handleToggleUnavailable(selection.playerId);
+                  }}
+                  className={cn(
+                    "flex min-h-16 touch-manipulation flex-col items-center justify-center gap-1 rounded-lg border-2 p-3",
+                    "text-center transition-colors select-none",
+                    selection.assignment === "bench" &&
+                      !canSelect &&
+                      "border-border bg-bench text-foreground",
+                    selection.assignment === "bench" &&
+                      canSelect &&
+                      "border-primary bg-primary/10 text-foreground cursor-pointer",
+                    selection.assignment === "unavailable" &&
+                      "border-border bg-background text-muted-foreground opacity-40 line-through",
+                  )}
+                  aria-label={t("match.setup.players.togglePlayer", {
+                    name: selection.name,
+                  })}
+                >
+                  <div className="flex items-center gap-1">
+                    {selection.number !== undefined && (
+                      <span className="text-xs font-bold opacity-70">
+                        #{selection.number}
+                      </span>
+                    )}
+                    {preferredPosition?.isKeeper && (
+                      <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
+                        GK
+                      </span>
+                    )}
+                    {preferredPosition && !preferredPosition.isKeeper && (
+                      <span className="rounded bg-muted px-1 text-[10px] font-medium text-muted-foreground">
+                        {t(preferredPosition.abbreviation)}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm font-medium leading-tight">
+                    {selection.name}
+                  </span>
+                  <span className="text-xs opacity-70">
+                    {selection.assignment === "bench" &&
+                      (canSelect
+                        ? t("match.setup.bench.tapToSelect")
+                        : t("match.setup.players.statusBench"))}
+                    {selection.assignment === "unavailable" &&
+                      t("match.setup.players.statusUnavailable")}
+                  </span>
+                </button>
+              );
+            })}
         </div>
       </section>
 

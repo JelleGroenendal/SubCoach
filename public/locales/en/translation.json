@@ -285,6 +285,17 @@
         "statusBench": "Bench",
         "statusUnavailable": "Unavailable"
       },
+      "field": {
+        "title": "Field",
+        "instructions": "Tap a position to remove or select a player.",
+        "empty": "Empty",
+        "selectPlayer": "Select player"
+      },
+      "bench": {
+        "title": "Bench",
+        "instructions": "Swipe to mark unavailable. Tap to assign (after selecting a position).",
+        "tapToSelect": "Tap to assign"
+      },
       "keeper": {
         "title": "Goalkeeper",
         "description": "Select which field player is the goalkeeper.",

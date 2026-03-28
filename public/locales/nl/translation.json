@@ -285,10 +285,16 @@
         "statusBench": "Bank",
         "statusUnavailable": "Afwezig"
       },
-      "keeper": {
-        "title": "Keeper",
-        "description": "Selecteer welke veldspeler de keeper is.",
-        "noSelection": "Geen keeper geselecteerd"
+      "field": {
+        "title": "Veld",
+        "instructions": "Tik op een positie om de speler te verwijderen of te selecteren.",
+        "empty": "Leeg",
+        "selectPlayer": "Kies speler"
+      },
+      "bench": {
+        "title": "Bank",
+        "instructions": "Swipe om afwezig te markeren. Tik om een speler in te zetten (na selectie van positie).",
+        "tapToSelect": "Tik om in te zetten"
       },
       "startMatch": "Start wedstrijd",
       "validation": {
