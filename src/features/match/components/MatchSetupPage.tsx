@@ -279,49 +279,59 @@ function MatchSetupForm({
     return order;
   }, [positions]);
 
-  // Helper function to reassign positions to field players and sort by position
-  const reassignPositions = useCallback(
-    (selections: PlayerSelection[]): PlayerSelection[] => {
+  // Helper function to assign a position to a new field player (keeps existing assignments)
+  const assignPositionToPlayer = useCallback(
+    (selections: PlayerSelection[], playerId: string): PlayerSelection[] => {
       const fieldPositions = positions.slice(0, requiredOnField);
-      const fieldPlayers = selections.filter((s) => s.assignment === "field");
-      const assignedPositions = new Set<string>();
-      const playerAssignments = new Map<string, string>();
 
-      // First pass: assign players to their preferred position if available
-      for (const player of fieldPlayers) {
+      // Get currently used positions (from other field players)
+      const usedPositions = new Set<string>();
+      for (const s of selections) {
         if (
-          player.preferredPositionId &&
-          !assignedPositions.has(player.preferredPositionId) &&
-          fieldPositions.some((p) => p.id === player.preferredPositionId)
+          s.assignment === "field" &&
+          s.assignedPositionId &&
+          s.playerId !== playerId
         ) {
-          playerAssignments.set(player.playerId, player.preferredPositionId);
-          assignedPositions.add(player.preferredPositionId);
+          usedPositions.add(s.assignedPositionId);
         }
       }
 
-      // Second pass: fill remaining positions with remaining players
-      const remainingPositions = fieldPositions.filter(
-        (p) => !assignedPositions.has(p.id),
+      // Find the player we're assigning
+      const player = selections.find((s) => s.playerId === playerId);
+      if (!player) return selections;
+
+      // Try to assign preferred position first
+      let assignedPosition: string | undefined;
+      if (
+        player.preferredPositionId &&
+        !usedPositions.has(player.preferredPositionId) &&
+        fieldPositions.some((p) => p.id === player.preferredPositionId)
+      ) {
+        assignedPosition = player.preferredPositionId;
+      } else {
+        // Find first available position
+        for (const pos of fieldPositions) {
+          if (!usedPositions.has(pos.id)) {
+            assignedPosition = pos.id;
+            break;
+          }
+        }
+      }
+
+      // Update only this player's position
+      return selections.map((s) =>
+        s.playerId === playerId
+          ? { ...s, assignedPositionId: assignedPosition }
+          : s,
       );
-      for (const player of fieldPlayers) {
-        if (remainingPositions.length === 0) break;
-        if (!playerAssignments.has(player.playerId)) {
-          const position = remainingPositions.shift()!;
-          playerAssignments.set(player.playerId, position.id);
-        }
-      }
+    },
+    [positions, requiredOnField],
+  );
 
-      // Update selections with new assignments
-      const updated = selections.map((s) => ({
-        ...s,
-        assignedPositionId:
-          s.assignment === "field"
-            ? playerAssignments.get(s.playerId)
-            : undefined,
-      }));
-
-      // Sort by position order (field players first, then bench)
-      return updated.sort((a, b) => {
+  // Helper function to sort selections by position order
+  const sortByPosition = useCallback(
+    (selections: PlayerSelection[]): PlayerSelection[] => {
+      return [...selections].sort((a, b) => {
         // Field players come first
         if (a.assignment === "field" && b.assignment !== "field") return -1;
         if (a.assignment !== "field" && b.assignment === "field") return 1;
@@ -336,7 +346,7 @@ function MatchSetupForm({
         return aOrder - bOrder;
       });
     },
-    [positions, requiredOnField, positionOrder],
+    [positionOrder],
   );
 
   const handleToggleAssignment = useCallback(
@@ -348,7 +358,7 @@ function MatchSetupForm({
         let updated: PlayerSelection[];
 
         if (player.assignment === "field") {
-          // Moving to bench - clear assignment and reassign remaining field players
+          // Moving to bench - just clear this player's assignment, keep others
           updated = prev.map((s) =>
             s.playerId === playerId
               ? {
@@ -366,26 +376,27 @@ function MatchSetupForm({
           if (currentFieldCount >= requiredOnField) {
             return prev; // No room on field
           }
+          // Set as field player first
           updated = prev.map((s) =>
             s.playerId === playerId
               ? { ...s, assignment: "field" as const }
               : s,
           );
+          // Assign position only to the new field player
+          updated = assignPositionToPlayer(updated, playerId);
         }
 
-        // Reassign positions to all field players
-        updated = reassignPositions(updated);
-
-        return updated;
+        // Sort for display
+        return sortByPosition(updated);
       });
     },
-    [requiredOnField, reassignPositions],
+    [requiredOnField, assignPositionToPlayer, sortByPosition],
   );
 
   const handleToggleUnavailable = useCallback(
     (playerId: string) => {
       setSelections((prev) => {
-        let updated = prev.map((s) => {
+        const updated = prev.map((s) => {
           if (s.playerId !== playerId) return s;
           if (s.assignment === "unavailable") {
             return {
@@ -401,17 +412,11 @@ function MatchSetupForm({
           };
         });
 
-        // Reassign positions when a field player becomes unavailable
-        const wasOnField =
-          prev.find((s) => s.playerId === playerId)?.assignment === "field";
-        if (wasOnField) {
-          updated = reassignPositions(updated);
-        }
-
-        return updated;
+        // Just sort, don't reassign other players' positions
+        return sortByPosition(updated);
       });
     },
-    [reassignPositions],
+    [sortByPosition],
   );
 
   // Swipe handling for mobile - swipe left/right to toggle unavailable
