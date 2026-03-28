@@ -238,19 +238,8 @@ export function SettingsPage(): React.ReactNode {
         <p className="mt-2 text-sm text-muted-foreground">
           {t("settings.aboutDescription")}
         </p>
-        <div className="mt-4 space-y-3">
-          <a
-            href="https://github.com/JelleGroenendal/SubCoach"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block min-h-12 touch-manipulation text-sm text-primary underline-offset-4 hover:underline"
-            aria-label={t("settings.github")}
-          >
-            {t("settings.github")}
-          </a>
-          <div>
-            <KofiButton />
-          </div>
+        <div className="mt-4">
+          <KofiButton />
         </div>
       </div>
 
