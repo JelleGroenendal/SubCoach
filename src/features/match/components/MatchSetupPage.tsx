@@ -58,14 +58,40 @@ function buildInitialSelections(
     return aOrder - bOrder;
   });
 
-  // Assign first N players to field (sorted by position), rest to bench
-  return sortedPlayers.map((p, index) => ({
+  // Smart field selection: pick at most 1 player per position
+  // This ensures we get a balanced team (1 keeper, 1 MO, 1 LO, etc.)
+  const fieldPlayerIds = new Set<string>();
+  const usedPositions = new Set<string>();
+
+  // First pass: select one player per position (in position order)
+  for (const player of sortedPlayers) {
+    if (fieldPlayerIds.size >= playersOnField) break;
+
+    const positionId = player.positionId ?? player.positionIds?.[0];
+    if (positionId && !usedPositions.has(positionId)) {
+      fieldPlayerIds.add(player.id);
+      usedPositions.add(positionId);
+    }
+  }
+
+  // Second pass: fill remaining spots with players without positions or duplicate positions
+  for (const player of sortedPlayers) {
+    if (fieldPlayerIds.size >= playersOnField) break;
+
+    if (!fieldPlayerIds.has(player.id)) {
+      fieldPlayerIds.add(player.id);
+    }
+  }
+
+  // Build selections maintaining the sorted order for display
+  return sortedPlayers.map((p) => ({
     playerId: p.id,
     name: p.name,
     number: p.number,
     positionId: p.positionId ?? p.positionIds?.[0],
-    assignment:
-      index < playersOnField ? ("field" as const) : ("bench" as const),
+    assignment: fieldPlayerIds.has(p.id)
+      ? ("field" as const)
+      : ("bench" as const),
   }));
 }
 
@@ -295,6 +321,8 @@ function MatchSetupForm({
       longPressTriggeredRef.current = false;
       longPressTimerRef.current = setTimeout(() => {
         longPressTriggeredRef.current = true;
+        // Clear timer ref immediately so touchend knows long press completed
+        longPressTimerRef.current = undefined;
         handleToggleUnavailable(playerId);
         // Vibrate on long press if supported
         if ("vibrate" in navigator) {
@@ -307,20 +335,26 @@ function MatchSetupForm({
 
   const handleTouchEnd = useCallback(
     (playerId: string) => {
+      // Clear any pending timer
       if (longPressTimerRef.current) {
         clearTimeout(longPressTimerRef.current);
         longPressTimerRef.current = undefined;
       }
+      // Only toggle field/bench if long press didn't trigger
       if (!longPressTriggeredRef.current) {
         handleToggleAssignment(playerId);
       }
+      // Reset for next interaction (with small delay to handle any race conditions)
+      setTimeout(() => {
+        longPressTriggeredRef.current = false;
+      }, 50);
     },
     [handleToggleAssignment],
   );
 
   const handleMouseDown = useCallback(
     (playerId: string, e: React.MouseEvent) => {
-      // Ignore mouse events if we just handled a touch event
+      // Ignore mouse events if we're on a touch device
       if (isTouchDeviceRef.current) {
         return;
       }
@@ -328,6 +362,7 @@ function MatchSetupForm({
       longPressTriggeredRef.current = false;
       longPressTimerRef.current = setTimeout(() => {
         longPressTriggeredRef.current = true;
+        longPressTimerRef.current = undefined;
         handleToggleUnavailable(playerId);
         if ("vibrate" in navigator) {
           navigator.vibrate(50);
@@ -339,7 +374,7 @@ function MatchSetupForm({
 
   const handleMouseUp = useCallback(
     (playerId: string) => {
-      // Ignore mouse events if we just handled a touch event
+      // Ignore mouse events if we're on a touch device
       if (isTouchDeviceRef.current) {
         return;
       }
@@ -350,6 +385,10 @@ function MatchSetupForm({
       if (!longPressTriggeredRef.current) {
         handleToggleAssignment(playerId);
       }
+      // Reset for next interaction
+      setTimeout(() => {
+        longPressTriggeredRef.current = false;
+      }, 50);
     },
     [handleToggleAssignment],
   );
