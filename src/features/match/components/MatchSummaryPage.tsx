@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useMatchStore } from "@/stores/matchStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { calculateFairnessScore } from "@/engine/fairness/calculateFairness";
 import { formatTime } from "@/engine/timer/matchTimer";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ export function MatchSummaryPage(): React.ReactNode {
   const navigate = useNavigate();
   const match = useMatchStore((s) => s.match);
   const updateMatchNotes = useMatchStore((s) => s.updateMatchNotes);
+  const { showFairnessScore } = useSettingsStore();
 
   const [matchNotes, setMatchNotes] = useState(match?.notes ?? "");
 
@@ -114,8 +116,8 @@ export function MatchSummaryPage(): React.ReactNode {
         </div>
       </div>
 
-      {/* Fairness Score */}
-      {fairness && (
+      {/* Fairness Score - only show if enabled in settings */}
+      {showFairnessScore && fairness && (
         <div
           className={cn(
             "flex items-center justify-between rounded-xl border p-4",

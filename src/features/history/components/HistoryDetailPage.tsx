@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useTeamStore } from "@/stores/teamStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import { useMatchHistory } from "@/data/yjs";
 import { calculateFairnessScore } from "@/engine/fairness/calculateFairness";
 import { formatTime } from "@/engine/timer/matchTimer";
@@ -109,6 +110,7 @@ export function HistoryDetailPage(): React.ReactNode {
   const navigate = useNavigate();
   const { activeTeamId, initialize } = useTeamStore();
   const { matches } = useMatchHistory(activeTeamId);
+  const { showFairnessScore } = useSettingsStore();
 
   useEffect(() => {
     initialize();
@@ -230,8 +232,8 @@ export function HistoryDetailPage(): React.ReactNode {
         </div>
       </div>
 
-      {/* Fairness Score */}
-      {fairness && (
+      {/* Fairness Score - only show if enabled in settings */}
+      {showFairnessScore && fairness && (
         <div
           className={cn(
             "flex items-center justify-between rounded-xl border p-4",
