@@ -420,6 +420,7 @@
       "noMatch": "Geen wedstrijd gevonden.",
       "backHome": "Terug naar home",
       "vs": "vs {{opponent}}",
+      "homeTeam": "Ons team",
       "fairness": "Eerlijkheidsscore",
       "fairnessDescription": "Hoe gelijk de speeltijd verdeeld is (0-100).",
       "playTime": "Speeltijd per speler",

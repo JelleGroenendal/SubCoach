@@ -108,7 +108,7 @@ export function HistoryDetailPage(): React.ReactNode {
   const { id } = useParams<{ id: string }>();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { activeTeamId, initialize } = useTeamStore();
+  const { team, activeTeamId, initialize } = useTeamStore();
   const { matches } = useMatchHistory(activeTeamId);
   const { showFairnessScore } = useSettingsStore();
 
@@ -218,9 +218,15 @@ export function HistoryDetailPage(): React.ReactNode {
 
       {/* Score */}
       <div className="flex flex-col items-center rounded-xl border border-border bg-card p-6">
-        <p className="text-sm text-muted-foreground">
-          {t("match.summary.vs", { opponent: match.opponentName })}
-        </p>
+        <div className="flex w-full items-center justify-center gap-4 text-sm">
+          <span className="flex-1 text-right font-medium text-foreground">
+            {team?.name ?? t("match.summary.homeTeam")}
+          </span>
+          <span className="text-muted-foreground">vs</span>
+          <span className="flex-1 text-left font-medium text-muted-foreground">
+            {match.opponentName}
+          </span>
+        </div>
         <div className="mt-2 flex items-baseline gap-4">
           <span className="text-5xl font-bold tabular-nums">
             {match.homeScore}

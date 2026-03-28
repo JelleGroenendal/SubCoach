@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useMatchStore } from "@/stores/matchStore";
+import { useTeamStore } from "@/stores/teamStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { calculateFairnessScore } from "@/engine/fairness/calculateFairness";
 import { formatTime } from "@/engine/timer/matchTimer";
@@ -42,6 +43,7 @@ export function MatchSummaryPage(): React.ReactNode {
   const navigate = useNavigate();
   const match = useMatchStore((s) => s.match);
   const updateMatchNotes = useMatchStore((s) => s.updateMatchNotes);
+  const { team } = useTeamStore();
   const { showFairnessScore } = useSettingsStore();
 
   const [matchNotes, setMatchNotes] = useState(match?.notes ?? "");
@@ -102,9 +104,15 @@ export function MatchSummaryPage(): React.ReactNode {
 
       {/* Score */}
       <div className="flex flex-col items-center rounded-xl border border-border bg-card p-6">
-        <p className="text-sm text-muted-foreground">
-          {t("match.summary.vs", { opponent: match.opponentName })}
-        </p>
+        <div className="flex w-full items-center justify-center gap-4 text-sm">
+          <span className="flex-1 text-right font-medium text-foreground">
+            {team?.name ?? t("match.summary.homeTeam")}
+          </span>
+          <span className="text-muted-foreground">vs</span>
+          <span className="flex-1 text-left font-medium text-muted-foreground">
+            {match.opponentName}
+          </span>
+        </div>
         <div className="mt-2 flex items-baseline gap-4">
           <span className="text-5xl font-bold tabular-nums">
             {match.homeScore}

@@ -425,6 +425,7 @@
       "noMatch": "No match found.",
       "backHome": "Back to home",
       "vs": "vs {{opponent}}",
+      "homeTeam": "Our team",
       "fairness": "Fairness score",
       "fairnessDescription": "How equally play time is distributed (0-100).",
       "playTime": "Play time per player",
