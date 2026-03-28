@@ -29,7 +29,8 @@ type PlayerSelection = {
   playerId: string;
   name: string;
   number: number | undefined;
-  positionId: string | undefined;
+  preferredPositionId: string | undefined; // Player's preferred position
+  assignedPositionId: string | undefined; // Position assigned on the field (only for field players)
   assignment: "field" | "bench" | "unavailable";
 };
 
@@ -58,28 +59,41 @@ function buildInitialSelections(
     return aOrder - bOrder;
   });
 
-  // Smart field selection: pick at most 1 player per position
-  // This ensures we get a balanced team (1 keeper, 1 MO, 1 LO, etc.)
-  const fieldPlayerIds = new Set<string>();
-  const usedPositions = new Set<string>();
+  // Get field positions (limited to playersOnField count)
+  const fieldPositions = positions.slice(0, playersOnField);
 
-  // First pass: select one player per position (in position order)
+  // Smart field selection: assign players to field positions based on preference
+  // Map: playerId -> assigned position id
+  const playerAssignments = new Map<string, string>();
+  const assignedPositions = new Set<string>();
+
+  // First pass: assign players to their preferred position if available
   for (const player of sortedPlayers) {
-    if (fieldPlayerIds.size >= playersOnField) break;
+    if (playerAssignments.size >= playersOnField) break;
 
-    const positionId = player.positionId ?? player.positionIds?.[0];
-    if (positionId && !usedPositions.has(positionId)) {
-      fieldPlayerIds.add(player.id);
-      usedPositions.add(positionId);
+    const preferredPositionId = player.positionId ?? player.positionIds?.[0];
+    if (
+      preferredPositionId &&
+      !assignedPositions.has(preferredPositionId) &&
+      fieldPositions.some((p) => p.id === preferredPositionId)
+    ) {
+      playerAssignments.set(player.id, preferredPositionId);
+      assignedPositions.add(preferredPositionId);
     }
   }
 
-  // Second pass: fill remaining spots with players without positions or duplicate positions
+  // Second pass: fill remaining positions with remaining players
+  const remainingPositions = fieldPositions.filter(
+    (p) => !assignedPositions.has(p.id),
+  );
   for (const player of sortedPlayers) {
-    if (fieldPlayerIds.size >= playersOnField) break;
+    if (playerAssignments.size >= playersOnField) break;
+    if (remainingPositions.length === 0) break;
 
-    if (!fieldPlayerIds.has(player.id)) {
-      fieldPlayerIds.add(player.id);
+    if (!playerAssignments.has(player.id)) {
+      const position = remainingPositions.shift()!;
+      playerAssignments.set(player.id, position.id);
+      assignedPositions.add(position.id);
     }
   }
 
@@ -88,8 +102,9 @@ function buildInitialSelections(
     playerId: p.id,
     name: p.name,
     number: p.number,
-    positionId: p.positionId ?? p.positionIds?.[0],
-    assignment: fieldPlayerIds.has(p.id)
+    preferredPositionId: p.positionId ?? p.positionIds?.[0],
+    assignedPositionId: playerAssignments.get(p.id),
+    assignment: playerAssignments.has(p.id)
       ? ("field" as const)
       : ("bench" as const),
   }));
@@ -235,11 +250,13 @@ function MatchSetupForm({
       return undefined;
     },
   );
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined,
-  );
-  const longPressTriggeredRef = useRef(false);
-  const isTouchDeviceRef = useRef(false);
+  // Swipe handling refs
+  const touchStartRef = useRef<{
+    x: number;
+    y: number;
+    playerId: string;
+  } | null>(null);
+  const swipeThreshold = 50; // Minimum swipe distance in pixels
 
   const fieldCount = useMemo(
     () => selections.filter((s) => s.assignment === "field").length,
@@ -256,24 +273,86 @@ function MatchSetupForm({
   const canStart =
     fieldCount === requiredOnField && opponentName.trim().length > 0;
 
+  // Helper function to reassign positions to field players
+  const reassignPositions = useCallback(
+    (selections: PlayerSelection[]): PlayerSelection[] => {
+      const fieldPositions = positions.slice(0, requiredOnField);
+      const fieldPlayers = selections.filter((s) => s.assignment === "field");
+      const assignedPositions = new Set<string>();
+      const playerAssignments = new Map<string, string>();
+
+      // First pass: assign players to their preferred position if available
+      for (const player of fieldPlayers) {
+        if (
+          player.preferredPositionId &&
+          !assignedPositions.has(player.preferredPositionId) &&
+          fieldPositions.some((p) => p.id === player.preferredPositionId)
+        ) {
+          playerAssignments.set(player.playerId, player.preferredPositionId);
+          assignedPositions.add(player.preferredPositionId);
+        }
+      }
+
+      // Second pass: fill remaining positions with remaining players
+      const remainingPositions = fieldPositions.filter(
+        (p) => !assignedPositions.has(p.id),
+      );
+      for (const player of fieldPlayers) {
+        if (remainingPositions.length === 0) break;
+        if (!playerAssignments.has(player.playerId)) {
+          const position = remainingPositions.shift()!;
+          playerAssignments.set(player.playerId, position.id);
+        }
+      }
+
+      // Update selections with new assignments
+      return selections.map((s) => ({
+        ...s,
+        assignedPositionId:
+          s.assignment === "field"
+            ? playerAssignments.get(s.playerId)
+            : undefined,
+      }));
+    },
+    [positions, requiredOnField],
+  );
+
   const handleToggleAssignment = useCallback(
     (playerId: string) => {
       setSelections((prev) => {
-        const updated = prev.map((s) => {
-          if (s.playerId !== playerId) return s;
-          if (s.assignment === "unavailable") return s;
+        const player = prev.find((s) => s.playerId === playerId);
+        if (!player || player.assignment === "unavailable") return prev;
 
-          if (s.assignment === "field") {
-            return { ...s, assignment: "bench" as const };
-          }
+        let updated: PlayerSelection[];
+
+        if (player.assignment === "field") {
+          // Moving to bench - clear assignment and reassign remaining field players
+          updated = prev.map((s) =>
+            s.playerId === playerId
+              ? {
+                  ...s,
+                  assignment: "bench" as const,
+                  assignedPositionId: undefined,
+                }
+              : s,
+          );
+        } else {
+          // Moving to field - check if there's room
           const currentFieldCount = prev.filter(
-            (ps) => ps.assignment === "field" && ps.playerId !== playerId,
+            (ps) => ps.assignment === "field",
           ).length;
-          if (currentFieldCount < requiredOnField) {
-            return { ...s, assignment: "field" as const };
+          if (currentFieldCount >= requiredOnField) {
+            return prev; // No room on field
           }
-          return s;
-        });
+          updated = prev.map((s) =>
+            s.playerId === playerId
+              ? { ...s, assignment: "field" as const }
+              : s,
+          );
+        }
+
+        // Reassign positions to all field players
+        updated = reassignPositions(updated);
 
         // Clear keeper selection if keeper moved off field
         const playerSelection = updated.find((s) => s.playerId === playerId);
@@ -287,7 +366,7 @@ function MatchSetupForm({
         return updated;
       });
     },
-    [requiredOnField, selectedKeeperId],
+    [requiredOnField, selectedKeeperId, reassignPositions],
   );
 
   const handleToggleUnavailable = useCallback(
@@ -297,108 +376,89 @@ function MatchSetupForm({
         setSelectedKeeperId(undefined);
       }
 
-      setSelections((prev) =>
-        prev.map((s) => {
+      setSelections((prev) => {
+        let updated = prev.map((s) => {
           if (s.playerId !== playerId) return s;
           if (s.assignment === "unavailable") {
-            return { ...s, assignment: "bench" };
+            return {
+              ...s,
+              assignment: "bench" as const,
+              assignedPositionId: undefined,
+            };
           }
-          return { ...s, assignment: "unavailable" };
-        }),
-      );
+          return {
+            ...s,
+            assignment: "unavailable" as const,
+            assignedPositionId: undefined,
+          };
+        });
+
+        // Reassign positions when a field player becomes unavailable
+        const wasOnField =
+          prev.find((s) => s.playerId === playerId)?.assignment === "field";
+        if (wasOnField) {
+          updated = reassignPositions(updated);
+        }
+
+        return updated;
+      });
     },
-    [selectedKeeperId],
+    [selectedKeeperId, reassignPositions],
   );
 
-  // Long press handling - works with both mouse and touch
-  // We track if a touch event started, so we can ignore the subsequent mouse events
+  // Swipe handling for mobile - swipe left/right to toggle unavailable
   const handleTouchStart = useCallback(
     (playerId: string, e: React.TouchEvent) => {
-      // Mark that we're handling a touch interaction
-      isTouchDeviceRef.current = true;
-      // Prevent text selection on long press
-      e.preventDefault();
-      longPressTriggeredRef.current = false;
-      longPressTimerRef.current = setTimeout(() => {
-        longPressTriggeredRef.current = true;
-        // Clear timer ref immediately so touchend knows long press completed
-        longPressTimerRef.current = undefined;
-        handleToggleUnavailable(playerId);
-        // Vibrate on long press if supported
-        if ("vibrate" in navigator) {
-          navigator.vibrate(50);
-        }
-      }, 500);
+      const touch = e.touches[0];
+      if (touch) {
+        touchStartRef.current = {
+          x: touch.clientX,
+          y: touch.clientY,
+          playerId,
+        };
+      }
     },
-    [handleToggleUnavailable],
+    [],
   );
 
   const handleTouchEnd = useCallback(
-    (playerId: string) => {
-      // Clear any pending timer
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = undefined;
-      }
-      // Only toggle field/bench if long press didn't trigger
-      if (!longPressTriggeredRef.current) {
-        handleToggleAssignment(playerId);
-      }
-      // Reset for next interaction (with small delay to handle any race conditions)
-      setTimeout(() => {
-        longPressTriggeredRef.current = false;
-      }, 50);
-    },
-    [handleToggleAssignment],
-  );
-
-  const handleMouseDown = useCallback(
-    (playerId: string, e: React.MouseEvent) => {
-      // Ignore mouse events if we're on a touch device
-      if (isTouchDeviceRef.current) {
+    (playerId: string, e: React.TouchEvent) => {
+      if (
+        !touchStartRef.current ||
+        touchStartRef.current.playerId !== playerId
+      ) {
+        touchStartRef.current = null;
         return;
       }
-      e.preventDefault();
-      longPressTriggeredRef.current = false;
-      longPressTimerRef.current = setTimeout(() => {
-        longPressTriggeredRef.current = true;
-        longPressTimerRef.current = undefined;
+
+      const touch = e.changedTouches[0];
+      if (!touch) {
+        touchStartRef.current = null;
+        return;
+      }
+
+      const deltaX = touch.clientX - touchStartRef.current.x;
+      const deltaY = touch.clientY - touchStartRef.current.y;
+
+      // Check if it's a horizontal swipe (more horizontal than vertical)
+      if (
+        Math.abs(deltaX) > swipeThreshold &&
+        Math.abs(deltaX) > Math.abs(deltaY)
+      ) {
+        // Swipe detected - toggle unavailable
         handleToggleUnavailable(playerId);
         if ("vibrate" in navigator) {
           navigator.vibrate(50);
         }
-      }, 500);
-    },
-    [handleToggleUnavailable],
-  );
-
-  const handleMouseUp = useCallback(
-    (playerId: string) => {
-      // Ignore mouse events if we're on a touch device
-      if (isTouchDeviceRef.current) {
-        return;
-      }
-      if (longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = undefined;
-      }
-      if (!longPressTriggeredRef.current) {
+      } else if (Math.abs(deltaX) < 10 && Math.abs(deltaY) < 10) {
+        // Tap detected (minimal movement) - toggle field/bench
         handleToggleAssignment(playerId);
       }
-      // Reset for next interaction
-      setTimeout(() => {
-        longPressTriggeredRef.current = false;
-      }, 50);
-    },
-    [handleToggleAssignment],
-  );
 
-  const handlePressCancel = useCallback(() => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = undefined;
-    }
-  }, []);
+      touchStartRef.current = null;
+    },
+    [handleToggleUnavailable, handleToggleAssignment, swipeThreshold],
+  );
 
   const handleStart = useCallback(() => {
     if (!canStart) return;
@@ -415,7 +475,7 @@ function MatchSetupForm({
           playerId: s.playerId,
           name: s.name,
           number: s.number,
-          positionId: s.positionId,
+          positionId: s.assignedPositionId ?? s.preferredPositionId,
           status: s.assignment as "field" | "bench",
           totalPlayTimeSeconds: 0,
           goals: 0,
@@ -625,8 +685,14 @@ function MatchSetupForm({
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {selections.map((selection) => {
-            const playerPosition = selection.positionId
-              ? positions.find((p) => p.id === selection.positionId)
+            // For field players, show the assigned position (the field slot they fill)
+            // For bench players, show their preferred position
+            const displayPositionId =
+              selection.assignment === "field"
+                ? selection.assignedPositionId
+                : selection.preferredPositionId;
+            const displayPosition = displayPositionId
+              ? positions.find((p) => p.id === displayPositionId)
               : undefined;
 
             return (
@@ -634,11 +700,14 @@ function MatchSetupForm({
                 key={selection.playerId}
                 type="button"
                 onTouchStart={(e) => handleTouchStart(selection.playerId, e)}
-                onTouchEnd={() => handleTouchEnd(selection.playerId)}
-                onTouchCancel={handlePressCancel}
-                onMouseDown={(e) => handleMouseDown(selection.playerId, e)}
-                onMouseUp={() => handleMouseUp(selection.playerId)}
-                onMouseLeave={handlePressCancel}
+                onTouchEnd={(e) => handleTouchEnd(selection.playerId, e)}
+                onClick={() => {
+                  // Only handle click on non-touch devices
+                  // Touch devices use touchEnd
+                  if (!touchStartRef.current) {
+                    handleToggleAssignment(selection.playerId);
+                  }
+                }}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   handleToggleUnavailable(selection.playerId);
@@ -663,12 +732,12 @@ function MatchSetupForm({
                       #{selection.number}
                     </span>
                   )}
-                  {playerPosition?.isKeeper && (
+                  {displayPosition?.isKeeper && (
                     <span className="rounded bg-amber-500 px-1 text-[10px] font-bold text-black">
                       GK
                     </span>
                   )}
-                  {playerPosition && !playerPosition.isKeeper && (
+                  {displayPosition && !displayPosition.isKeeper && (
                     <span
                       className={cn(
                         "rounded px-1 text-[10px] font-medium",
@@ -677,7 +746,7 @@ function MatchSetupForm({
                           : "bg-muted text-muted-foreground",
                       )}
                     >
-                      {t(playerPosition.abbreviation)}
+                      {t(displayPosition.abbreviation)}
                     </span>
                   )}
                 </div>
